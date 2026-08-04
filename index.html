@@ -216,7 +216,7 @@
   .xp-progress-track{height:10px;border-radius:5px;background:#ddd2c4;overflow:hidden;margin-bottom:6px}
   .xp-progress-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,#6bbf59,#4a90d9);width:0%;transition:width .4s ease}
   .xp-progress-text{font-size:11px;font-weight:700;color:var(--ink)}
-  .xp-remaining{font-size:9px;font-weight:700;color:#a99;margin-left:5px}
+  .xp-remaining{font-size:9px;font-weight:700;color:#a99;margin-left:5px;flex-shrink:0;white-space:nowrap}
   .google-auth-row{width:100%;display:flex;justify-content:center;margin:4px 0 12px}
   .google-signin-btn{display:flex;align-items:center;gap:8px;background:#fff;color:#3c4043;border:1px solid #dadce0;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.15)}
   .google-signin-btn:active{background:#f8f8f8}
@@ -332,8 +332,10 @@
   .top-info-row{margin:2px 12px 6px;display:flex;align-items:stretch;gap:8px}
   .profile{flex:1;min-width:0;display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:10px;padding:7px 10px}
   .profile-info{flex:1;min-width:0}
-  .profile-name{font-size:12px;font-weight:700;color:var(--ink);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap}
-  .profile-name-left{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .profile-name{font-size:12px;font-weight:700;color:var(--ink);display:flex;justify-content:space-between;align-items:center;flex-wrap:nowrap;min-width:0}
+  .profile-name-left{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;min-width:0}
+  #playerName{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex-shrink:1}
+  .level-balloon,.combo-text{flex-shrink:0}
   .level-balloon{display:inline-flex;align-items:center;justify-content:center;background:var(--gold);color:#7a5a00;font-size:10px;font-weight:800;border-radius:10px;padding:2px 7px;line-height:1.4}
   .combo-text{font-size:10px;font-weight:800;color:var(--orange)}
   .combo-bar-track{margin-top:3px;height:7px;border-radius:4px;background:#ddd2c4;overflow:hidden}
@@ -352,7 +354,7 @@
   .mission{flex:1;min-width:0;background:var(--panel);border-radius:10px;padding:8px 10px}
   .mission-head{display:flex;align-items:center;gap:6px;margin-bottom:6px}
   .mission-swatch{width:20px;height:20px;border-radius:6px;flex-shrink:0;box-shadow:inset 0 -3px 0 rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;font-size:13px}
-  .mission-text{font-size:12px;font-weight:700;color:var(--ink)}
+  .mission-text{font-size:11px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
   .mission-progress{color:var(--green);font-weight:800}
   .mission-text b{font-weight:800}
   .slots{display:flex;flex-wrap:nowrap;gap:4px;overflow:hidden}
@@ -3113,6 +3115,7 @@
     clearFallingCubes();
     stopGameMusic();
     playGameOverSound();
+    var sessionDurationMs = sessionStartTime ? (performance.now() - sessionStartTime) : 0;
     accumulatePlayTime();
 
     if(gameMode === "arcade"){
@@ -3126,7 +3129,6 @@
       return;
     }
 
-    var sessionDurationMs = sessionStartTime ? (performance.now() - sessionStartTime) : 0;
     profile.records = profile.records || [];
     profile.records.push({score: sessionXpEarned, gold: sessionGoldEarned, level: profile.level||1, missions: missionCount});
     profile.records.sort(function(a,b){ return b.score - a.score; });
