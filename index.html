@@ -74,6 +74,9 @@
   .menu-btn.leaderboard-btn:active{box-shadow:0 1px 0 #a86f14,0 2px 4px rgba(0,0,0,.2)}
   .menu-btn.mailbox-btn{background:#3fa9a0;box-shadow:0 4px 0 #297a73,0 6px 12px rgba(0,0,0,.2);position:relative}
   .menu-btn.mailbox-btn:active{box-shadow:0 1px 0 #297a73,0 2px 4px rgba(0,0,0,.2)}
+  .menu-btn.ranked-btn{background:#d6455b;box-shadow:0 4px 0 #a02a3d,0 6px 12px rgba(0,0,0,.2);position:relative;display:flex;flex-direction:column;align-items:center;gap:2px}
+  .menu-btn.ranked-btn:active{box-shadow:0 1px 0 #a02a3d,0 2px 4px rgba(0,0,0,.2)}
+  .ranked-btn-price{font-size:10px;font-weight:700;opacity:.85}
 
   .arcade-level-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:14px 8px}
   .arcade-level-card{background:var(--panel);border-radius:10px;padding:8px 4px 10px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;border:2px solid transparent;transition:transform .1s}
@@ -574,6 +577,7 @@
     <button class="menu-btn friends-btn" id="friendsBtn">👥 Dostlar<span class="daily-btn-dot" id="friendsBtnDot" style="display:none"></span></button>
     <button class="menu-btn leaderboard-btn" id="leaderboardBtn">🏆 Reytinq Cədvəli</button>
     <button class="menu-btn mailbox-btn" id="mailboxBtn">📬 Poçt qutusu<span class="daily-btn-dot" id="mailboxBtnDot" style="display:none"></span></button>
+    <button class="menu-btn ranked-btn" id="rankedBtn">🌐 Online Rəqib Tap<span class="ranked-btn-price">500 🪙</span></button>
     <button class="menu-btn daily-btn" id="dailyBtn">🎁 Gündəlik Mükafat<span class="daily-btn-dot" id="dailyBtnDot" style="display:none"></span></button>
     <button class="menu-btn arcade-btn" id="arcadeBtn">🕹️ Arkada Rejimi</button>
     <div class="menu-hint">
@@ -950,7 +954,7 @@
   <div class="modal-overlay" id="battleWaitingModal">
     <div class="modal-panel" style="text-align:center">
       <div class="modal-header">
-        <h3>🎮 Dəvət göndərildi</h3>
+        <h3 id="battleWaitingTitle">🎮 Dəvət göndərildi</h3>
       </div>
       <p style="font-size:13px;color:var(--ink);margin-bottom:16px" id="battleWaitingText">Rəqibin qəbul etməsi gözlənilir...</p>
       <button class="menu-return" id="battleWaitingCancel">Ləğv et</button>
@@ -1019,6 +1023,8 @@
     conversationsCache = [];
     if(messagesInboxChannel){ supabaseClient.removeChannel(messagesInboxChannel); messagesInboxChannel = null; }
     if(giftsInboxChannel){ supabaseClient.removeChannel(giftsInboxChannel); giftsInboxChannel = null; }
+    if(matchmakingChannel){ supabaseClient.removeChannel(matchmakingChannel); matchmakingChannel = null; }
+    matchmakingActive = false;
     chatPeerId = null;
     supabaseClient.auth.signOut();
   }
@@ -1445,6 +1451,11 @@
   var battleEliminated = false; // mən canımı itirmişəm amma öndəyəm - rəqib məni keçənə qədər gözləyirəm
   var battleOpponentEliminated = false; // rəqib canını itirib, onun xalı artıq dəyişmir
   var battleOpponentFrozenScore = 0;
+  var battleIsRanked = false;
+  var RANKED_ENTRY_FEE = 500;
+  var RANKED_WIN_GOLD_BONUS = 1000;
+  var matchmakingActive = false;
+  var matchmakingChannel = null;
   var pendingIncomingInvite = null;
   var battlePendingOpponentId = null;
   var battlePendingOpponentName = null;
@@ -2660,11 +2671,76 @@
         supabaseClient.from("battle_invites").insert({from_user: cloudUserId, to_user: playerId, battle_id: battle.id, battle_type: battlePendingBattleType}).then(function(res2){
           if(res2.error){ showToast("⚠️ Xəta: " + res2.error.message); return; }
           var typeLabel = battlePendingBattleType === "endless" ? "Sonsuz Rəqabət" : "60 saniyəlik Battle";
+          matchmakingActive = false;
+          document.getElementById("battleWaitingTitle").textContent = "🎮 Dəvət göndərildi";
           document.getElementById("battleWaitingText").textContent = playerName + " (" + typeLabel + ") qəbul etməsini gözləyirik...";
           document.getElementById("battleWaitingModal").classList.add("show");
           closePlayerCard();
         });
       });
+  }
+
+  // ===== Online rəqib tapma (pullu, reytinqli) =====
+  function findMatch(){
+    if(!cloudUserId){ showToast("⚠️ Əvvəlcə Google ilə daxil olmalısan"); return; }
+    if((profile.gold || 0) < RANKED_ENTRY_FEE){ showToast("⚠️ Kifayət qədər qızılın yoxdur (500 lazımdır)"); return; }
+    supabaseClient.rpc("find_match").then(function(res){
+      if(res.error){ showToast("⚠️ Xəta: " + res.error.message); return; }
+      var result = res.data;
+      profile.gold = Math.max(0, (profile.gold || 0) - RANKED_ENTRY_FEE);
+      profile.totalGoldSpent = (profile.totalGoldSpent||0) + RANKED_ENTRY_FEE;
+      renderProfile();
+      saveProfile();
+      if(result.status === "matched"){
+        matchmakingActive = false;
+        supabaseClient.from("profiles").select("name").eq("id", result.opponent_id).maybeSingle().then(function(res2){
+          var name = (res2.data && res2.data.name) || "Oyunçu";
+          startBattle(result.battle_id, result.opponent_id, name, false, "timed", true);
+        });
+      } else {
+        matchmakingActive = true;
+        document.getElementById("battleWaitingTitle").textContent = "🌐 Rəqib axtarılır...";
+        document.getElementById("battleWaitingText").textContent = "500 🪙 ödənildi. Uyğun rəqib tapılana qədər gözlə...";
+        document.getElementById("battleWaitingModal").classList.add("show");
+        subscribeMatchmaking();
+      }
+    });
+  }
+
+  function subscribeMatchmaking(){
+    if(!supabaseClient || !cloudUserId) return;
+    if(matchmakingChannel){ supabaseClient.removeChannel(matchmakingChannel); matchmakingChannel = null; }
+    matchmakingChannel = supabaseClient.channel("matchmaking-" + cloudUserId)
+      .on("postgres_changes", {event:"UPDATE", schema:"public", table:"matchmaking_queue", filter:"user_id=eq." + cloudUserId}, function(payload){
+        if(payload.new.status !== "matched" || !payload.new.battle_id) return;
+        matchmakingActive = false;
+        document.getElementById("battleWaitingModal").classList.remove("show");
+        if(matchmakingChannel){ supabaseClient.removeChannel(matchmakingChannel); matchmakingChannel = null; }
+        supabaseClient.from("battles").select("player1_id,player2_id").eq("id", payload.new.battle_id).maybeSingle().then(function(res){
+          if(res.error || !res.data) return;
+          var opponentId = res.data.player1_id === cloudUserId ? res.data.player2_id : res.data.player1_id;
+          supabaseClient.from("profiles").select("name").eq("id", opponentId).maybeSingle().then(function(res2){
+            var name = (res2.data && res2.data.name) || "Oyunçu";
+            startBattle(payload.new.battle_id, opponentId, name, true, "timed", true);
+          });
+        });
+      })
+      .subscribe();
+  }
+
+  function cancelMatchmaking(){
+    matchmakingActive = false;
+    document.getElementById("battleWaitingModal").classList.remove("show");
+    if(matchmakingChannel && supabaseClient){ supabaseClient.removeChannel(matchmakingChannel); matchmakingChannel = null; }
+    if(!supabaseClient) return;
+    supabaseClient.rpc("cancel_match").then(function(res){
+      if(res.error){ showToast("⚠️ Xəta: " + res.error.message); return; }
+      profile.gold = (profile.gold || 0) + RANKED_ENTRY_FEE;
+      profile.totalGoldSpent = Math.max(0, (profile.totalGoldSpent||0) - RANKED_ENTRY_FEE);
+      renderProfile();
+      saveProfile();
+      showToast("↩️ Axtarış ləğv edildi, qızıl geri qaytarıldı");
+    });
   }
 
   var battleCountdownTimeouts = [];
@@ -2700,11 +2776,12 @@
     showStep(0);
   }
 
-  function startBattle(bId, opponentId, opponentName, isPlayer1, type){
+  function startBattle(bId, opponentId, opponentName, isPlayer1, type, isRanked){
     battleId = bId;
     battleOpponentId = opponentId;
     battleIsPlayer1 = isPlayer1;
     battleType = type || "timed";
+    battleIsRanked = !!isRanked;
     battleEnded = false;
     battleEliminated = false;
     battleOpponentEliminated = false;
@@ -2713,7 +2790,7 @@
     document.getElementById("battleInviteModal").classList.remove("show");
     document.getElementById("battleWaitingModal").classList.remove("show");
     var lbl = document.getElementById("battleOpponentLbl");
-    if(lbl) lbl.textContent = (opponentName || "RƏQİB").toUpperCase().slice(0,8);
+    if(lbl) lbl.textContent = (opponentName || "RƏQİB").toUpperCase().slice(0,8) + (isRanked ? " ⚔️" : "");
     var scoreEl = document.getElementById("battleOpponentScoreVal");
     if(scoreEl) scoreEl.textContent = "0";
     stopMenuBgAnim();
@@ -2828,10 +2905,22 @@
     }
     var titleEl = document.getElementById("battleResultTitle");
     var statsEl = document.getElementById("battleResultStats");
+    var rankedExtra = "";
+    if(battleIsRanked){
+      var mult = myScore > oppScore ? 3 : (myScore < oppScore ? 1.5 : 2);
+      var bonusXp = Math.round(sessionXpEarned * (mult - 1));
+      if(bonusXp > 0) addXp(bonusXp);
+      if(myScore > oppScore){
+        addGold(RANKED_WIN_GOLD_BONUS);
+        rankedExtra = "<br>⚔️ +" + RANKED_WIN_GOLD_BONUS + " qızıl, " + mult + "x xal";
+      } else {
+        rankedExtra = "<br>⚔️ " + mult + "x xal";
+      }
+    }
     if(myScore > oppScore) titleEl.textContent = "🏆 Sən qalib gəldin!";
     else if(myScore < oppScore) titleEl.textContent = "💔 Rəqib qalib gəldi";
     else titleEl.textContent = "🤝 Bərabərə";
-    statsEl.innerHTML = "Sənin xalın: <b>" + myScore + "</b><br>Rəqibin xalı: <b>" + oppScore + "</b>";
+    statsEl.innerHTML = "Sənin xalın: <b>" + myScore + "</b><br>Rəqibin xalı: <b>" + oppScore + "</b>" + rankedExtra;
     battleResultOverlay.classList.add("show");
     battleTimerBadge.style.display = "none";
     battleOpponentBadge.style.display = "none";
@@ -5313,6 +5402,7 @@
     battleEliminated = false;
     battleOpponentEliminated = false;
     battleOpponentFrozenScore = 0;
+    battleIsRanked = false;
     battleResultOverlay.classList.remove("show");
     document.getElementById("battleWaitOverlay").classList.remove("show");
     battleTimerBadge.classList.remove("urgent");
@@ -5423,6 +5513,7 @@
   document.getElementById("leaderboardBtn").addEventListener("click", openLeaderboard);
   document.getElementById("leaderboardBack").addEventListener("click", closeLeaderboard);
   document.getElementById("mailboxBtn").addEventListener("click", openMailbox);
+  document.getElementById("rankedBtn").addEventListener("click", findMatch);
   document.getElementById("mailboxBack").addEventListener("click", closeMailbox);
   document.getElementById("giftRevealClose").addEventListener("click", function(){
     document.getElementById("giftRevealModal").classList.remove("show");
@@ -5479,6 +5570,7 @@
     pendingIncomingInvite = null;
   });
   document.getElementById("battleWaitingCancel").addEventListener("click", function(){
+    if(matchmakingActive){ cancelMatchmaking(); return; }
     document.getElementById("battleWaitingModal").classList.remove("show");
   });
   document.getElementById("battleResultMenuBtn").addEventListener("click", function(){
