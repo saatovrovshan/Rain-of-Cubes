@@ -65,6 +65,8 @@
   @keyframes dailyDotPulse{from{transform:scale(1)}to{transform:scale(1.25)}}
   .menu-btn.arcade-btn{background:var(--cyan);box-shadow:0 4px 0 #00a3a4,0 6px 12px rgba(0,0,0,.2)}
   .menu-btn.arcade-btn:active{box-shadow:0 1px 0 #00a3a4,0 2px 4px rgba(0,0,0,.2)}
+  .menu-btn.friends-btn{background:#5b6fd6;box-shadow:0 4px 0 #3d4fae,0 6px 12px rgba(0,0,0,.2);position:relative}
+  .menu-btn.friends-btn:active{box-shadow:0 1px 0 #3d4fae,0 2px 4px rgba(0,0,0,.2)}
 
   .arcade-level-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:14px 8px}
   .arcade-level-card{background:var(--panel);border-radius:10px;padding:8px 4px 10px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;border:2px solid transparent;transition:transform .1s}
@@ -221,6 +223,23 @@
   .record-row .rscore{flex:1;text-align:left}
   .record-row .rmeta{font-size:10px;color:#a99;font-weight:600}
   .empty-hint{font-size:11px;color:#a99;text-align:left;padding:4px 6px}
+  #friendsScreen{padding:16px;display:none;align-items:stretch}
+  .friend-search-bar{display:flex;gap:6px;padding:10px 0}
+  .friend-search-bar input{flex:1;min-width:0;border:2px solid var(--board-cell);border-radius:8px;padding:9px 12px;font-size:13px;background:#fff;color:var(--ink)}
+  .friend-search-btn{background:var(--green);color:#fff;border:none;border-radius:8px;padding:0 16px;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0}
+  .friend-list{display:flex;flex-direction:column;gap:6px}
+  .friend-row{display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:10px;padding:8px 10px;cursor:pointer}
+  .friend-row-info{flex:1;min-width:0;text-align:left}
+  .friend-row-name{font-size:13px;font-weight:800;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .friend-row-meta{font-size:10px;color:#a99;font-weight:600}
+  .friend-action-btn{background:var(--green);color:#fff;border:none;border-radius:7px;padding:7px 12px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;white-space:nowrap}
+  .friend-action-btn.reject{background:var(--red)}
+  .friend-action-btn.pending{background:#b9ac9d;cursor:not-allowed}
+  .friend-tab-dot{position:absolute;top:-4px;right:6px;width:10px;height:10px;border-radius:50%;background:var(--red);border:2px solid #fff}
+  .player-card-stats{display:flex;justify-content:center;gap:18px;margin:12px 0}
+  .player-card-stat{text-align:center}
+  .player-card-stat .pnum{font-size:18px;font-weight:800;color:var(--ink)}
+  .player-card-stat .plbl{font-size:9px;color:#a99;font-weight:700;text-transform:uppercase}
   .achievement-row{display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:8px;padding:8px 10px;opacity:.45}
   .achievement-row.unlocked{opacity:1;background:#e8f5e9}
   .achievement-icon{font-size:20px;width:30px;text-align:center;flex-shrink:0}
@@ -429,6 +448,7 @@
     <button class="menu-btn shop-btn" id="shopBtn">🛒 Mağaza</button>
     <button class="menu-btn profile-btn" id="profileBtn">👤 Profil</button>
     <button class="menu-btn achievements-btn" id="achievementsBtn">🎖️ Nailiyyətlər</button>
+    <button class="menu-btn friends-btn" id="friendsBtn">👥 Dostlar<span class="daily-btn-dot" id="friendsBtnDot" style="display:none"></span></button>
     <button class="menu-btn daily-btn" id="dailyBtn">🎁 Gündəlik Mükafat<span class="daily-btn-dot" id="dailyBtnDot" style="display:none"></span></button>
     <button class="menu-btn arcade-btn" id="arcadeBtn">🕹️ Arkada Rejimi</button>
     <div class="menu-hint">
@@ -503,6 +523,17 @@
       <h2>🎖️ Nailiyyətlər</h2>
     </div>
     <div class="achievements-list" id="achievementsList"></div>
+  </div>
+
+  <div id="friendsScreen">
+    <div class="shop-sticky-top">
+      <div class="shop-header">
+        <button class="shop-back" id="friendsBack">← Geri</button>
+        <h2>👥 Dostlar</h2>
+      </div>
+      <div class="shop-tabs" id="friendsTabs"></div>
+    </div>
+    <div id="friendsContent"></div>
   </div>
 
   <div id="dailyScreen">
@@ -633,6 +664,23 @@
     </div>
   </div>
 
+  <div class="modal-overlay" id="playerCardModal">
+    <div class="modal-panel" style="text-align:center">
+      <div class="modal-header">
+        <h3>👤 Profil</h3>
+        <button class="modal-close" id="playerCardClose">✕</button>
+      </div>
+      <div class="ppic ppic-lg" id="playerCardPhoto" style="margin:0 auto"></div>
+      <div class="menu-player-name" id="playerCardName" style="text-align:center;font-size:16px;margin-top:8px">Oyunçu</div>
+      <div class="player-card-stats">
+        <div class="player-card-stat"><div class="pnum" id="playerCardLevel">1</div><div class="plbl">Səviyyə</div></div>
+        <div class="player-card-stat"><div class="pnum" id="playerCardMissions">0</div><div class="plbl">Misya</div></div>
+        <div class="player-card-stat"><div class="pnum" id="playerCardPopularity">0</div><div class="plbl">Populyarlıq</div></div>
+      </div>
+      <button class="friend-action-btn" id="playerCardActionBtn" style="width:100%;padding:12px;font-size:13px"></button>
+    </div>
+  </div>
+
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -682,6 +730,8 @@
     try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(profile)); }catch(e){}
     renderProfile();
     if(profileScreen && profileScreen.style.display !== "none") renderProfileScreen();
+    var friendsDot = document.getElementById("friendsBtnDot");
+    if(friendsDot) friendsDot.style.display = "none";
     supabaseClient.auth.signOut();
   }
 
@@ -1006,6 +1056,7 @@
   var shopScreen = document.getElementById("shopScreen");
   var profileScreen = document.getElementById("profileScreen");
   var achievementsScreen = document.getElementById("achievementsScreen");
+  var friendsScreen = document.getElementById("friendsScreen");
   var dailyScreen = document.getElementById("dailyScreen");
   var arcadeScreen = document.getElementById("arcadeScreen");
   var arcadeResultOverlay = document.getElementById("arcadeResultOverlay");
@@ -1219,9 +1270,11 @@
         renderProfile();
         cloudSyncEnabled = true;
         uploadProfileToCloud();
+        checkFriendRequestsBadge();
         return;
       }
       cloudSyncEnabled = true;
+      checkFriendRequestsBadge();
     });
   }
 
@@ -1252,6 +1305,319 @@
     if(!cloudSyncEnabled || !cloudUserId) return;
     clearTimeout(cloudSyncTimer);
     cloudSyncTimer = setTimeout(uploadProfileToCloud, 2000);
+  }
+
+  // ===== Dostluq sistemi =====
+  var friendsActiveTab = "search";
+  var friendRequestsCache = [];
+  var friendsCache = [];
+  var friendSearchResults = [];
+  var viewedPlayerId = null;
+
+  function friendAvatarHtml(url, name){
+    if(url) return '<img src="' + url + '" style="width:40px;height:40px;border-radius:28%;object-fit:cover;flex-shrink:0">';
+    return '<div style="width:40px;height:40px;border-radius:28%;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;flex-shrink:0">' + (name ? name.charAt(0).toUpperCase() : "?") + '</div>';
+  }
+
+  function openFriends(){
+    if(!cloudUserId){
+      showToast("⚠️ Əvvəlcə Google ilə daxil olmalısan");
+      return;
+    }
+    menuScreen.style.display = "none";
+    stopMenuBgAnim();
+    friendsScreen.style.display = "flex";
+    renderFriendsTabs();
+    renderFriendsContent();
+  }
+
+  function closeFriends(){
+    friendsScreen.style.display = "none";
+    menuScreen.style.display = "";
+    startMenuBgAnim();
+  }
+
+  function renderFriendsTabs(){
+    var tabsEl = document.getElementById("friendsTabs");
+    var tabs = [
+      {id:"search", label:"🔍 Axtar"},
+      {id:"requests", label:"📨 Sorğular"},
+      {id:"friends", label:"👥 Dostlarım"}
+    ];
+    tabsEl.innerHTML = tabs.map(function(t){
+      var dot = (t.id === "requests" && friendRequestsCache.length) ? '<span class="friend-tab-dot"></span>' : "";
+      return '<button class="shop-tab-btn' + (t.id === friendsActiveTab ? " active" : "") + '" data-id="' + t.id + '" style="position:relative">' + t.label + dot + '</button>';
+    }).join("");
+    tabsEl.querySelectorAll("button").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        friendsActiveTab = this.getAttribute("data-id");
+        renderFriendsTabs();
+        renderFriendsContent();
+      });
+    });
+  }
+
+  function renderFriendsContent(){
+    var el = document.getElementById("friendsContent");
+    if(friendsActiveTab === "search"){
+      el.innerHTML =
+        '<div class="friend-search-bar">' +
+          '<input type="text" id="friendSearchInput" placeholder="Oyunçu adı axtar...">' +
+          '<button class="friend-search-btn" id="friendSearchBtn">Axtar</button>' +
+        '</div>' +
+        '<div class="friend-list" id="friendSearchResults"></div>';
+      document.getElementById("friendSearchBtn").addEventListener("click", doFriendSearch);
+      document.getElementById("friendSearchInput").addEventListener("keydown", function(e){
+        if(e.key === "Enter") doFriendSearch();
+      });
+      renderFriendSearchResults();
+    } else if(friendsActiveTab === "requests"){
+      el.innerHTML = '<div class="friend-list" id="friendRequestsList"></div>';
+      loadFriendRequests();
+    } else {
+      el.innerHTML = '<div class="friend-list" id="friendsListEl"></div>';
+      loadFriendsList();
+    }
+  }
+
+  function renderFriendSearchResults(){
+    var container = document.getElementById("friendSearchResults");
+    if(!container) return;
+    if(!friendSearchResults.length){
+      container.innerHTML = '<div class="empty-hint">Axtarış üçün ad yaz</div>';
+      return;
+    }
+    container.innerHTML = friendSearchResults.map(function(p){
+      return '<div class="friend-row" data-id="' + p.id + '">' +
+        friendAvatarHtml(p.avatar_url, p.name) +
+        '<div class="friend-row-info"><div class="friend-row-name">' + p.name + '</div><div class="friend-row-meta">Lv.' + (p.level||1) + '</div></div>' +
+        '</div>';
+    }).join("");
+    container.querySelectorAll(".friend-row").forEach(function(row){
+      row.addEventListener("click", function(){ openPlayerCard(this.getAttribute("data-id")); });
+    });
+  }
+
+  function doFriendSearch(){
+    var input = document.getElementById("friendSearchInput");
+    var q = input ? input.value.trim() : "";
+    if(!q || !supabaseClient || !cloudUserId) return;
+    supabaseClient.from("profiles").select("id,name,avatar_url,level")
+      .ilike("name", "%" + q + "%").neq("id", cloudUserId).limit(20)
+      .then(function(res){
+        if(res.error){ console.error("Axtarış xətası:", res.error); showToast("⚠️ Axtarış xətası: " + res.error.message); return; }
+        friendSearchResults = res.data || [];
+        renderFriendSearchResults();
+      });
+  }
+
+  function loadFriendRequests(){
+    if(!supabaseClient || !cloudUserId) return;
+    supabaseClient.from("friendships").select("id,requester_id,created_at")
+      .eq("addressee_id", cloudUserId).eq("status","pending")
+      .then(function(res){
+        if(res.error){ console.error("Sorğu xətası:", res.error); return; }
+        var rows = res.data || [];
+        if(!rows.length){
+          friendRequestsCache = [];
+          renderFriendRequestsList([]);
+          renderFriendsTabs();
+          return;
+        }
+        var ids = rows.map(function(r){ return r.requester_id; });
+        supabaseClient.from("profiles").select("id,name,avatar_url,level").in("id", ids).then(function(res2){
+          var profs = res2.data || [];
+          var merged = rows.map(function(r){
+            var p = profs.find(function(pp){ return pp.id === r.requester_id; }) || {};
+            return {friendshipId:r.id, id:r.requester_id, name:p.name||"Oyunçu", avatar_url:p.avatar_url, level:p.level||1};
+          });
+          friendRequestsCache = merged;
+          renderFriendRequestsList(merged);
+          renderFriendsTabs();
+        });
+      });
+  }
+
+  function renderFriendRequestsList(list){
+    var container = document.getElementById("friendRequestsList");
+    if(!container) return;
+    if(!list.length){
+      container.innerHTML = '<div class="empty-hint">Gələn sorğu yoxdur</div>';
+      return;
+    }
+    container.innerHTML = list.map(function(r){
+      return '<div class="friend-row">' +
+        friendAvatarHtml(r.avatar_url, r.name) +
+        '<div class="friend-row-info"><div class="friend-row-name">' + r.name + '</div><div class="friend-row-meta">Lv.' + r.level + '</div></div>' +
+        '<button class="friend-action-btn" data-action="accept" data-fid="' + r.friendshipId + '">Qəbul et</button>' +
+        '<button class="friend-action-btn reject" data-action="reject" data-fid="' + r.friendshipId + '">Rədd et</button>' +
+        '</div>';
+    }).join("");
+    container.querySelectorAll("button[data-action]").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var fid = this.getAttribute("data-fid");
+        respondFriendRequest(fid, this.getAttribute("data-action") === "accept");
+      });
+    });
+  }
+
+  function respondFriendRequest(friendshipId, accept){
+    if(!supabaseClient) return;
+    if(accept){
+      supabaseClient.from("friendships").update({status:"accepted"}).eq("id", friendshipId).then(function(res){
+        if(res.error){ showToast("⚠️ Xəta: " + res.error.message); return; }
+        showToast("✅ Dost əlavə edildi");
+        loadFriendRequests();
+        checkFriendRequestsBadge();
+      });
+    } else {
+      supabaseClient.from("friendships").delete().eq("id", friendshipId).then(function(res){
+        if(res.error){ showToast("⚠️ Xəta: " + res.error.message); return; }
+        loadFriendRequests();
+        checkFriendRequestsBadge();
+      });
+    }
+  }
+
+  function loadFriendsList(){
+    if(!supabaseClient || !cloudUserId) return;
+    supabaseClient.from("friendships").select("id,requester_id,addressee_id")
+      .eq("status","accepted")
+      .or("requester_id.eq." + cloudUserId + ",addressee_id.eq." + cloudUserId)
+      .then(function(res){
+        if(res.error){ console.error("Dostlar xətası:", res.error); return; }
+        var rows = res.data || [];
+        if(!rows.length){
+          friendsCache = [];
+          renderFriendsListUI([]);
+          return;
+        }
+        var ids = rows.map(function(r){ return r.requester_id === cloudUserId ? r.addressee_id : r.requester_id; });
+        supabaseClient.from("profiles").select("id,name,avatar_url,level").in("id", ids).then(function(res2){
+          friendsCache = res2.data || [];
+          renderFriendsListUI(friendsCache);
+        });
+      });
+  }
+
+  function renderFriendsListUI(list){
+    var container = document.getElementById("friendsListEl");
+    if(!container) return;
+    if(!list.length){
+      container.innerHTML = '<div class="empty-hint">Hələ dostun yoxdur — "Axtar" bölməsindən tap</div>';
+      return;
+    }
+    container.innerHTML = list.map(function(p){
+      return '<div class="friend-row" data-id="' + p.id + '">' +
+        friendAvatarHtml(p.avatar_url, p.name) +
+        '<div class="friend-row-info"><div class="friend-row-name">' + p.name + '</div><div class="friend-row-meta">Lv.' + (p.level||1) + '</div></div>' +
+        '</div>';
+    }).join("");
+    container.querySelectorAll(".friend-row").forEach(function(row){
+      row.addEventListener("click", function(){ openPlayerCard(this.getAttribute("data-id")); });
+    });
+  }
+
+  function openPlayerCard(playerId){
+    if(!supabaseClient) return;
+    viewedPlayerId = playerId;
+    supabaseClient.from("profiles").select("id,name,avatar_url,country_flag,level,missions_done,popularity").eq("id", playerId).maybeSingle().then(function(res){
+      if(res.error || !res.data){ showToast("⚠️ Profil tapılmadı"); return; }
+      var p = res.data;
+      document.getElementById("playerCardName").textContent = p.name || "Oyunçu";
+      document.getElementById("playerCardLevel").textContent = p.level || 1;
+      document.getElementById("playerCardMissions").textContent = p.missions_done || 0;
+      document.getElementById("playerCardPopularity").textContent = p.popularity || 0;
+      var photoContainer = document.getElementById("playerCardPhoto");
+      photoContainer.className = "ppic ppic-lg";
+      photoContainer.innerHTML = "";
+      var inner = document.createElement("div");
+      inner.className = "ppic-inner";
+      if(p.avatar_url){
+        var img = document.createElement("img");
+        img.src = p.avatar_url;
+        inner.appendChild(img);
+      } else if(p.country_flag){
+        var flagFill = document.createElement("div");
+        flagFill.className = "ppic-flag-fill";
+        var flagImg = document.createElement("img");
+        flagImg.src = flagImgUrl(p.country_flag);
+        flagFill.appendChild(flagImg);
+        inner.appendChild(flagFill);
+      } else {
+        var fallback = document.createElement("span");
+        fallback.className = "ppic-level-fallback";
+        fallback.textContent = p.level || 1;
+        inner.appendChild(fallback);
+      }
+      photoContainer.appendChild(inner);
+      updatePlayerCardActionBtn(playerId);
+      document.getElementById("playerCardModal").classList.add("show");
+    });
+  }
+
+  function closePlayerCard(){
+    document.getElementById("playerCardModal").classList.remove("show");
+    viewedPlayerId = null;
+  }
+
+  function updatePlayerCardActionBtn(playerId){
+    var btn = document.getElementById("playerCardActionBtn");
+    btn.className = "friend-action-btn";
+    btn.style.width = "100%"; btn.style.padding = "12px"; btn.style.fontSize = "13px";
+    if(!cloudUserId){
+      btn.textContent = "Daxil olmalısan";
+      btn.className += " pending";
+      btn.onclick = null;
+      return;
+    }
+    if(playerId === cloudUserId){
+      btn.textContent = "Bu sənsən";
+      btn.className += " pending";
+      btn.onclick = null;
+      return;
+    }
+    btn.textContent = "...";
+    supabaseClient.from("friendships").select("id,requester_id,addressee_id,status")
+      .or("and(requester_id.eq." + cloudUserId + ",addressee_id.eq." + playerId + "),and(requester_id.eq." + playerId + ",addressee_id.eq." + cloudUserId + ")")
+      .maybeSingle().then(function(res){
+        var row = res.data;
+        if(!row){
+          btn.textContent = "➕ Dost əlavə et";
+          btn.onclick = function(){ sendFriendRequest(playerId); };
+        } else if(row.status === "accepted"){
+          btn.textContent = "✅ Artıq dostsunuz";
+          btn.className += " pending";
+          btn.onclick = null;
+        } else if(row.requester_id === cloudUserId){
+          btn.textContent = "⏳ Sorğu göndərilib";
+          btn.className += " pending";
+          btn.onclick = null;
+        } else {
+          btn.textContent = "✅ Sorğunu qəbul et";
+          btn.onclick = function(){ respondFriendRequest(row.id, true); closePlayerCard(); };
+        }
+      });
+  }
+
+  function sendFriendRequest(playerId){
+    if(!supabaseClient || !cloudUserId) return;
+    supabaseClient.from("friendships").insert({requester_id: cloudUserId, addressee_id: playerId}).then(function(res){
+      if(res.error){ showToast("⚠️ Xəta: " + res.error.message); return; }
+      showToast("📨 Dostluq sorğusu göndərildi");
+      updatePlayerCardActionBtn(playerId);
+    });
+  }
+
+  function checkFriendRequestsBadge(){
+    if(!supabaseClient || !cloudUserId) return;
+    supabaseClient.from("friendships").select("id", {count:"exact", head:true})
+      .eq("addressee_id", cloudUserId).eq("status","pending")
+      .then(function(res){
+        var dot = document.getElementById("friendsBtnDot");
+        if(!dot) return;
+        dot.style.display = (res.count && res.count > 0) ? "" : "none";
+      });
   }
 
   function rebuildColorPool(){
@@ -3480,6 +3846,7 @@
     shopScreen.style.display = "none";
     profileScreen.style.display = "none";
     achievementsScreen.style.display = "none";
+    friendsScreen.style.display = "none";
     dailyScreen.style.display = "none";
     arcadeScreen.style.display = "none";
     overlayEl.classList.remove("show");
@@ -3570,6 +3937,7 @@
     shopScreen.style.display = "none";
     profileScreen.style.display = "none";
     achievementsScreen.style.display = "none";
+    friendsScreen.style.display = "none";
     dailyScreen.style.display = "none";
     arcadeScreen.style.display = "none";
     gameMode = "endless";
@@ -3605,6 +3973,7 @@
     shopScreen.style.display = "none";
     profileScreen.style.display = "none";
     achievementsScreen.style.display = "none";
+    friendsScreen.style.display = "none";
     dailyScreen.style.display = "none";
     clearArcadeModifiers();
     levelBadge.style.display = "none";
@@ -3637,6 +4006,7 @@
     stopPreviewIfAny();
     profileScreen.style.display = "none";
     achievementsScreen.style.display = "none";
+    friendsScreen.style.display = "none";
     dailyScreen.style.display = "none";
     menuScreen.style.display = "";
     startMenuBgAnim();
@@ -3651,6 +4021,7 @@
 
   function closeAchievements(){
     achievementsScreen.style.display = "none";
+    friendsScreen.style.display = "none";
     dailyScreen.style.display = "none";
     menuScreen.style.display = "";
     startMenuBgAnim();
@@ -3676,6 +4047,12 @@
   document.getElementById("profileBack").addEventListener("click", closeProfile);
   document.getElementById("achievementsBtn").addEventListener("click", openAchievements);
   document.getElementById("achievementsBack").addEventListener("click", closeAchievements);
+  document.getElementById("friendsBtn").addEventListener("click", openFriends);
+  document.getElementById("friendsBack").addEventListener("click", closeFriends);
+  document.getElementById("playerCardClose").addEventListener("click", closePlayerCard);
+  document.getElementById("playerCardModal").addEventListener("click", function(e){
+    if(e.target === this) closePlayerCard();
+  });
   document.getElementById("dailyBtn").addEventListener("click", openDaily);
   document.getElementById("dailyBack").addEventListener("click", closeDaily);
   document.getElementById("dailyClaimBtn").addEventListener("click", claimDailyReward);
