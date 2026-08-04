@@ -16,7 +16,7 @@
   html,body{margin:0;padding:0;height:100%;background:#3a332c;font-family:"Segoe UI",Arial,sans-serif;overscroll-behavior:none;user-select:none;-webkit-user-select:none}
   #app{max-width:480px;margin:0 auto;height:100vh;height:100dvh;background:var(--bg);display:flex;flex-direction:column;position:relative;overflow:hidden;box-shadow:0 0 40px rgba(0,0,0,.5)}
 
-  #menuScreen,#shopScreen,#profileScreen,#achievementsScreen,#dailyScreen,#arcadeScreen,#friendsScreen,#chatScreen{position:absolute;inset:0;z-index:100;background:linear-gradient(180deg,#faf8ef,#f0e6d6);display:flex;flex-direction:column;padding:0;text-align:center;overflow-y:auto}
+  #menuScreen,#shopScreen,#profileScreen,#achievementsScreen,#dailyScreen,#arcadeScreen,#friendsScreen,#chatScreen,#leaderboardScreen{position:absolute;inset:0;z-index:100;background:linear-gradient(180deg,#faf8ef,#f0e6d6);display:flex;flex-direction:column;padding:0;text-align:center;overflow-y:auto}
   #menuScreen{justify-content:center;align-items:center;padding:24px}
   #shopScreen{padding:16px;display:none}
   #profileScreen{padding:16px;display:none;align-items:stretch}
@@ -24,6 +24,7 @@
   #dailyScreen{padding:16px;display:none;align-items:stretch}
   #arcadeScreen{padding:16px;display:none;align-items:stretch}
   #chatScreen{padding:0;display:none;align-items:stretch;overflow-y:hidden}
+  #leaderboardScreen{padding:16px;display:none;align-items:stretch}
   .shop-sticky-top{position:sticky;top:0;z-index:6;background:#faf8ef}
   .shop-header{display:flex;align-items:center;justify-content:space-between;padding-bottom:10px;border-bottom:2px solid var(--board-cell)}
   .shop-tabs{display:flex;flex-wrap:wrap;gap:6px;padding:10px 0}
@@ -68,6 +69,8 @@
   .menu-btn.arcade-btn:active{box-shadow:0 1px 0 #00a3a4,0 2px 4px rgba(0,0,0,.2)}
   .menu-btn.friends-btn{background:#5b6fd6;box-shadow:0 4px 0 #3d4fae,0 6px 12px rgba(0,0,0,.2);position:relative}
   .menu-btn.friends-btn:active{box-shadow:0 1px 0 #3d4fae,0 2px 4px rgba(0,0,0,.2)}
+  .menu-btn.leaderboard-btn{background:#d9992e;box-shadow:0 4px 0 #a86f14,0 6px 12px rgba(0,0,0,.2)}
+  .menu-btn.leaderboard-btn:active{box-shadow:0 1px 0 #a86f14,0 2px 4px rgba(0,0,0,.2)}
 
   .arcade-level-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:14px 8px}
   .arcade-level-card{background:var(--panel);border-radius:10px;padding:8px 4px 10px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;border:2px solid transparent;transition:transform .1s}
@@ -269,6 +272,27 @@
   .gift-icon{font-size:28px}
   .gift-name{font-size:10px;font-weight:800;color:var(--ink)}
   .gift-cost{font-size:10px;font-weight:700;color:#c98a00}
+
+  .lb-list{display:flex;flex-direction:column;gap:6px;padding-top:6px}
+  .lb-row{display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:12px;padding:8px 12px;cursor:pointer;border:2px solid transparent;box-shadow:0 2px 0 rgba(0,0,0,.06);transition:border-color .15s,transform .1s}
+  .lb-row:hover{border-color:var(--gold)}
+  .lb-row:active{transform:translateY(1px)}
+  .lb-rank{width:26px;flex-shrink:0;font-size:13px;font-weight:800;color:var(--ink);text-align:center}
+  .lb-row.top1 .lb-rank{color:#c98a00;font-size:16px}
+  .lb-row.top2 .lb-rank{color:#8a8f98;font-size:15px}
+  .lb-row.top3 .lb-rank{color:#b56a34;font-size:15px}
+  .lb-row.top1{background:linear-gradient(90deg,rgba(255,215,0,.22),var(--panel) 60%)}
+  .lb-row.top2{background:linear-gradient(90deg,rgba(180,190,200,.25),var(--panel) 60%)}
+  .lb-row.top3{background:linear-gradient(90deg,rgba(205,127,50,.2),var(--panel) 60%)}
+  .lb-avatar{position:relative;width:38px;height:38px;flex-shrink:0}
+  .lb-avatar-inner{width:100%;height:100%;border-radius:28%;overflow:hidden;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px}
+  .lb-avatar-inner img{width:100%;height:100%;object-fit:cover;display:block}
+  .lb-flag-badge{position:absolute;right:-3px;bottom:-3px;width:15px;height:15px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.4);overflow:hidden}
+  .lb-flag-badge img{width:100%;height:100%;object-fit:cover;display:block}
+  .lb-info{flex:1;min-width:0;text-align:left}
+  .lb-name{font-size:13px;font-weight:800;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lb-value{font-size:12px;font-weight:800;color:#c98a00;white-space:nowrap;flex-shrink:0;text-align:right}
+  .lb-value .lb-value-sub{display:block;font-size:9px;font-weight:600;color:#a99}
   .player-card-stats{display:flex;justify-content:center;gap:18px;margin:12px 0}
   .player-card-stat{text-align:center}
   .player-card-stat .pnum{font-size:18px;font-weight:800;color:var(--ink)}
@@ -492,6 +516,7 @@
     <button class="menu-btn profile-btn" id="profileBtn">👤 Profil</button>
     <button class="menu-btn achievements-btn" id="achievementsBtn">🎖️ Nailiyyətlər</button>
     <button class="menu-btn friends-btn" id="friendsBtn">👥 Dostlar<span class="daily-btn-dot" id="friendsBtnDot" style="display:none"></span></button>
+    <button class="menu-btn leaderboard-btn" id="leaderboardBtn">🏆 Reytinq Cədvəli</button>
     <button class="menu-btn daily-btn" id="dailyBtn">🎁 Gündəlik Mükafat<span class="daily-btn-dot" id="dailyBtnDot" style="display:none"></span></button>
     <button class="menu-btn arcade-btn" id="arcadeBtn">🕹️ Arkada Rejimi</button>
     <div class="menu-hint">
@@ -592,6 +617,17 @@
       <input type="text" id="chatInput" maxlength="500" placeholder="Mesaj yaz...">
       <button class="chat-send-btn" id="chatSendBtn">➤</button>
     </div>
+  </div>
+
+  <div id="leaderboardScreen">
+    <div class="shop-sticky-top">
+      <div class="shop-header">
+        <button class="shop-back" id="leaderboardBack">← Geri</button>
+        <h2>🏆 Reytinq Cədvəli</h2>
+      </div>
+      <div class="shop-tabs" id="leaderboardTabs"></div>
+    </div>
+    <div class="lb-list" id="leaderboardList"></div>
   </div>
 
   <div id="dailyScreen">
@@ -1183,6 +1219,7 @@
   var achievementsScreen = document.getElementById("achievementsScreen");
   var friendsScreen = document.getElementById("friendsScreen");
   var chatScreen = document.getElementById("chatScreen");
+  var leaderboardScreen = document.getElementById("leaderboardScreen");
   var dailyScreen = document.getElementById("dailyScreen");
   var arcadeScreen = document.getElementById("arcadeScreen");
   var arcadeResultOverlay = document.getElementById("arcadeResultOverlay");
@@ -1349,6 +1386,7 @@
     if(!p.totalPlayTimeMs) p.totalPlayTimeMs = 0;
     if(!p.gamesPlayed) p.gamesPlayed = 0;
     if(!p.totalGoldEarned) p.totalGoldEarned = 0;
+    if(!p.totalGoldSpent) p.totalGoldSpent = 0;
     if(!p.xp) p.xp = 0;
     if(!p.powerupsUsed) p.powerupsUsed = 0;
     if(!p.comboActivations) p.comboActivations = 0;
@@ -1430,6 +1468,7 @@
 
   function uploadProfileToCloud(){
     if(!supabaseClient || !cloudUserId) return;
+    var bestRecord = (profile.records && profile.records.length) ? profile.records[0] : null;
     supabaseClient.from("profiles").upsert({
       id: cloudUserId,
       name: profile.name,
@@ -1439,6 +1478,11 @@
       xp: profile.xp,
       gold: profile.gold,
       missions_done: profile.missionsDone,
+      total_gold_earned: profile.totalGoldEarned || 0,
+      total_gold_spent: profile.totalGoldSpent || 0,
+      total_play_time_ms: Math.round(profile.totalPlayTimeMs || 0),
+      best_score: bestRecord ? bestRecord.score : 0,
+      best_score_missions: bestRecord ? bestRecord.missions : 0,
       save_data: profile,
       updated_at: new Date().toISOString()
     }).then(function(res){
@@ -1467,6 +1511,7 @@
   // ===== Mesajlaşma =====
   var chatPeerId = null;
   var chatPeerName = null;
+  var chatReturnScreen = "friends";
   var chatRenderedIds = {};
   var messagesInboxChannel = null;
   var conversationsCache = [];
@@ -1926,10 +1971,12 @@
     chatPeerId = peerId;
     chatPeerName = peerName;
     chatRenderedIds = {};
+    chatReturnScreen = (leaderboardScreen.style.display !== "none") ? "leaderboard" : "friends";
     document.getElementById("chatPeerName").textContent = peerName || "Söhbət";
     document.getElementById("chatMessages").innerHTML = "";
     menuScreen.style.display = "none";
     friendsScreen.style.display = "none";
+    leaderboardScreen.style.display = "none";
     document.getElementById("playerCardModal").classList.remove("show");
     stopMenuBgAnim();
     chatScreen.style.display = "flex";
@@ -1947,10 +1994,14 @@
   function closeChat(){
     chatPeerId = null;
     chatScreen.style.display = "none";
-    friendsScreen.style.display = "flex";
-    friendsActiveTab = "messages";
-    renderFriendsTabs();
-    renderFriendsContent();
+    if(chatReturnScreen === "leaderboard"){
+      leaderboardScreen.style.display = "flex";
+    } else {
+      friendsScreen.style.display = "flex";
+      friendsActiveTab = "messages";
+      renderFriendsTabs();
+      renderFriendsContent();
+    }
   }
 
   function appendChatBubble(m){
@@ -2034,12 +2085,94 @@
     supabaseClient.rpc("send_gift", {p_to_user: giftTargetId, p_gift_id: gift.id, p_gold_cost: gift.cost}).then(function(res){
       if(res.error){ showToast("⚠️ Hədiyyə göndərilmədi: " + res.error.message); return; }
       profile.gold = Math.max(0, (profile.gold || 0) - gift.cost);
+      profile.totalGoldSpent = (profile.totalGoldSpent||0) + gift.cost;
       renderProfile();
       saveProfile();
       showToast(gift.icon + " " + (giftTargetName || "Oyunçu") + "-yə hədiyyə göndərildi!");
       document.getElementById("giftModalOverlay").classList.remove("show");
       if(viewedPlayerId === giftTargetId) openPlayerCard(giftTargetId);
     });
+  }
+
+  // ===== Reytinq Cədvəli =====
+  var LEADERBOARD_CATEGORIES = [
+    {id:"gold_earned", label:"🪙 Qazanılan qızıl", column:"total_gold_earned", icon:"🪙", suffix:" qızıl"},
+    {id:"gold_spent", label:"💸 Xərclənən qızıl", column:"total_gold_spent", icon:"💸", suffix:" qızıl"},
+    {id:"play_time", label:"⏱️ Oyun vaxtı", column:"total_play_time_ms", icon:"⏱️", format:"duration"},
+    {id:"missions", label:"✅ Misyalar", column:"missions_done", icon:"✅", suffix:" misya"},
+    {id:"best_score", label:"⭐ Ən yüksək xal", column:"best_score", icon:"⭐", suffix:" xal", extraColumn:"best_score_missions", extraSuffix:" misya tamamladı"},
+    {id:"gifts_sent", label:"🎁 Göndərilən hədiyyə", column:"total_gifts_sent", icon:"🎁", suffix:" ədəd"},
+    {id:"gifts_received", label:"🎀 Alınan hədiyyə", column:"total_gifts_received", icon:"🎀", suffix:" ədəd"},
+    {id:"popularity", label:"🔥 Populyarlıq", column:"popularity", icon:"🔥", suffix:""}
+  ];
+  var leaderboardActiveTab = "gold_earned";
+
+  function openLeaderboard(){
+    if(!supabaseClient){ showToast("⚠️ Bulud bağlantısı yoxdur"); return; }
+    menuScreen.style.display = "none";
+    stopMenuBgAnim();
+    leaderboardScreen.style.display = "flex";
+    renderLeaderboardTabs();
+    loadLeaderboard();
+  }
+
+  function closeLeaderboard(){
+    leaderboardScreen.style.display = "none";
+    menuScreen.style.display = "";
+    startMenuBgAnim();
+  }
+
+  function renderLeaderboardTabs(){
+    var tabsEl = document.getElementById("leaderboardTabs");
+    tabsEl.innerHTML = LEADERBOARD_CATEGORIES.map(function(c){
+      return '<button class="shop-tab-btn' + (c.id === leaderboardActiveTab ? " active" : "") + '" data-id="' + c.id + '">' + c.label + '</button>';
+    }).join("");
+    tabsEl.querySelectorAll("button").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        leaderboardActiveTab = this.getAttribute("data-id");
+        renderLeaderboardTabs();
+        loadLeaderboard();
+      });
+    });
+  }
+
+  function lbAvatarHtml(avatarUrl, countryFlag, name){
+    var inner = avatarUrl
+      ? '<img src="' + escapeHtml(avatarUrl) + '">'
+      : (name ? escapeHtml(name.charAt(0).toUpperCase()) : "?");
+    var badge = (countryFlag) ? '<div class="lb-flag-badge"><img src="' + escapeHtml(flagImgUrl(countryFlag)) + '"></div>' : "";
+    return '<div class="lb-avatar"><div class="lb-avatar-inner">' + inner + '</div>' + badge + '</div>';
+  }
+
+  function loadLeaderboard(){
+    var cat = LEADERBOARD_CATEGORIES.find(function(c){ return c.id === leaderboardActiveTab; });
+    if(!cat) return;
+    var listEl = document.getElementById("leaderboardList");
+    listEl.innerHTML = '<div class="empty-hint">Yüklənir...</div>';
+    var cols = "id,name,avatar_url,country_flag," + cat.column + (cat.extraColumn ? "," + cat.extraColumn : "");
+    supabaseClient.from("profiles").select(cols)
+      .order(cat.column, {ascending:false}).limit(100)
+      .then(function(res){
+        if(res.error){ listEl.innerHTML = '<div class="empty-hint">⚠️ Yüklənmə xətası: ' + escapeHtml(res.error.message) + '</div>'; return; }
+        var rows = res.data || [];
+        if(!rows.length){ listEl.innerHTML = '<div class="empty-hint">Hələ məlumat yoxdur</div>'; return; }
+        listEl.innerHTML = rows.map(function(p, i){
+          var rank = i + 1;
+          var rankClass = rank <= 3 ? " top" + rank : "";
+          var val = p[cat.column] || 0;
+          var valueHtml = cat.format === "duration" ? formatDuration(val) : (cat.icon + " " + val + (cat.suffix || ""));
+          var subHtml = cat.extraColumn ? '<span class="lb-value-sub">' + (p[cat.extraColumn] || 0) + (cat.extraSuffix || "") + '</span>' : "";
+          return '<div class="lb-row' + rankClass + '" data-id="' + escapeHtml(p.id) + '">' +
+            '<div class="lb-rank">' + rank + '</div>' +
+            lbAvatarHtml(p.avatar_url, p.country_flag, p.name) +
+            '<div class="lb-info"><div class="lb-name">' + escapeHtml(p.name || "Oyunçu") + '</div></div>' +
+            '<div class="lb-value">' + valueHtml + subHtml + '</div>' +
+            '</div>';
+        }).join("");
+        listEl.querySelectorAll(".lb-row").forEach(function(row){
+          row.addEventListener("click", function(){ openPlayerCard(this.getAttribute("data-id")); });
+        });
+      });
   }
 
   // ===== Canlı "Battle" (dostla xal yarışı) rejimi =====
@@ -3938,6 +4071,7 @@
       }
       if(profile.gold < item.price) return;
       profile.gold -= item.price;
+      profile.totalGoldSpent = (profile.totalGoldSpent||0) + item.price;
       profile.unlocks[id] = true;
       if(item.type === "unlock"){ profile.enabledUnlocks[id] = true; rebuildColorPool(); }
       if(item.type === "effect") profile.activeEffect = id.replace("fx","").toLowerCase();
@@ -3951,6 +4085,7 @@
     } else {
       if(profile.gold < item.price) return;
       profile.gold -= item.price;
+      profile.totalGoldSpent = (profile.totalGoldSpent||0) + item.price;
       profile.inventory[id] = (profile.inventory[id] || 0) + 1;
       saveProfile();
       renderProfile();
@@ -4603,6 +4738,7 @@
     achievementsScreen.style.display = "none";
     friendsScreen.style.display = "none";
     chatScreen.style.display = "none";
+    leaderboardScreen.style.display = "none";
     dailyScreen.style.display = "none";
     arcadeScreen.style.display = "none";
     gameMode = "endless";
@@ -4731,6 +4867,8 @@
   document.getElementById("achievementsBack").addEventListener("click", closeAchievements);
   document.getElementById("friendsBtn").addEventListener("click", openFriends);
   document.getElementById("friendsBack").addEventListener("click", closeFriends);
+  document.getElementById("leaderboardBtn").addEventListener("click", openLeaderboard);
+  document.getElementById("leaderboardBack").addEventListener("click", closeLeaderboard);
   document.getElementById("playerCardClose").addEventListener("click", closePlayerCard);
   document.getElementById("playerCardModal").addEventListener("click", function(e){
     if(e.target === this) closePlayerCard();
