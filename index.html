@@ -125,7 +125,9 @@
 
   .profile-edit{background:var(--panel);border-radius:12px;padding:12px;display:flex;align-items:center;gap:10px;margin-top:4px}
   .xp-progress{background:var(--panel);border-radius:12px;padding:12px 14px;margin:18px 0;text-align:left;width:100%;box-sizing:border-box}
-  .xp-progress-menu{display:flex;align-items:center;gap:12px}
+  .xp-progress-menu{display:flex;align-items:center;gap:12px;cursor:pointer;border:2px solid transparent;transition:border-color .15s,transform .1s}
+  .xp-progress-menu:hover{border-color:var(--blue)}
+  .xp-progress-menu:active{transform:translateY(1px)}
   /* ===== Profil şəkli (squircle) + çərçivə sistemi — menyu, oyun içi və profil ekranında paylaşılır ===== */
   .ppic{position:relative;flex-shrink:0;display:flex;align-items:center;justify-content:center}
   .ppic-sm{width:34px;height:34px;--orbit-r:19px}
@@ -440,7 +442,7 @@
       <div class="menu-stat"><div class="num" id="menuGold">0</div><div class="lbl">Qızıl</div></div>
       <div class="menu-stat"><div class="num" id="menuMissions">0</div><div class="lbl">Misyalar</div></div>
     </div>
-    <div class="xp-progress xp-progress-menu">
+    <div class="xp-progress xp-progress-menu" id="menuProfileCard" role="button" title="Profilə keç">
       <div class="ppic ppic-md" id="menuPhoto"></div>
       <div class="xp-progress-body">
         <div class="menu-player-name" id="menuPlayerName">Oyunçu</div>
@@ -4379,6 +4381,7 @@
   document.getElementById("shopBtn").addEventListener("click", openShop);
   document.getElementById("shopBack").addEventListener("click", returnToMenu);
   document.getElementById("profileBtn").addEventListener("click", openProfile);
+  document.getElementById("menuProfileCard").addEventListener("click", openProfile);
   document.getElementById("profileBack").addEventListener("click", closeProfile);
   document.getElementById("achievementsBtn").addEventListener("click", openAchievements);
   document.getElementById("achievementsBack").addEventListener("click", closeAchievements);
