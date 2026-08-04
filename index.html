@@ -676,6 +676,12 @@
     cloudSyncEnabled = false;
     cloudUserId = null;
     clearTimeout(cloudSyncTimer);
+    // Çıxış edən kimi lokal profili sıfırla — yoxsa bu cihazda sonra girən BAŞQA
+    // Google hesabı səhvən əvvəlki hesabın məlumatlarını "irs alır" (həm göstərilir, həm buluda yazılır)
+    profile = migrateProfile({});
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(profile)); }catch(e){}
+    renderProfile();
+    if(profileScreen && profileScreen.style.display !== "none") renderProfileScreen();
     supabaseClient.auth.signOut();
   }
 
