@@ -60,7 +60,7 @@
   .menu-btn.shop-btn:active{box-shadow:0 1px 0 #e68a33,0 2px 4px rgba(0,0,0,.2)}
   .menu-btn.profile-btn{background:var(--blue);box-shadow:0 4px 0 #3a75b3,0 6px 12px rgba(0,0,0,.2)}
   .menu-btn.profile-btn:active{box-shadow:0 1px 0 #3a75b3,0 2px 4px rgba(0,0,0,.2)}
-  .menu-btn.achievements-btn{background:var(--purple);box-shadow:0 4px 0 #7d3fa8,0 6px 12px rgba(0,0,0,.2)}
+  .menu-btn.achievements-btn{background:var(--purple);box-shadow:0 4px 0 #7d3fa8,0 6px 12px rgba(0,0,0,.2);position:relative}
   .menu-btn.achievements-btn:active{box-shadow:0 1px 0 #7d3fa8,0 2px 4px rgba(0,0,0,.2)}
   .menu-btn.daily-btn{background:var(--pink);box-shadow:0 4px 0 #cc4d78,0 6px 12px rgba(0,0,0,.2);position:relative}
   .menu-btn.daily-btn:active{box-shadow:0 1px 0 #cc4d78,0 2px 4px rgba(0,0,0,.2)}
@@ -343,6 +343,10 @@
   .achievement-info{flex:1;text-align:left;min-width:0}
   .achievement-name{font-size:12px;font-weight:700;color:var(--ink)}
   .achievement-desc{font-size:9px;color:#a99}
+  .achievement-row.claimable{background:#fff6db;border:2px solid var(--gold);animation:achievementClaimPulse 1s ease-in-out infinite alternate}
+  @keyframes achievementClaimPulse{from{box-shadow:0 0 0 rgba(255,215,0,0)}to{box-shadow:0 0 10px 2px rgba(255,215,0,.7)}}
+  .achievement-claim-btn{background:var(--gold);color:#7a5a00;border:none;border-radius:8px;padding:7px 12px;font-size:11px;font-weight:800;cursor:pointer;flex-shrink:0;box-shadow:0 3px 0 #c9a200}
+  .achievement-claim-btn:active{transform:translateY(2px);box-shadow:0 1px 0 #c9a200}
 
   header{padding:8px 12px 4px;display:flex;align-items:center;justify-content:space-between;gap:8px}
   .title{font-size:20px;font-weight:800;color:var(--ink);letter-spacing:.5px}
@@ -565,7 +569,7 @@
     <button class="menu-btn" id="startBtn">▶ Oyna</button>
     <button class="menu-btn shop-btn" id="shopBtn">🛒 Mağaza</button>
     <button class="menu-btn profile-btn" id="profileBtn">👤 Profil</button>
-    <button class="menu-btn achievements-btn" id="achievementsBtn">🎖️ Nailiyyətlər</button>
+    <button class="menu-btn achievements-btn" id="achievementsBtn">🎖️ Nailiyyətlər<span class="daily-btn-dot" id="achievementsBtnDot" style="display:none"></span></button>
     <button class="menu-btn friends-btn" id="friendsBtn">👥 Dostlar<span class="daily-btn-dot" id="friendsBtnDot" style="display:none"></span></button>
     <button class="menu-btn leaderboard-btn" id="leaderboardBtn">🏆 Reytinq Cədvəli</button>
     <button class="menu-btn mailbox-btn" id="mailboxBtn">📬 Poçt qutusu<span class="daily-btn-dot" id="mailboxBtnDot" style="display:none"></span></button>
@@ -1518,6 +1522,14 @@
     if(!p.comboActivations) p.comboActivations = 0;
     if(!p.records) p.records = [];
     if(!p.unlockedAchievements) p.unlockedAchievements = {};
+    if(!p.claimedAchievements){
+      // Köhnə sistemdə kilid açılması = avtomatik qızıl demək idi — miqrasiyada artıq açılmış
+      // naliyyətləri "götürülmüş" say ki, mövcud oyunçular ikinci dəfə mükafat götürməsin
+      p.claimedAchievements = {};
+      Object.keys(p.unlockedAchievements).forEach(function(id){
+        if(p.unlockedAchievements[id]) p.claimedAchievements[id] = true;
+      });
+    }
     if(!p.totalLoginDays) p.totalLoginDays = 0;
     if(!p.lastLoginDate) p.lastLoginDate = null;
     if(typeof p.rewardDayIndex !== "number") p.rewardDayIndex = 0;
@@ -1616,6 +1628,7 @@
       total_play_time_ms: Math.round(profile.totalPlayTimeMs || 0),
       best_score: bestRecord ? bestRecord.score : 0,
       best_score_missions: bestRecord ? bestRecord.missions : 0,
+      achievements_unlocked: Object.keys(profile.unlockedAchievements || {}).length,
       save_data: profile,
       updated_at: new Date().toISOString()
     }).then(function(res){
@@ -2524,7 +2537,8 @@
     {id:"best_score", label:"⭐ Ən yüksək xal", column:"best_score", icon:"⭐", suffix:" xal", extraColumn:"best_score_missions", extraSuffix:" misya tamamladı"},
     {id:"gifts_sent", label:"🎁 Göndərilən hədiyyə", column:"total_gifts_sent", icon:"🎁", suffix:" ədəd"},
     {id:"gifts_received", label:"🎀 Alınan hədiyyə", column:"total_gifts_received", icon:"🎀", suffix:" ədəd"},
-    {id:"popularity", label:"🔥 Populyarlıq", column:"popularity", icon:"🔥", suffix:""}
+    {id:"popularity", label:"🔥 Populyarlıq", column:"popularity", icon:"🔥", suffix:""},
+    {id:"achievements", label:"🎖️ Nailiyyətlər", column:"achievements_unlocked", icon:"🎖️", suffix:" ədəd"}
   ];
   var leaderboardActiveTab = "gold_earned";
 
@@ -2923,7 +2937,7 @@
     if(xpRemainingEl) xpRemainingEl.textContent = "+" + remaining + "xp";
   }
 
-  // Kilidi yeni açılan naliyyətlərə qızıl mükafatı verir (hər biri yalnız BİR dəfə)
+  // Naliyyət tamamlananda qızıl AVTOMATIK verilmir — oyunçu Nailiyyətlər ekranına girib özü götürməlidir
   function checkAchievements(){
     var newlyUnlocked = [];
     ACHIEVEMENTS.forEach(function(a){
@@ -2933,13 +2947,33 @@
       }
     });
     if(newlyUnlocked.length){
-      var totalGold = newlyUnlocked.length * ACHIEVEMENT_GOLD_REWARD;
-      profile.gold += totalGold;
-      profile.totalGoldEarned = (profile.totalGoldEarned||0) + totalGold;
-      sessionGoldEarned += totalGold;
-      showToast("🎖️ " + newlyUnlocked[newlyUnlocked.length-1].name + "! +" + totalGold + " qızıl");
+      showToast("🎖️ " + newlyUnlocked[newlyUnlocked.length-1].name + " tamamlandı! Mükafatı götür");
       saveProfile();
     }
+    updateAchievementsBtnDot();
+  }
+
+  function updateAchievementsBtnDot(){
+    var dot = document.getElementById("achievementsBtnDot");
+    if(!dot) return;
+    var hasClaimable = ACHIEVEMENTS.some(function(a){
+      return profile.unlockedAchievements[a.id] && !profile.claimedAchievements[a.id];
+    });
+    dot.style.display = hasClaimable ? "" : "none";
+  }
+
+  function claimAchievement(achievementId){
+    var a = ACHIEVEMENTS.find(function(x){ return x.id === achievementId; });
+    if(!a || !profile.unlockedAchievements[a.id] || profile.claimedAchievements[a.id]) return;
+    profile.claimedAchievements[a.id] = true;
+    profile.gold += ACHIEVEMENT_GOLD_REWARD;
+    profile.totalGoldEarned = (profile.totalGoldEarned||0) + ACHIEVEMENT_GOLD_REWARD;
+    sessionGoldEarned += ACHIEVEMENT_GOLD_REWARD;
+    showToast("🎖️ +" + ACHIEVEMENT_GOLD_REWARD + " qızıl!");
+    saveProfile();
+    renderProfile();
+    renderAchievementsScreen();
+    updateAchievementsBtnDot();
   }
 
   // Profil şəklini (foto/bayraq/səviyyə ehtiyat) + aktiv çərçivəni verilən konteynerə çəkir.
@@ -3156,10 +3190,17 @@
     var achListEl = document.getElementById("achievementsList");
     achListEl.innerHTML = ACHIEVEMENTS.map(function(a){
       var unlocked = a.check(profile);
-      return '<div class="achievement-row' + (unlocked ? " unlocked" : "") + '">' +
+      var claimed = !!profile.claimedAchievements[a.id];
+      var claimable = unlocked && !claimed;
+      return '<div class="achievement-row' + (unlocked ? " unlocked" : "") + (claimable ? " claimable" : "") + '">' +
         '<div class="achievement-icon">' + (unlocked ? a.icon : "🔒") + '</div>' +
-        '<div class="achievement-info"><div class="achievement-name">' + a.name + '</div><div class="achievement-desc">' + a.desc + '</div></div></div>';
+        '<div class="achievement-info"><div class="achievement-name">' + a.name + '</div><div class="achievement-desc">' + a.desc + '</div></div>' +
+        (claimable ? '<button class="achievement-claim-btn" data-id="' + a.id + '">+' + ACHIEVEMENT_GOLD_REWARD + ' 🪙</button>' : '') +
+        '</div>';
     }).join("");
+    achListEl.querySelectorAll(".achievement-claim-btn").forEach(function(btn){
+      btn.addEventListener("click", function(){ claimAchievement(this.getAttribute("data-id")); });
+    });
   }
 
   // Gündəlik giriş mükafatı: 1,2,4,5,7-ci günlər qızıl; 3 və 6-cı günlər rastgələ ulti
