@@ -685,7 +685,10 @@
         <div class="player-card-stat"><div class="pnum" id="playerCardPopularity">0</div><div class="plbl">Populyarlıq</div></div>
       </div>
       <button class="friend-action-btn" id="playerCardActionBtn" style="width:100%;padding:12px;font-size:13px"></button>
-      <button class="friend-action-btn" id="playerCardBattleBtn" style="width:100%;padding:12px;font-size:13px;margin-top:8px;background:#5b6fd6;display:none">🎮 Oyuna dəvət et</button>
+      <div id="playerCardBattleBtns" style="display:none;gap:8px;margin-top:8px">
+        <button class="friend-action-btn" id="playerCardBattleTimedBtn" style="flex:1;padding:12px;font-size:12px;background:#5b6fd6">⏱️ 60san Battle</button>
+        <button class="friend-action-btn" id="playerCardBattleEndlessBtn" style="flex:1;padding:12px;font-size:12px;background:#00a3a4">♾️ Sonsuz Rəqabət</button>
+      </div>
     </div>
   </div>
 
@@ -1179,9 +1182,11 @@
   var battleChannel = null;
   var battleEndsAt = 0;
   var battleEnded = false;
+  var battleType = "timed"; // "timed" (60san) | "endless" (canlar bitənədək)
   var pendingIncomingInvite = null;
   var battlePendingOpponentId = null;
   var battlePendingOpponentName = null;
+  var battlePendingBattleType = "timed";
   var arcadeMissionsRequired = 0;
   var arcadeSpeedMult = 1;
   var arcadeColorCount = null; // null (arkada deyil) | 3..12 aktiv rəng sayı
@@ -1601,12 +1606,13 @@
       }
       photoContainer.appendChild(inner);
       updatePlayerCardActionBtn(playerId);
-      var battleBtn = document.getElementById("playerCardBattleBtn");
+      var battleBtns = document.getElementById("playerCardBattleBtns");
       if(cloudUserId && playerId !== cloudUserId){
-        battleBtn.style.display = "";
-        battleBtn.onclick = function(){ sendBattleInvite(playerId, p.name || "Oyunçu"); };
+        battleBtns.style.display = "flex";
+        document.getElementById("playerCardBattleTimedBtn").onclick = function(){ sendBattleInvite(playerId, p.name || "Oyunçu", "timed"); };
+        document.getElementById("playerCardBattleEndlessBtn").onclick = function(){ sendBattleInvite(playerId, p.name || "Oyunçu", "endless"); };
       } else {
-        battleBtn.style.display = "none";
+        battleBtns.style.display = "none";
       }
       document.getElementById("playerCardModal").classList.add("show");
     });
@@ -1686,7 +1692,7 @@
       .on("postgres_changes", {event:"UPDATE", schema:"public", table:"battle_invites", filter:"from_user=eq." + cloudUserId}, function(payload){
         if(payload.new.status === "accepted"){
           document.getElementById("battleWaitingModal").classList.remove("show");
-          startBattle(payload.new.battle_id, battlePendingOpponentId, battlePendingOpponentName, true);
+          startBattle(payload.new.battle_id, battlePendingOpponentId, battlePendingOpponentName, true, battlePendingBattleType);
         } else if(payload.new.status === "declined"){
           document.getElementById("battleWaitingModal").classList.remove("show");
           showToast("❌ Dəvət rədd edildi");
@@ -1700,7 +1706,8 @@
     pendingIncomingInvite = invite;
     supabaseClient.from("profiles").select("name,avatar_url,level").eq("id", invite.from_user).maybeSingle().then(function(res){
       var p = res.data || {};
-      document.getElementById("battleInviteName").textContent = (p.name || "Oyunçu") + " səni dəvət edir";
+      var typeLabel = invite.battle_type === "endless" ? "Sonsuz Rəqabətə" : "60 saniyəlik Battle-ə";
+      document.getElementById("battleInviteName").textContent = (p.name || "Oyunçu") + " səni " + typeLabel + " dəvət edir";
       var photoContainer = document.getElementById("battleInvitePhoto");
       photoContainer.className = "ppic ppic-lg";
       photoContainer.innerHTML = "";
@@ -1721,27 +1728,30 @@
     });
   }
 
-  function sendBattleInvite(playerId, playerName){
+  function sendBattleInvite(playerId, playerName, type){
     if(!supabaseClient || !cloudUserId) return;
     battlePendingOpponentId = playerId;
     battlePendingOpponentName = playerName;
-    supabaseClient.from("battles").insert({player1_id: cloudUserId, player2_id: playerId, duration_sec: battleDurationSec})
+    battlePendingBattleType = type || "timed";
+    supabaseClient.from("battles").insert({player1_id: cloudUserId, player2_id: playerId, duration_sec: battleDurationSec, battle_type: battlePendingBattleType})
       .select().single().then(function(res){
         if(res.error){ showToast("⚠️ Xəta: " + res.error.message); return; }
         var battle = res.data;
-        supabaseClient.from("battle_invites").insert({from_user: cloudUserId, to_user: playerId, battle_id: battle.id}).then(function(res2){
+        supabaseClient.from("battle_invites").insert({from_user: cloudUserId, to_user: playerId, battle_id: battle.id, battle_type: battlePendingBattleType}).then(function(res2){
           if(res2.error){ showToast("⚠️ Xəta: " + res2.error.message); return; }
-          document.getElementById("battleWaitingText").textContent = playerName + " qəbul etməsini gözləyirik...";
+          var typeLabel = battlePendingBattleType === "endless" ? "Sonsuz Rəqabət" : "60 saniyəlik Battle";
+          document.getElementById("battleWaitingText").textContent = playerName + " (" + typeLabel + ") qəbul etməsini gözləyirik...";
           document.getElementById("battleWaitingModal").classList.add("show");
           closePlayerCard();
         });
       });
   }
 
-  function startBattle(bId, opponentId, opponentName, isPlayer1){
+  function startBattle(bId, opponentId, opponentName, isPlayer1, type){
     battleId = bId;
     battleOpponentId = opponentId;
     battleIsPlayer1 = isPlayer1;
+    battleType = type || "timed";
     battleEnded = false;
     gameMode = "battle";
     document.getElementById("battleInviteModal").classList.remove("show");
@@ -1751,19 +1761,23 @@
     var scoreEl = document.getElementById("battleOpponentScoreVal");
     if(scoreEl) scoreEl.textContent = "0";
     startGame();
-    battleEndsAt = performance.now() + battleDurationSec * 1000;
-    battleTimerBadge.style.display = "";
     battleOpponentBadge.style.display = "";
-    battleTimerVal.textContent = battleDurationSec;
     clearInterval(battleTimerInterval);
-    battleTimerInterval = setInterval(function(){
-      var remain = Math.max(0, Math.ceil((battleEndsAt - performance.now())/1000));
-      battleTimerVal.textContent = remain;
-      if(remain <= 0){
-        clearInterval(battleTimerInterval);
-        endBattle();
-      }
-    }, 250);
+    if(battleType === "timed"){
+      battleEndsAt = performance.now() + battleDurationSec * 1000;
+      battleTimerBadge.style.display = "";
+      battleTimerVal.textContent = battleDurationSec;
+      battleTimerInterval = setInterval(function(){
+        var remain = Math.max(0, Math.ceil((battleEndsAt - performance.now())/1000));
+        battleTimerVal.textContent = remain;
+        if(remain <= 0){
+          clearInterval(battleTimerInterval);
+          endBattle();
+        }
+      }, 250);
+    } else {
+      battleTimerBadge.style.display = "none";
+    }
     clearInterval(battleScoreSyncInterval);
     battleScoreSyncInterval = setInterval(syncMyBattleScore, 1000);
     subscribeBattleChannel();
@@ -1784,6 +1798,10 @@
     if(battleChannel){ supabaseClient.removeChannel(battleChannel); battleChannel = null; }
     battleChannel = supabaseClient.channel("battle-" + battleId)
       .on("postgres_changes", {event:"UPDATE", schema:"public", table:"battles", filter:"id=eq." + battleId}, function(payload){
+        if(payload.new.status === "finished"){
+          if(!battleEnded) endBattle(payload.new);
+          return;
+        }
         var oppScore = battleIsPlayer1 ? payload.new.player2_score : payload.new.player1_score;
         var el = document.getElementById("battleOpponentScoreVal");
         if(el) el.textContent = oppScore || 0;
@@ -1791,7 +1809,9 @@
       .subscribe();
   }
 
-  function endBattle(){
+  // finalScores verilirsə (rəqib artıq bitirib, real-time-dan gəlib) — sadəcə göstər, yenidən yazma.
+  // verilmirsə (mənim vaxtım/canım bitib) — öz son xalımı yaz, sətri "finished" et ki rəqib də bitirsin.
+  function endBattle(finalScores){
     if(battleEnded) return;
     battleEnded = true;
     spawning = false;
@@ -1800,12 +1820,25 @@
     clearBurstTimeouts();
     clearFallingCubes();
     stopGameMusic();
+    clearInterval(battleTimerInterval);
     clearInterval(battleScoreSyncInterval);
     accumulatePlayTime();
-    syncMyBattleScore();
-    var oppScoreEl = document.getElementById("battleOpponentScoreVal");
-    var oppScore = oppScoreEl ? (parseInt(oppScoreEl.textContent, 10) || 0) : 0;
-    var myScore = sessionXpEarned;
+    var myScore, oppScore;
+    if(finalScores){
+      myScore = battleIsPlayer1 ? finalScores.player1_score : finalScores.player2_score;
+      oppScore = battleIsPlayer1 ? finalScores.player2_score : finalScores.player1_score;
+    } else {
+      myScore = sessionXpEarned;
+      var oppScoreEl = document.getElementById("battleOpponentScoreVal");
+      oppScore = oppScoreEl ? (parseInt(oppScoreEl.textContent, 10) || 0) : 0;
+      if(supabaseClient && battleId){
+        var updateFields = {status:"finished", ended_at: new Date().toISOString()};
+        updateFields[battleIsPlayer1 ? "player1_score" : "player2_score"] = myScore;
+        supabaseClient.from("battles").update(updateFields).eq("id", battleId).then(function(res){
+          if(res.error) console.error("Battle bitirmə xətası:", res.error);
+        });
+      }
+    }
     var titleEl = document.getElementById("battleResultTitle");
     var statsEl = document.getElementById("battleResultStats");
     if(myScore > oppScore) titleEl.textContent = "🏆 Sən qalib gəldin!";
@@ -2431,8 +2464,9 @@
     resetCombo();
     playBreakSound();
     if(reason) showToast("💔 " + reason);
-    // Battle rejimində can bitməsi oyunu bitirmir — yalnız vaxt bitəndə bitir, hər iki oyunçu axıra qədər oynasın
-    if(lives <= 0 && gameMode !== "battle"){
+    // 60-saniyəlik battle-də can bitməsi oyunu bitirmir — yalnız vaxt bitəndə bitir.
+    // "Sonsuz Rəqabət" battle-də isə can bitməsi HƏLƏ DƏ normal kimi bitirir (kim əvvəl canını itirsə uduzur)
+    if(lives <= 0 && !(gameMode === "battle" && battleType === "timed")){
       setTimeout(gameOver, 400);
     }
   }
@@ -2458,6 +2492,11 @@
     if(gameMode === "arcade"){
       saveProfile();
       arcadeLevelEnd(false);
+      return;
+    }
+
+    if(gameMode === "battle"){
+      endBattle();
       return;
     }
 
@@ -4278,7 +4317,7 @@
       if(res.error){ showToast("⚠️ Xəta: " + res.error.message); return; }
       document.getElementById("battleInviteModal").classList.remove("show");
       supabaseClient.from("profiles").select("name").eq("id", invite.from_user).maybeSingle().then(function(res2){
-        startBattle(invite.battle_id, invite.from_user, (res2.data && res2.data.name) || "Rəqib", false);
+        startBattle(invite.battle_id, invite.from_user, (res2.data && res2.data.name) || "Rəqib", false, invite.battle_type);
       });
     });
   });
