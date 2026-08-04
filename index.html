@@ -196,6 +196,11 @@
   .xp-progress-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,#6bbf59,#4a90d9);width:0%;transition:width .4s ease}
   .xp-progress-text{font-size:11px;font-weight:700;color:var(--ink)}
   .xp-remaining{font-size:9px;font-weight:700;color:#a99;margin-left:5px}
+  .google-auth-row{width:100%;display:flex;justify-content:center;margin:4px 0 12px}
+  .google-signin-btn{display:flex;align-items:center;gap:8px;background:#fff;color:#3c4043;border:1px solid #dadce0;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.15)}
+  .google-signin-btn:active{background:#f8f8f8}
+  .google-auth-status{display:flex;align-items:center;gap:8px;background:var(--panel);border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;color:var(--ink)}
+  .google-signout-btn{background:none;border:none;color:var(--red);font-size:11px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0}
   .profile-edit label{font-size:12px;font-weight:700;color:var(--ink)}
   .profile-edit input{flex:1;border:2px solid var(--board-cell);border-radius:8px;padding:8px 10px;font-size:14px;font-family:inherit;min-width:0}
   .profile-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
@@ -410,6 +415,16 @@
         <div class="xp-progress-text" id="menuXpText">0 / 3000 XP</div>
       </div>
     </div>
+    <div class="google-auth-row" id="googleAuthRow">
+      <button class="google-signin-btn" id="googleSignInBtn">
+        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.9-2.26 5.36-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        Google ilə daxil ol
+      </button>
+      <div class="google-auth-status" id="googleAuthStatus" style="display:none">
+        <span id="googleAuthName"></span>
+        <button class="google-signout-btn" id="googleSignOutBtn">Çıxış</button>
+      </div>
+    </div>
     <button class="menu-btn" id="startBtn">▶ Oyna</button>
     <button class="menu-btn shop-btn" id="shopBtn">🛒 Mağaza</button>
     <button class="menu-btn profile-btn" id="profileBtn">👤 Profil</button>
@@ -620,8 +635,53 @@
 
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
 (function(){
+  // ===== Online hesab (Google giriş) — Supabase Auth =====
+  var SUPABASE_URL = "https://kouodojrajrlehycoigb.supabase.co";
+  var SUPABASE_ANON_KEY = "sb_publishable_SUY7okvzdtRoTuGtKDwaPQ_PpgiSpXd";
+  var supabaseClient = (window.supabase && window.supabase.createClient) ?
+    window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+  function renderGoogleAuthUI(session){
+    var btn = document.getElementById("googleSignInBtn");
+    var status = document.getElementById("googleAuthStatus");
+    var nameEl = document.getElementById("googleAuthName");
+    if(!btn || !status || !nameEl) return;
+    if(session && session.user){
+      btn.style.display = "none";
+      status.style.display = "flex";
+      var meta = session.user.user_metadata || {};
+      nameEl.textContent = "✅ " + (meta.full_name || meta.name || session.user.email || "Oyunçu");
+    } else {
+      btn.style.display = "flex";
+      status.style.display = "none";
+    }
+  }
+
+  function signInWithGoogle(){
+    if(!supabaseClient) return;
+    supabaseClient.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin + window.location.pathname }
+    });
+  }
+
+  function signOutGoogle(){
+    if(!supabaseClient) return;
+    supabaseClient.auth.signOut();
+  }
+
+  if(supabaseClient){
+    supabaseClient.auth.getSession().then(function(res){
+      renderGoogleAuthUI(res.data.session);
+    });
+    supabaseClient.auth.onAuthStateChange(function(event, session){
+      renderGoogleAuthUI(session);
+    });
+  }
+
   var BASE_COLORS = [
     {id:"red", hex:getVar("--red"), name:"qırmızı"},
     {id:"blue", hex:getVar("--blue"), name:"mavi"},
@@ -3575,6 +3635,8 @@
     if(e.target === this) closeFlagModal();
   });
   document.getElementById("settingsBtn").addEventListener("click", openSettingsModal);
+  document.getElementById("googleSignInBtn").addEventListener("click", signInWithGoogle);
+  document.getElementById("googleSignOutBtn").addEventListener("click", signOutGoogle);
   document.getElementById("settingsModalClose").addEventListener("click", closeSettingsModal);
   document.getElementById("settingsModalOverlay").addEventListener("click", function(e){
     if(e.target === this) closeSettingsModal();
