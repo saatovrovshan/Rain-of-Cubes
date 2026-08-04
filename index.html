@@ -638,11 +638,14 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
 (function(){
-  // ===== Online hesab (Google giriş) — Supabase Auth =====
+  // ===== Online hesab (Google giriş) — Supabase Auth + bulud saxlama =====
   var SUPABASE_URL = "https://kouodojrajrlehycoigb.supabase.co";
   var SUPABASE_ANON_KEY = "sb_publishable_SUY7okvzdtRoTuGtKDwaPQ_PpgiSpXd";
   var supabaseClient = (window.supabase && window.supabase.createClient) ?
     window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+  var cloudUserId = null;
+  var cloudSyncEnabled = false;
+  var cloudSyncTimer = null;
 
   function renderGoogleAuthUI(session){
     var btn = document.getElementById("googleSignInBtn");
@@ -670,15 +673,21 @@
 
   function signOutGoogle(){
     if(!supabaseClient) return;
+    cloudSyncEnabled = false;
+    cloudUserId = null;
+    clearTimeout(cloudSyncTimer);
     supabaseClient.auth.signOut();
   }
 
   if(supabaseClient){
     supabaseClient.auth.getSession().then(function(res){
       renderGoogleAuthUI(res.data.session);
+      if(res.data.session) onGoogleSignedIn(res.data.session);
     });
     supabaseClient.auth.onAuthStateChange(function(event, session){
       renderGoogleAuthUI(session);
+      if(event === "SIGNED_IN" && session) onGoogleSignedIn(session);
+      if(event === "SIGNED_OUT"){ cloudSyncEnabled = false; cloudUserId = null; }
     });
   }
 
@@ -1123,52 +1132,110 @@
   var USE_LIMIT_PER_GAME = 3;
   var usesThisGame = {};
 
+  // localStorage-dən VƏ ya buluddan (Supabase) gələn profili eyni qaydada tamamlayır —
+  // hər iki mənbə üçün çatışmayan sahələr defolt dəyərlərlə doldurulur
+  function migrateProfile(p){
+    if(!p.name) p.name = "Oyunçu";
+    if(typeof p.gold !== "number") p.gold = 0;
+    if(typeof p.missionsDone !== "number") p.missionsDone = 0;
+    if(!p.inventory) p.inventory = {};
+    if(!p.unlocks) p.unlocks = {};
+    if(!p.activeEffect) p.activeEffect = "none";
+    if(!p.activeTheme) p.activeTheme = "color";
+    if(!p.activeBreakEffect) p.activeBreakEffect = "none";
+    if(typeof p.musicMuted !== "boolean") p.musicMuted = (typeof p.muted === "boolean") ? p.muted : false;
+    if(typeof p.sfxMuted !== "boolean") p.sfxMuted = (typeof p.muted === "boolean") ? p.muted : false;
+    if(!p.totalPlayTimeMs) p.totalPlayTimeMs = 0;
+    if(!p.gamesPlayed) p.gamesPlayed = 0;
+    if(!p.totalGoldEarned) p.totalGoldEarned = 0;
+    if(!p.xp) p.xp = 0;
+    if(!p.powerupsUsed) p.powerupsUsed = 0;
+    if(!p.comboActivations) p.comboActivations = 0;
+    if(!p.records) p.records = [];
+    if(!p.unlockedAchievements) p.unlockedAchievements = {};
+    if(!p.totalLoginDays) p.totalLoginDays = 0;
+    if(!p.lastLoginDate) p.lastLoginDate = null;
+    if(typeof p.rewardDayIndex !== "number") p.rewardDayIndex = 0;
+    if(typeof p.dailyClaimedToday !== "boolean") p.dailyClaimedToday = false;
+    if(!p.enabledUnlocks) p.enabledUnlocks = {};
+    // Əvvəldən sahib olunan paketlər bu yeniləmədən sonra da aktiv qalsın (default: aktiv)
+    Object.keys(p.unlocks).forEach(function(k){
+      if(p.unlocks[k] && typeof p.enabledUnlocks[k] !== "boolean") p.enabledUnlocks[k] = true;
+    });
+    if(!p.customMusic) p.customMusic = {menu:null, game:null};
+    if(typeof p.countryFlag !== "string") p.countryFlag = null;
+    // Köhnə versiya bayrağı emoji kimi saxlayırdı (məs. "🇦🇿") — indi ISO kodu (məs. "az") istifadə olunur
+    if(p.countryFlag && !/^[a-z]{2}$/i.test(p.countryFlag)) p.countryFlag = null;
+    if(typeof p.photoDataUrl !== "string") p.photoDataUrl = null;
+    if(!p.activeFrame) p.activeFrame = "none";
+    if(!p.arcade) p.arcade = {stars:{}, unlockedLevel:1};
+    if(!p.arcade.stars) p.arcade.stars = {};
+    if(!p.arcade.unlockedLevel) p.arcade.unlockedLevel = 1;
+    p.level = levelFromXp(p.xp);
+    return p;
+  }
   function loadProfile(){
     try{
       var raw = localStorage.getItem(STORAGE_KEY);
-      if(raw){
-        var p = JSON.parse(raw);
-        if(!p.inventory) p.inventory = {};
-        if(!p.unlocks) p.unlocks = {};
-        if(!p.activeEffect) p.activeEffect = "none";
-        if(!p.activeTheme) p.activeTheme = "color";
-        if(!p.activeBreakEffect) p.activeBreakEffect = "none";
-        if(typeof p.musicMuted !== "boolean") p.musicMuted = (typeof p.muted === "boolean") ? p.muted : false;
-        if(typeof p.sfxMuted !== "boolean") p.sfxMuted = (typeof p.muted === "boolean") ? p.muted : false;
-        if(!p.totalPlayTimeMs) p.totalPlayTimeMs = 0;
-        if(!p.gamesPlayed) p.gamesPlayed = 0;
-        if(!p.totalGoldEarned) p.totalGoldEarned = 0;
-        if(!p.xp) p.xp = 0;
-        if(!p.powerupsUsed) p.powerupsUsed = 0;
-        if(!p.comboActivations) p.comboActivations = 0;
-        if(!p.records) p.records = [];
-        if(!p.unlockedAchievements) p.unlockedAchievements = {};
-        if(!p.totalLoginDays) p.totalLoginDays = 0;
-        if(!p.lastLoginDate) p.lastLoginDate = null;
-        if(typeof p.rewardDayIndex !== "number") p.rewardDayIndex = 0;
-        if(typeof p.dailyClaimedToday !== "boolean") p.dailyClaimedToday = false;
-        if(!p.enabledUnlocks) p.enabledUnlocks = {};
-        // Əvvəldən sahib olunan paketlər bu yeniləmədən sonra da aktiv qalsın (default: aktiv)
-        Object.keys(p.unlocks).forEach(function(k){
-          if(p.unlocks[k] && typeof p.enabledUnlocks[k] !== "boolean") p.enabledUnlocks[k] = true;
-        });
-        if(!p.customMusic) p.customMusic = {menu:null, game:null};
-        if(typeof p.countryFlag !== "string") p.countryFlag = null;
-        // Köhnə versiya bayrağı emoji kimi saxlayırdı (məs. "🇦🇿") — indi ISO kodu (məs. "az") istifadə olunur
-        if(p.countryFlag && !/^[a-z]{2}$/i.test(p.countryFlag)) p.countryFlag = null;
-        if(typeof p.photoDataUrl !== "string") p.photoDataUrl = null;
-        if(!p.activeFrame) p.activeFrame = "none";
-        if(!p.arcade) p.arcade = {stars:{}, unlockedLevel:1};
-        if(!p.arcade.stars) p.arcade.stars = {};
-        if(!p.arcade.unlockedLevel) p.arcade.unlockedLevel = 1;
-        p.level = levelFromXp(p.xp);
-        return p;
-      }
+      if(raw) return migrateProfile(JSON.parse(raw));
     }catch(e){}
-    return {name:"Oyunçu", xp:0, gold:0, level:1, missionsDone:0, inventory:{}, unlocks:{}, activeEffect:"none", activeTheme:"color", activeBreakEffect:"none", musicMuted:false, sfxMuted:false, totalPlayTimeMs:0, gamesPlayed:0, totalGoldEarned:0, powerupsUsed:0, comboActivations:0, records:[], unlockedAchievements:{}, totalLoginDays:0, lastLoginDate:null, rewardDayIndex:0, dailyClaimedToday:false, enabledUnlocks:{}, customMusic:{menu:null, game:null}, countryFlag:null, photoDataUrl:null, activeFrame:"none", arcade:{stars:{}, unlockedLevel:1}};
+    return migrateProfile({});
   }
   function saveProfile(){
     try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(profile)); }catch(e){}
+    scheduleCloudSync();
+  }
+
+  // Google ilə giriş edilən kimi: buludda saxlanmış profil varsa onu yüklə (başqa cihazdan davam),
+  // yoxdursa hazırkı lokal profili ilk bulud yaddaşı kimi göndər (mövcud tərəqqi itməsin)
+  function onGoogleSignedIn(session){
+    if(!supabaseClient || !session || !session.user) return;
+    var userId = session.user.id;
+    cloudUserId = userId;
+    supabaseClient.from("profiles").select("save_data").eq("id", userId).maybeSingle().then(function(res){
+      if(res.error){ console.error("Bulud profili oxuma xətası:", res.error); return; }
+      if(res.data && res.data.save_data && Object.keys(res.data.save_data).length){
+        profile = migrateProfile(res.data.save_data);
+        try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(profile)); }catch(e){}
+        renderProfile();
+        if(profileScreen && profileScreen.style.display !== "none") renderProfileScreen();
+      } else {
+        var meta = session.user.user_metadata || {};
+        var googleName = meta.full_name || meta.name;
+        var googlePhoto = meta.avatar_url || meta.picture;
+        if(googleName && (!profile.name || profile.name === "Oyunçu")) profile.name = googleName;
+        if(googlePhoto && !profile.photoDataUrl) profile.photoDataUrl = googlePhoto;
+        renderProfile();
+        cloudSyncEnabled = true;
+        uploadProfileToCloud();
+        return;
+      }
+      cloudSyncEnabled = true;
+    });
+  }
+
+  function uploadProfileToCloud(){
+    if(!supabaseClient || !cloudUserId) return;
+    supabaseClient.from("profiles").upsert({
+      id: cloudUserId,
+      name: profile.name,
+      country_flag: profile.countryFlag,
+      avatar_url: profile.photoDataUrl,
+      level: profile.level,
+      xp: profile.xp,
+      gold: profile.gold,
+      missions_done: profile.missionsDone,
+      save_data: profile,
+      updated_at: new Date().toISOString()
+    }).then(function(res){
+      if(res.error) console.error("Bulud saxlama xətası:", res.error);
+    });
+  }
+
+  function scheduleCloudSync(){
+    if(!cloudSyncEnabled || !cloudUserId) return;
+    clearTimeout(cloudSyncTimer);
+    cloudSyncTimer = setTimeout(uploadProfileToCloud, 2000);
   }
 
   function rebuildColorPool(){
