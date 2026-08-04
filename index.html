@@ -401,6 +401,7 @@
      .smiley-hit qatı üzərindən idarə olunur (aşağıya bax) ki, üst-üstə düşəndə künc boşluğuna
      toxunma bu kubu deyil, altındakını tutsun */
   .cube.theme-pure-smiley{background:transparent !important;box-shadow:none !important;font-size:44px;pointer-events:none;overflow:visible}
+  .cube.theme-cube-img{background-color:transparent;background-size:contain;background-repeat:no-repeat;background-position:center;box-shadow:none;border-radius:0}
   .smiley-hit{position:absolute;inset:0;border-radius:50%;pointer-events:auto}
   .cube.hammer-cube{background:radial-gradient(circle at 35% 30%,#fff3c4,#ffcc33 45%,#ff9f43 80%) !important;box-shadow:0 0 14px 4px rgba(255,215,0,.75),inset 0 -5px 0 rgba(0,0,0,.12),0 3px 6px rgba(0,0,0,.25);animation:hammerPulse .8s ease-in-out infinite alternate;z-index:8}
   .cube.hammer-cube svg{width:30px;height:30px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35))}
@@ -1174,6 +1175,8 @@
         {id:"themeNormal", name:"Normal", desc:"Sadə rəngli kubiklər, tema yoxdur", price:0, icon:"🟦", type:"theme", themeValue:"color"},
         {id:"emojiPack", name:"Smayliklər", desc:"Kubiklərdə qarışıq smayliklər", price:150, icon:"😀", type:"theme", themeValue:"emoji"},
         {id:"pureSmileyPack", name:"Əsas Smaylilər", desc:"7 klassik smayli, kubiksiz düşür", price:180, icon:"😎", type:"theme", themeValue:"puresmiley"},
+        {id:"lavaCubePack", name:"Lava Kublar", desc:"Parlayan lava, enerji və kristal kubiklər", price:250, icon:"🌋", type:"theme", themeValue:"lava"},
+        {id:"symbolCubePack", name:"Simvol Kublar", desc:"Həkk olunmuş simvollu daş kubiklər", price:250, icon:"🔶", type:"theme", themeValue:"symbol"},
         {id:"colorPack", name:"Premium Rənglər", desc:"3 yeni rəng əlavə et", price:300, icon:"🎨", type:"unlock"},
         {id:"monoPack", name:"Mono Rənglər", desc:"Qara, boz və ağ rəng əlavə et", price:280, icon:"⬛", type:"unlock"}
       ]
@@ -2859,6 +2862,36 @@
   function currentTheme(){
     return arcadeThemeOverride || profile.activeTheme;
   }
+
+  // Şəkilli kubik temaları: hər tema yalnız 6 əsas rəngi (BASE_COLORS) əhatə edir —
+  // premium/mono rənglər aktivdirsə həmin kubiklər adi rəngli fona geri düşür (aşağıdakı cubeThemeImageUrl-da)
+  var CUBE_IMAGE_THEMES = {
+    lava: {red:"cube-themes/lava_red.png", orange:"cube-themes/lava_orange.png", yellow:"cube-themes/lava_yellow.png", green:"cube-themes/lava_green.png", blue:"cube-themes/lava_blue.png", purple:"cube-themes/lava_purple.png"},
+    symbol: {red:"cube-themes/symbol_red.png", orange:"cube-themes/symbol_orange.png", yellow:"cube-themes/symbol_yellow.png", green:"cube-themes/symbol_green.png", blue:"cube-themes/symbol_blue.png", purple:"cube-themes/symbol_purple.png"}
+  };
+
+  function cubeThemeImageUrl(color){
+    var themeMap = CUBE_IMAGE_THEMES[currentTheme()];
+    return (themeMap && themeMap[color.id]) || null;
+  }
+
+  // Misya göstəricisi (swatch/flash-circle/slot) üçün ortaq render — kubiklərin özü ilə HƏMİŞƏ sinxron qalsın
+  function applyThemedSwatch(el, color){
+    var imgUrl = cubeThemeImageUrl(color);
+    if(imgUrl){
+      el.style.background = "url('" + imgUrl + "') center/contain no-repeat";
+      el.style.boxShadow = "none";
+      el.textContent = "";
+    } else if(currentTheme() === "puresmiley"){
+      el.style.background = "transparent";
+      el.style.boxShadow = "none";
+      el.textContent = pureSmileyFor(color);
+    } else {
+      el.style.background = color.hex;
+      el.style.boxShadow = "";
+      el.textContent = "";
+    }
+  }
   // Dalğa rejimi (sıx "dalğa" + boş "sakit" fazası) hələlik LƏĞV EDİLİB — aşağıdakı funksiyalar
   // sonradan yenidən aktivləşdirmək üçün saxlanılır, amma hazırda loop() onları çağırmır
   function getSpawnInterval(){
@@ -3396,15 +3429,7 @@
     }
     mission = {color:color, count:count, filled:0};
     prevMissionColorId = color.id;
-    if(currentTheme() === "puresmiley"){
-      missionSwatchEl.style.background = "transparent";
-      missionSwatchEl.style.boxShadow = "none";
-      missionSwatchEl.textContent = pureSmileyFor(color);
-    } else {
-      missionSwatchEl.style.background = color.hex;
-      missionSwatchEl.style.boxShadow = "";
-      missionSwatchEl.textContent = "";
-    }
+    applyThemedSwatch(missionSwatchEl, color);
     missionTextEl.textContent = count + " " + color.name + " kub";
     slotsEl.innerHTML = "";
     for(var i=0;i<count;i++){
@@ -3422,12 +3447,7 @@
     flash.className = "mission-flash";
     var circle = document.createElement("div");
     circle.className = "mission-flash-circle";
-    if(currentTheme() === "puresmiley"){
-      circle.style.background = "transparent";
-      circle.textContent = pureSmileyFor(color);
-    } else {
-      circle.style.background = color.hex;
-    }
+    applyThemedSwatch(circle, color);
     flash.appendChild(circle);
     field.appendChild(flash);
     setTimeout(function(){ if(flash.parentNode) flash.parentNode.removeChild(flash); }, 900);
@@ -3476,12 +3496,7 @@
     var slot = empties[0];
     slot.classList.add("filled");
     slot.style.borderColor = mission.color.hex;
-    if(currentTheme() === "puresmiley"){
-      slot.style.background = "transparent";
-      slot.textContent = pureSmileyFor(mission.color);
-    } else {
-      slot.style.background = mission.color.hex;
-    }
+    applyThemedSwatch(slot, mission.color);
     mission.filled++;
     if(mission.filled >= mission.count){
       completeMission();
@@ -3773,6 +3788,7 @@
     var content = getCubeContent(color);
     var smileyHitEl = null;
     var smileyGlyphEl = null;
+    var cubeImgUrl = cubeThemeImageUrl(color);
     if(currentTheme() === "puresmiley"){
       el.classList.add("theme-pure-smiley");
       // Glif öz ayrıca span-ında saxlanılır ki, sonradan (məs. Rəng Qarışdırma ultisi) mətni
@@ -3784,6 +3800,9 @@
       smileyHitEl = document.createElement("div");
       smileyHitEl.className = "smiley-hit";
       el.appendChild(smileyHitEl);
+    } else if(cubeImgUrl){
+      el.classList.add("theme-cube-img");
+      el.style.backgroundImage = "url('" + cubeImgUrl + "')";
     } else {
       el.style.background = color.hex;
       if(content) el.textContent = content;
@@ -4376,9 +4395,17 @@
     candidates.forEach(function(c, i){
       c.color = colors[i];
       var content = getCubeContent(colors[i]);
+      var imgUrl = cubeThemeImageUrl(colors[i]);
       if(currentTheme() === "puresmiley"){
         if(c.smileyGlyphEl) c.smileyGlyphEl.textContent = content;
+      } else if(imgUrl){
+        c.el.classList.add("theme-cube-img");
+        c.el.style.background = "";
+        c.el.style.backgroundImage = "url('" + imgUrl + "')";
+        c.el.textContent = "";
       } else {
+        c.el.classList.remove("theme-cube-img");
+        c.el.style.backgroundImage = "";
         c.el.style.background = colors[i].hex;
         c.el.textContent = content || "";
       }
