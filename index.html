@@ -129,7 +129,20 @@
 
   .profile-edit{background:var(--panel);border-radius:12px;padding:12px;display:flex;align-items:center;gap:10px;margin-top:4px}
   .xp-progress{background:var(--panel);border-radius:12px;padding:12px 14px;margin:18px 0;text-align:left;width:100%;box-sizing:border-box}
-  .xp-progress-menu{display:flex;align-items:center;gap:12px;cursor:pointer;border:2px solid transparent;transition:border-color .15s,transform .1s}
+  .xp-progress-menu{display:flex;align-items:center;gap:12px;cursor:pointer;border:2px solid transparent;transition:border-color .15s,transform .1s;position:relative}
+  .menu-presence-dot{position:absolute;right:12px;bottom:12px;width:13px;height:13px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.35)}
+  .menu-presence-dot.online{background:#3ecf5e}
+  .menu-presence-dot.offline{background:#9aa0a6}
+  .presence-avatar-wrap{position:relative;flex-shrink:0}
+  .presence-dot{position:absolute;right:-2px;bottom:-2px;width:11px;height:11px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 2px rgba(0,0,0,.3)}
+  .presence-dot.online{background:#3ecf5e}
+  .presence-dot.offline{background:#9aa0a6}
+  .presence-dot.lg{width:15px;height:15px;right:0;bottom:2px}
+  .presence-dot.top-corner{top:-2px;right:-2px;bottom:auto}
+  .presence-label{font-size:10px;font-weight:700;display:inline-flex;align-items:center;gap:4px}
+  .presence-label .presence-dot{position:static;border:none;box-shadow:none}
+  .presence-label.online{color:#2fa84f}
+  .presence-label.offline{color:#8a8f98}
   .xp-progress-menu:hover{border-color:var(--blue)}
   .xp-progress-menu:active{transform:translateY(1px)}
   /* ===== Profil şəkli (squircle) + çərçivə sistemi — menyu, oyun içi və profil ekranında paylaşılır ===== */
@@ -500,6 +513,7 @@
         <div class="xp-progress-track"><div class="xp-progress-fill" id="menuXpFill"></div></div>
         <div class="xp-progress-text" id="menuXpText">0 / 3000 XP</div>
       </div>
+      <span class="menu-presence-dot" id="menuPresenceDot" style="display:none"></span>
     </div>
     <div class="google-auth-row" id="googleAuthRow">
       <button class="google-signin-btn" id="googleSignInBtn">
@@ -776,6 +790,7 @@
       </div>
       <div class="ppic ppic-lg" id="playerCardPhoto" style="margin:0 auto"></div>
       <div class="menu-player-name" id="playerCardName" style="text-align:center;font-size:16px;margin-top:8px">Oyunçu</div>
+      <div id="playerCardPresence" style="text-align:center;margin-top:4px"></div>
       <div class="profile-stats-grid" style="margin-top:12px">
         <div class="profile-stat"><div class="pnum" id="playerCardLevel">1</div><div class="plbl">Səviyyə</div></div>
         <div class="profile-stat"><div class="pnum" id="playerCardXp">0</div><div class="plbl">Ümumi xal</div></div>
@@ -877,7 +892,12 @@
 
   function signOutGoogle(){
     if(!supabaseClient) return;
+    var signingOutId = cloudUserId;
     cloudSyncEnabled = false;
+    stopPresenceHeartbeat();
+    if(signingOutId){
+      supabaseClient.from("profiles").update({last_seen: null}).eq("id", signingOutId).then(function(){});
+    }
     cloudUserId = null;
     clearTimeout(cloudSyncTimer);
     // Çıxış edən kimi lokal profili sıfırla — yoxsa bu cihazda sonra girən BAŞQA
@@ -1431,6 +1451,8 @@
     if(!supabaseClient || !session || !session.user) return;
     var userId = session.user.id;
     cloudUserId = userId;
+    startPresenceHeartbeat();
+    renderProfile();
     supabaseClient.from("profiles").select("save_data").eq("id", userId).maybeSingle().then(function(res){
       if(res.error){
         console.error("Bulud profili oxuma xətası:", res.error);
@@ -1534,9 +1556,42 @@
     });
   }
 
-  function friendAvatarHtml(url, name){
-    if(url) return '<img src="' + url + '" style="width:40px;height:40px;border-radius:28%;object-fit:cover;flex-shrink:0">';
-    return '<div style="width:40px;height:40px;border-radius:28%;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;flex-shrink:0">' + (name ? name.charAt(0).toUpperCase() : "?") + '</div>';
+  // ===== Online/offline statusu (presence) =====
+  var PRESENCE_ONLINE_THRESHOLD_MS = 120000;
+  var presenceHeartbeatInterval = null;
+
+  function isOnline(lastSeen){
+    if(!lastSeen) return false;
+    return (Date.now() - new Date(lastSeen).getTime()) < PRESENCE_ONLINE_THRESHOLD_MS;
+  }
+
+  function presenceDotHtml(lastSeen, extraClass){
+    return '<span class="presence-dot' + (extraClass ? " " + extraClass : "") + ' ' + (isOnline(lastSeen) ? "online" : "offline") + '"></span>';
+  }
+
+  function updateLastSeen(){
+    if(!supabaseClient || !cloudUserId) return;
+    supabaseClient.from("profiles").update({last_seen: new Date().toISOString()}).eq("id", cloudUserId).then(function(res){
+      if(res.error) console.error("last_seen yeniləmə xətası:", res.error);
+    });
+  }
+
+  function startPresenceHeartbeat(){
+    updateLastSeen();
+    clearInterval(presenceHeartbeatInterval);
+    presenceHeartbeatInterval = setInterval(updateLastSeen, 45000);
+  }
+
+  function stopPresenceHeartbeat(){
+    clearInterval(presenceHeartbeatInterval);
+    presenceHeartbeatInterval = null;
+  }
+
+  function friendAvatarHtml(url, name, lastSeen){
+    var inner = url
+      ? '<img src="' + escapeHtml(url) + '" style="width:40px;height:40px;border-radius:28%;object-fit:cover;display:block">'
+      : '<div style="width:40px;height:40px;border-radius:28%;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800">' + (name ? escapeHtml(name.charAt(0).toUpperCase()) : "?") + '</div>';
+    return '<div class="presence-avatar-wrap">' + inner + presenceDotHtml(lastSeen) + '</div>';
   }
 
   function openFriends(){
@@ -1614,8 +1669,8 @@
     }
     container.innerHTML = friendSearchResults.map(function(p){
       return '<div class="friend-row" data-id="' + p.id + '">' +
-        friendAvatarHtml(p.avatar_url, p.name) +
-        '<div class="friend-row-info"><div class="friend-row-name">' + p.name + '</div><div class="friend-row-meta">Lv.' + (p.level||1) + '</div></div>' +
+        friendAvatarHtml(p.avatar_url, p.name, p.last_seen) +
+        '<div class="friend-row-info"><div class="friend-row-name">' + escapeHtml(p.name) + '</div><div class="friend-row-meta">Lv.' + (p.level||1) + '</div></div>' +
         '</div>';
     }).join("");
     container.querySelectorAll(".friend-row").forEach(function(row){
@@ -1627,7 +1682,7 @@
     var input = document.getElementById("friendSearchInput");
     var q = input ? input.value.trim() : "";
     if(!q || !supabaseClient || !cloudUserId) return;
-    supabaseClient.from("profiles").select("id,name,avatar_url,level")
+    supabaseClient.from("profiles").select("id,name,avatar_url,level,last_seen")
       .ilike("name", "%" + q + "%").neq("id", cloudUserId).limit(20)
       .then(function(res){
         if(res.error){ console.error("Axtarış xətası:", res.error); showToast("⚠️ Axtarış xətası: " + res.error.message); return; }
@@ -1650,11 +1705,11 @@
           return;
         }
         var ids = rows.map(function(r){ return r.requester_id; });
-        supabaseClient.from("profiles").select("id,name,avatar_url,level").in("id", ids).then(function(res2){
+        supabaseClient.from("profiles").select("id,name,avatar_url,level,last_seen").in("id", ids).then(function(res2){
           var profs = res2.data || [];
           var merged = rows.map(function(r){
             var p = profs.find(function(pp){ return pp.id === r.requester_id; }) || {};
-            return {friendshipId:r.id, id:r.requester_id, name:p.name||"Oyunçu", avatar_url:p.avatar_url, level:p.level||1};
+            return {friendshipId:r.id, id:r.requester_id, name:p.name||"Oyunçu", avatar_url:p.avatar_url, level:p.level||1, last_seen:p.last_seen};
           });
           friendRequestsCache = merged;
           renderFriendRequestsList(merged);
@@ -1672,8 +1727,8 @@
     }
     container.innerHTML = list.map(function(r){
       return '<div class="friend-row">' +
-        friendAvatarHtml(r.avatar_url, r.name) +
-        '<div class="friend-row-info"><div class="friend-row-name">' + r.name + '</div><div class="friend-row-meta">Lv.' + r.level + '</div></div>' +
+        friendAvatarHtml(r.avatar_url, r.name, r.last_seen) +
+        '<div class="friend-row-info"><div class="friend-row-name">' + escapeHtml(r.name) + '</div><div class="friend-row-meta">Lv.' + r.level + '</div></div>' +
         '<button class="friend-action-btn" data-action="accept" data-fid="' + r.friendshipId + '">Qəbul et</button>' +
         '<button class="friend-action-btn reject" data-action="reject" data-fid="' + r.friendshipId + '">Rədd et</button>' +
         '</div>';
@@ -1718,7 +1773,7 @@
           return;
         }
         var ids = rows.map(function(r){ return r.requester_id === cloudUserId ? r.addressee_id : r.requester_id; });
-        supabaseClient.from("profiles").select("id,name,avatar_url,level").in("id", ids).then(function(res2){
+        supabaseClient.from("profiles").select("id,name,avatar_url,level,last_seen").in("id", ids).then(function(res2){
           friendsCache = res2.data || [];
           renderFriendsListUI(friendsCache);
         });
@@ -1734,8 +1789,8 @@
     }
     container.innerHTML = list.map(function(p){
       return '<div class="friend-row" data-id="' + p.id + '">' +
-        friendAvatarHtml(p.avatar_url, p.name) +
-        '<div class="friend-row-info"><div class="friend-row-name">' + p.name + '</div><div class="friend-row-meta">Lv.' + (p.level||1) + '</div></div>' +
+        friendAvatarHtml(p.avatar_url, p.name, p.last_seen) +
+        '<div class="friend-row-info"><div class="friend-row-name">' + escapeHtml(p.name) + '</div><div class="friend-row-meta">Lv.' + (p.level||1) + '</div></div>' +
         '</div>';
     }).join("");
     container.querySelectorAll(".friend-row").forEach(function(row){
@@ -1746,11 +1801,14 @@
   function openPlayerCard(playerId){
     if(!supabaseClient) return;
     viewedPlayerId = playerId;
-    supabaseClient.from("profiles").select("id,name,avatar_url,country_flag,level,gold,missions_done,popularity,total_gifts_received,total_gifts_sent,save_data").eq("id", playerId).maybeSingle().then(function(res){
+    supabaseClient.from("profiles").select("id,name,avatar_url,country_flag,level,gold,missions_done,popularity,total_gifts_received,total_gifts_sent,last_seen,save_data").eq("id", playerId).maybeSingle().then(function(res){
       if(res.error || !res.data){ showToast("⚠️ Profil tapılmadı"); return; }
       var p = res.data;
       var sd = p.save_data || {};
       var bestScore = (sd.records && sd.records.length) ? sd.records[0].score : 0;
+      var online = isOnline(p.last_seen);
+      document.getElementById("playerCardPresence").innerHTML =
+        '<span class="presence-label ' + (online ? "online" : "offline") + '">' + presenceDotHtml(p.last_seen) + (online ? "Onlayn" : "Oflayn") + '</span>';
       document.getElementById("playerCardName").textContent = p.name || "Oyunçu";
       document.getElementById("playerCardLevel").textContent = p.level || 1;
       document.getElementById("playerCardMissions").textContent = p.missions_done || 0;
@@ -1931,12 +1989,12 @@
           renderFriendsTabs();
           return;
         }
-        supabaseClient.from("profiles").select("id,name,avatar_url").in("id", peerIds).then(function(res2){
+        supabaseClient.from("profiles").select("id,name,avatar_url,last_seen").in("id", peerIds).then(function(res2){
           var profs = res2.data || [];
           conversationsCache = peerIds.map(function(pid){
             var p = profs.find(function(pp){ return pp.id === pid; }) || {};
             var c = byPeer[pid];
-            return {peerId:pid, name:p.name || "Oyunçu", avatar_url:p.avatar_url, lastBody:c.lastBody, unread:c.unread};
+            return {peerId:pid, name:p.name || "Oyunçu", avatar_url:p.avatar_url, last_seen:p.last_seen, lastBody:c.lastBody, unread:c.unread};
           });
           renderConversationsList();
           renderFriendsTabs();
@@ -1953,7 +2011,7 @@
     }
     container.innerHTML = conversationsCache.map(function(c){
       return '<div class="convo-row" data-id="' + c.peerId + '" data-name="' + escapeHtml(c.name) + '">' +
-        friendAvatarHtml(c.avatar_url, c.name) +
+        friendAvatarHtml(c.avatar_url, c.name, c.last_seen) +
         '<div class="convo-row-info"><div class="convo-row-name">' + escapeHtml(c.name) + '</div>' +
         '<div class="convo-row-preview' + (c.unread ? " unread" : "") + '">' + escapeHtml((c.lastBody || "").slice(0,40)) + '</div></div>' +
         (c.unread ? '<div class="convo-unread-dot"></div>' : '') +
@@ -2136,12 +2194,12 @@
     });
   }
 
-  function lbAvatarHtml(avatarUrl, countryFlag, name){
+  function lbAvatarHtml(avatarUrl, countryFlag, name, lastSeen){
     var inner = avatarUrl
       ? '<img src="' + escapeHtml(avatarUrl) + '">'
       : (name ? escapeHtml(name.charAt(0).toUpperCase()) : "?");
     var badge = (countryFlag) ? '<div class="lb-flag-badge"><img src="' + escapeHtml(flagImgUrl(countryFlag)) + '"></div>' : "";
-    return '<div class="lb-avatar"><div class="lb-avatar-inner">' + inner + '</div>' + badge + '</div>';
+    return '<div class="lb-avatar"><div class="lb-avatar-inner">' + inner + '</div>' + badge + presenceDotHtml(lastSeen, "top-corner") + '</div>';
   }
 
   function loadLeaderboard(){
@@ -2149,7 +2207,7 @@
     if(!cat) return;
     var listEl = document.getElementById("leaderboardList");
     listEl.innerHTML = '<div class="empty-hint">Yüklənir...</div>';
-    var cols = "id,name,avatar_url,country_flag," + cat.column + (cat.extraColumn ? "," + cat.extraColumn : "");
+    var cols = "id,name,avatar_url,country_flag,last_seen," + cat.column + (cat.extraColumn ? "," + cat.extraColumn : "");
     supabaseClient.from("profiles").select(cols)
       .order(cat.column, {ascending:false}).limit(100)
       .then(function(res){
@@ -2164,7 +2222,7 @@
           var subHtml = cat.extraColumn ? '<span class="lb-value-sub">' + (p[cat.extraColumn] || 0) + (cat.extraSuffix || "") + '</span>' : "";
           return '<div class="lb-row' + rankClass + '" data-id="' + escapeHtml(p.id) + '">' +
             '<div class="lb-rank">' + rank + '</div>' +
-            lbAvatarHtml(p.avatar_url, p.country_flag, p.name) +
+            lbAvatarHtml(p.avatar_url, p.country_flag, p.name, p.last_seen) +
             '<div class="lb-info"><div class="lb-name">' + escapeHtml(p.name || "Oyunçu") + '</div></div>' +
             '<div class="lb-value">' + valueHtml + subHtml + '</div>' +
             '</div>';
@@ -2667,6 +2725,15 @@
     renderXpProgress();
     renderPhotoInto("menuPhoto", "md");
     renderPhotoInto("gamePhoto", "sm");
+    var menuDot = document.getElementById("menuPresenceDot");
+    if(menuDot){
+      if(cloudUserId){
+        menuDot.style.display = "";
+        menuDot.className = "menu-presence-dot online";
+      } else {
+        menuDot.style.display = "none";
+      }
+    }
   }
 
   function renderProfileScreen(){
