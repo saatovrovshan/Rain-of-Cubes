@@ -1193,12 +1193,17 @@
     var userId = session.user.id;
     cloudUserId = userId;
     supabaseClient.from("profiles").select("save_data").eq("id", userId).maybeSingle().then(function(res){
-      if(res.error){ console.error("Bulud profili oxuma xətası:", res.error); return; }
+      if(res.error){
+        console.error("Bulud profili oxuma xətası:", res.error);
+        if(typeof showToast === "function") showToast("⚠️ Bulud oxuma xətası: " + res.error.message);
+        return;
+      }
       if(res.data && res.data.save_data && Object.keys(res.data.save_data).length){
         profile = migrateProfile(res.data.save_data);
         try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(profile)); }catch(e){}
         renderProfile();
         if(profileScreen && profileScreen.style.display !== "none") renderProfileScreen();
+        if(typeof showToast === "function") showToast("☁️ Bulud profili yükləndi");
       } else {
         var meta = session.user.user_metadata || {};
         var googleName = meta.full_name || meta.name;
@@ -1228,7 +1233,12 @@
       save_data: profile,
       updated_at: new Date().toISOString()
     }).then(function(res){
-      if(res.error) console.error("Bulud saxlama xətası:", res.error);
+      if(res.error){
+        console.error("Bulud saxlama xətası:", res.error);
+        if(typeof showToast === "function") showToast("⚠️ Bulud saxlama xətası: " + res.error.message);
+      } else {
+        if(typeof showToast === "function") showToast("☁️ Bulud profili yaradıldı");
+      }
     });
   }
 
