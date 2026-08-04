@@ -2154,6 +2154,7 @@
 
   // ===== Reytinq Cədvəli =====
   var LEADERBOARD_CATEGORIES = [
+    {id:"level", label:"🏅 Səviyyə", column:"level", format:"level"},
     {id:"gold_earned", label:"🪙 Qazanılan qızıl", column:"total_gold_earned", icon:"🪙", suffix:" qızıl"},
     {id:"gold_spent", label:"💸 Xərclənən qızıl", column:"total_gold_spent", icon:"💸", suffix:" qızıl"},
     {id:"play_time", label:"⏱️ Oyun vaxtı", column:"total_play_time_ms", icon:"⏱️", format:"duration"},
@@ -2218,7 +2219,9 @@
           var rank = i + 1;
           var rankClass = rank <= 3 ? " top" + rank : "";
           var val = p[cat.column] || 0;
-          var valueHtml = cat.format === "duration" ? formatDuration(val) : (cat.icon + " " + val + (cat.suffix || ""));
+          var valueHtml = cat.format === "duration" ? formatDuration(val)
+            : cat.format === "level" ? ("🏅 Lv. " + val)
+            : (cat.icon + " " + val + (cat.suffix || ""));
           var subHtml = cat.extraColumn ? '<span class="lb-value-sub">' + (p[cat.extraColumn] || 0) + (cat.extraSuffix || "") + '</span>' : "";
           return '<div class="lb-row' + rankClass + '" data-id="' + escapeHtml(p.id) + '">' +
             '<div class="lb-rank">' + rank + '</div>' +
