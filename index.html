@@ -563,6 +563,8 @@
       <div class="badge"><div class="lbl">MİSYA</div><div class="val" id="missionVal">0</div></div>
       <div class="badge"><div class="lbl">XAL</div><div class="val" id="xpVal">0</div></div>
       <div class="badge"><div class="lbl">CAN</div><div class="val hearts" id="livesVal"></div></div>
+      <div class="badge" id="battleTimerBadge" style="display:none"><div class="lbl">VAXT</div><div class="val" id="battleTimerVal">60</div></div>
+      <div class="badge" id="battleOpponentBadge" style="display:none"><div class="lbl" id="battleOpponentLbl">RƏQİB</div><div class="val" id="battleOpponentScoreVal">0</div></div>
       <button class="icon-btn" id="pauseBtn" title="Pauza">⏸️</button>
     </div>
   </header>
@@ -633,6 +635,11 @@
       <button class="menu-return" id="arcadeLevelsBtn">🕹️ Levellər</button>
       <button class="menu-return" id="arcadeMenuBtn">🏠 Ana Menyu</button>
     </div>
+    <div class="overlay" id="battleResultOverlay">
+      <h2 id="battleResultTitle">🏆 Sən qalib gəldin!</h2>
+      <p id="battleResultStats"></p>
+      <button class="menu-return" id="battleResultMenuBtn">🏠 Ana Menyu</button>
+    </div>
   </div>
 
   <div class="mission">
@@ -678,6 +685,30 @@
         <div class="player-card-stat"><div class="pnum" id="playerCardPopularity">0</div><div class="plbl">Populyarlıq</div></div>
       </div>
       <button class="friend-action-btn" id="playerCardActionBtn" style="width:100%;padding:12px;font-size:13px"></button>
+      <button class="friend-action-btn" id="playerCardBattleBtn" style="width:100%;padding:12px;font-size:13px;margin-top:8px;background:#5b6fd6;display:none">🎮 Oyuna dəvət et</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="battleInviteModal">
+    <div class="modal-panel" style="text-align:center">
+      <div class="modal-header">
+        <h3>🎮 Oyun Dəvəti</h3>
+      </div>
+      <div class="ppic ppic-lg" id="battleInvitePhoto" style="margin:0 auto"></div>
+      <div class="menu-player-name" id="battleInviteName" style="text-align:center;font-size:16px;margin:8px 0 16px">Oyunçu</div>
+      <p style="font-size:12px;color:var(--ink);margin-bottom:12px">səni 60 saniyəlik xal yarışına dəvət edir!</p>
+      <button class="friend-action-btn" id="battleInviteAccept" style="width:100%;padding:12px;font-size:13px;margin-bottom:8px">✅ Qəbul et</button>
+      <button class="friend-action-btn reject" id="battleInviteDecline" style="width:100%;padding:12px;font-size:13px">✕ Rədd et</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="battleWaitingModal">
+    <div class="modal-panel" style="text-align:center">
+      <div class="modal-header">
+        <h3>🎮 Dəvət göndərildi</h3>
+      </div>
+      <p style="font-size:13px;color:var(--ink);margin-bottom:16px" id="battleWaitingText">Rəqibin qəbul etməsi gözlənilir...</p>
+      <button class="menu-return" id="battleWaitingCancel">Ləğv et</button>
     </div>
   </div>
 
@@ -1060,6 +1091,10 @@
   var dailyScreen = document.getElementById("dailyScreen");
   var arcadeScreen = document.getElementById("arcadeScreen");
   var arcadeResultOverlay = document.getElementById("arcadeResultOverlay");
+  var battleResultOverlay = document.getElementById("battleResultOverlay");
+  var battleTimerBadge = document.getElementById("battleTimerBadge");
+  var battleTimerVal = document.getElementById("battleTimerVal");
+  var battleOpponentBadge = document.getElementById("battleOpponentBadge");
   var powerupsEl = document.getElementById("powerups");
   var shopContent = document.getElementById("shopContent");
   var shopGoldVal = document.getElementById("shopGoldVal");
@@ -1133,8 +1168,20 @@
   var missionCount = 0;
 
   // ===== Arkada Rejimi: level-əsaslı, ulduz reytinqli rejim (Misya Rejimindən ayrı) =====
-  var gameMode = "endless"; // "endless" (Misya Rejimi) | "arcade"
+  var gameMode = "endless"; // "endless" (Misya Rejimi) | "arcade" | "battle"
   var arcadeLevelNum = null;
+  var battleId = null;
+  var battleOpponentId = null;
+  var battleIsPlayer1 = false;
+  var battleDurationSec = 60;
+  var battleTimerInterval = null;
+  var battleScoreSyncInterval = null;
+  var battleChannel = null;
+  var battleEndsAt = 0;
+  var battleEnded = false;
+  var pendingIncomingInvite = null;
+  var battlePendingOpponentId = null;
+  var battlePendingOpponentName = null;
   var arcadeMissionsRequired = 0;
   var arcadeSpeedMult = 1;
   var arcadeColorCount = null; // null (arkada deyil) | 3..12 aktiv rəng sayı
@@ -1271,10 +1318,12 @@
         cloudSyncEnabled = true;
         uploadProfileToCloud();
         checkFriendRequestsBadge();
+        subscribeBattleInvites();
         return;
       }
       cloudSyncEnabled = true;
       checkFriendRequestsBadge();
+      subscribeBattleInvites();
     });
   }
 
@@ -1552,6 +1601,13 @@
       }
       photoContainer.appendChild(inner);
       updatePlayerCardActionBtn(playerId);
+      var battleBtn = document.getElementById("playerCardBattleBtn");
+      if(cloudUserId && playerId !== cloudUserId){
+        battleBtn.style.display = "";
+        battleBtn.onclick = function(){ sendBattleInvite(playerId, p.name || "Oyunçu"); };
+      } else {
+        battleBtn.style.display = "none";
+      }
       document.getElementById("playerCardModal").classList.add("show");
     });
   }
@@ -1618,6 +1674,149 @@
         if(!dot) return;
         dot.style.display = (res.count && res.count > 0) ? "" : "none";
       });
+  }
+
+  // ===== Canlı "Battle" (dostla xal yarışı) rejimi =====
+  function subscribeBattleInvites(){
+    if(!supabaseClient || !cloudUserId) return;
+    supabaseClient.channel("battle-invites-" + cloudUserId)
+      .on("postgres_changes", {event:"INSERT", schema:"public", table:"battle_invites", filter:"to_user=eq." + cloudUserId}, function(payload){
+        handleIncomingBattleInvite(payload.new);
+      })
+      .on("postgres_changes", {event:"UPDATE", schema:"public", table:"battle_invites", filter:"from_user=eq." + cloudUserId}, function(payload){
+        if(payload.new.status === "accepted"){
+          document.getElementById("battleWaitingModal").classList.remove("show");
+          startBattle(payload.new.battle_id, battlePendingOpponentId, battlePendingOpponentName, true);
+        } else if(payload.new.status === "declined"){
+          document.getElementById("battleWaitingModal").classList.remove("show");
+          showToast("❌ Dəvət rədd edildi");
+        }
+      })
+      .subscribe();
+  }
+
+  function handleIncomingBattleInvite(invite){
+    if(gameActive) return; // artıq oynayarkən yeni dəvət göstərmə
+    pendingIncomingInvite = invite;
+    supabaseClient.from("profiles").select("name,avatar_url,level").eq("id", invite.from_user).maybeSingle().then(function(res){
+      var p = res.data || {};
+      document.getElementById("battleInviteName").textContent = (p.name || "Oyunçu") + " səni dəvət edir";
+      var photoContainer = document.getElementById("battleInvitePhoto");
+      photoContainer.className = "ppic ppic-lg";
+      photoContainer.innerHTML = "";
+      var inner = document.createElement("div");
+      inner.className = "ppic-inner";
+      if(p.avatar_url){
+        var img = document.createElement("img");
+        img.src = p.avatar_url;
+        inner.appendChild(img);
+      } else {
+        var fallback = document.createElement("span");
+        fallback.className = "ppic-level-fallback";
+        fallback.textContent = p.level || 1;
+        inner.appendChild(fallback);
+      }
+      photoContainer.appendChild(inner);
+      document.getElementById("battleInviteModal").classList.add("show");
+    });
+  }
+
+  function sendBattleInvite(playerId, playerName){
+    if(!supabaseClient || !cloudUserId) return;
+    battlePendingOpponentId = playerId;
+    battlePendingOpponentName = playerName;
+    supabaseClient.from("battles").insert({player1_id: cloudUserId, player2_id: playerId, duration_sec: battleDurationSec})
+      .select().single().then(function(res){
+        if(res.error){ showToast("⚠️ Xəta: " + res.error.message); return; }
+        var battle = res.data;
+        supabaseClient.from("battle_invites").insert({from_user: cloudUserId, to_user: playerId, battle_id: battle.id}).then(function(res2){
+          if(res2.error){ showToast("⚠️ Xəta: " + res2.error.message); return; }
+          document.getElementById("battleWaitingText").textContent = playerName + " qəbul etməsini gözləyirik...";
+          document.getElementById("battleWaitingModal").classList.add("show");
+          closePlayerCard();
+        });
+      });
+  }
+
+  function startBattle(bId, opponentId, opponentName, isPlayer1){
+    battleId = bId;
+    battleOpponentId = opponentId;
+    battleIsPlayer1 = isPlayer1;
+    battleEnded = false;
+    gameMode = "battle";
+    document.getElementById("battleInviteModal").classList.remove("show");
+    document.getElementById("battleWaitingModal").classList.remove("show");
+    var lbl = document.getElementById("battleOpponentLbl");
+    if(lbl) lbl.textContent = (opponentName || "RƏQİB").toUpperCase().slice(0,8);
+    var scoreEl = document.getElementById("battleOpponentScoreVal");
+    if(scoreEl) scoreEl.textContent = "0";
+    startGame();
+    battleEndsAt = performance.now() + battleDurationSec * 1000;
+    battleTimerBadge.style.display = "";
+    battleOpponentBadge.style.display = "";
+    battleTimerVal.textContent = battleDurationSec;
+    clearInterval(battleTimerInterval);
+    battleTimerInterval = setInterval(function(){
+      var remain = Math.max(0, Math.ceil((battleEndsAt - performance.now())/1000));
+      battleTimerVal.textContent = remain;
+      if(remain <= 0){
+        clearInterval(battleTimerInterval);
+        endBattle();
+      }
+    }, 250);
+    clearInterval(battleScoreSyncInterval);
+    battleScoreSyncInterval = setInterval(syncMyBattleScore, 1000);
+    subscribeBattleChannel();
+  }
+
+  function syncMyBattleScore(){
+    if(!supabaseClient || !battleId) return;
+    var field = battleIsPlayer1 ? "player1_score" : "player2_score";
+    var update = {};
+    update[field] = sessionXpEarned;
+    supabaseClient.from("battles").update(update).eq("id", battleId).then(function(res){
+      if(res.error) console.error("Battle sync xətası:", res.error);
+    });
+  }
+
+  function subscribeBattleChannel(){
+    if(!supabaseClient || !battleId) return;
+    if(battleChannel){ supabaseClient.removeChannel(battleChannel); battleChannel = null; }
+    battleChannel = supabaseClient.channel("battle-" + battleId)
+      .on("postgres_changes", {event:"UPDATE", schema:"public", table:"battles", filter:"id=eq." + battleId}, function(payload){
+        var oppScore = battleIsPlayer1 ? payload.new.player2_score : payload.new.player1_score;
+        var el = document.getElementById("battleOpponentScoreVal");
+        if(el) el.textContent = oppScore || 0;
+      })
+      .subscribe();
+  }
+
+  function endBattle(){
+    if(battleEnded) return;
+    battleEnded = true;
+    spawning = false;
+    gameActive = false;
+    clearTimeout(spawnTimer);
+    clearBurstTimeouts();
+    clearFallingCubes();
+    stopGameMusic();
+    clearInterval(battleScoreSyncInterval);
+    accumulatePlayTime();
+    syncMyBattleScore();
+    var oppScoreEl = document.getElementById("battleOpponentScoreVal");
+    var oppScore = oppScoreEl ? (parseInt(oppScoreEl.textContent, 10) || 0) : 0;
+    var myScore = sessionXpEarned;
+    var titleEl = document.getElementById("battleResultTitle");
+    var statsEl = document.getElementById("battleResultStats");
+    if(myScore > oppScore) titleEl.textContent = "🏆 Sən qalib gəldin!";
+    else if(myScore < oppScore) titleEl.textContent = "💔 Rəqib qalib gəldi";
+    else titleEl.textContent = "🤝 Bərabərə";
+    statsEl.innerHTML = "Sənin xalın: <b>" + myScore + "</b><br>Rəqibin xalı: <b>" + oppScore + "</b>";
+    battleResultOverlay.classList.add("show");
+    battleTimerBadge.style.display = "none";
+    battleOpponentBadge.style.display = "none";
+    saveProfile();
+    if(battleChannel && supabaseClient){ supabaseClient.removeChannel(battleChannel); battleChannel = null; }
   }
 
   function rebuildColorPool(){
@@ -2232,7 +2431,8 @@
     resetCombo();
     playBreakSound();
     if(reason) showToast("💔 " + reason);
-    if(lives <= 0){
+    // Battle rejimində can bitməsi oyunu bitirmir — yalnız vaxt bitəndə bitir, hər iki oyunçu axıra qədər oynasın
+    if(lives <= 0 && gameMode !== "battle"){
       setTimeout(gameOver, 400);
     }
   }
@@ -3852,6 +4052,7 @@
     overlayEl.classList.remove("show");
     pauseOverlay.classList.remove("show");
     arcadeResultOverlay.classList.remove("show");
+    battleResultOverlay.classList.remove("show");
     if(gameMode === "arcade" && arcadeLevelNum){
       applyArcadeModifiers(buildArcadeLevel(arcadeLevelNum));
       levelBadge.style.display = "";
@@ -3859,6 +4060,10 @@
     } else {
       clearArcadeModifiers();
       levelBadge.style.display = "none";
+    }
+    if(gameMode !== "battle"){
+      battleTimerBadge.style.display = "none";
+      battleOpponentBadge.style.display = "none";
     }
     spawning = false;
     gameActive = false;
@@ -3943,11 +4148,24 @@
     gameMode = "endless";
     arcadeLevelNum = null;
     clearArcadeModifiers();
+    cleanupBattleState();
     stopGameMusic();
     accumulatePlayTime();
     renderProfile();
     startMenuBgAnim();
     startMenuMusic();
+  }
+
+  function cleanupBattleState(){
+    clearInterval(battleTimerInterval);
+    clearInterval(battleScoreSyncInterval);
+    if(battleChannel && supabaseClient){ supabaseClient.removeChannel(battleChannel); battleChannel = null; }
+    battleId = null;
+    battleOpponentId = null;
+    battleEnded = false;
+    battleResultOverlay.classList.remove("show");
+    battleTimerBadge.style.display = "none";
+    battleOpponentBadge.style.display = "none";
   }
 
   function returnToArcadeLevels(){
@@ -4052,6 +4270,30 @@
   document.getElementById("playerCardClose").addEventListener("click", closePlayerCard);
   document.getElementById("playerCardModal").addEventListener("click", function(e){
     if(e.target === this) closePlayerCard();
+  });
+  document.getElementById("battleInviteAccept").addEventListener("click", function(){
+    if(!pendingIncomingInvite) return;
+    var invite = pendingIncomingInvite;
+    supabaseClient.from("battle_invites").update({status:"accepted"}).eq("id", invite.id).then(function(res){
+      if(res.error){ showToast("⚠️ Xəta: " + res.error.message); return; }
+      document.getElementById("battleInviteModal").classList.remove("show");
+      supabaseClient.from("profiles").select("name").eq("id", invite.from_user).maybeSingle().then(function(res2){
+        startBattle(invite.battle_id, invite.from_user, (res2.data && res2.data.name) || "Rəqib", false);
+      });
+    });
+  });
+  document.getElementById("battleInviteDecline").addEventListener("click", function(){
+    if(!pendingIncomingInvite) return;
+    supabaseClient.from("battle_invites").update({status:"declined"}).eq("id", pendingIncomingInvite.id).then(function(){});
+    document.getElementById("battleInviteModal").classList.remove("show");
+    pendingIncomingInvite = null;
+  });
+  document.getElementById("battleWaitingCancel").addEventListener("click", function(){
+    document.getElementById("battleWaitingModal").classList.remove("show");
+  });
+  document.getElementById("battleResultMenuBtn").addEventListener("click", function(){
+    cleanupBattleState();
+    returnToMenu();
   });
   document.getElementById("dailyBtn").addEventListener("click", openDaily);
   document.getElementById("dailyBack").addEventListener("click", closeDaily);
