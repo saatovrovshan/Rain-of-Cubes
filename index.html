@@ -4742,9 +4742,9 @@
   });
   document.getElementById("playerCardMessageBtn").addEventListener("click", function(){
     if(!viewedPlayerId) return;
+    var peerId = viewedPlayerId;
     var name = document.getElementById("playerCardName").textContent;
-    closePlayerCard();
-    openChat(viewedPlayerId, name);
+    openChat(peerId, name);
   });
   document.getElementById("playerCardGiftBtn").addEventListener("click", function(){
     if(!viewedPlayerId) return;
