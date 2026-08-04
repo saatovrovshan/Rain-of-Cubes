@@ -1,0 +1,3637 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Rəngli Kublar</title>
+<style>
+  :root{
+    --bg:#faf8ef; --board:#bbada0; --board-cell:#cdc1b4; --ink:#776e65;
+    --ink-light:#f9f6f2; --panel:#eee4da; --red:#f2545b; --blue:#4a90d9;
+    --green:#6bbf59; --yellow:#f4c542; --purple:#a463d6; --orange:#ff9f43;
+    --pink:#ff6b9d; --cyan:#00d2d3; --gold:#ffd700;
+    --mono-black:#3a3a3a; --mono-gray:#9ea0a5; --mono-white:#eef0f2;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+  html,body{margin:0;padding:0;height:100%;background:#3a332c;font-family:"Segoe UI",Arial,sans-serif;overscroll-behavior:none;user-select:none;-webkit-user-select:none}
+  #app{max-width:480px;margin:0 auto;height:100vh;height:100dvh;background:var(--bg);display:flex;flex-direction:column;position:relative;overflow:hidden;box-shadow:0 0 40px rgba(0,0,0,.5)}
+
+  #menuScreen,#shopScreen,#profileScreen,#achievementsScreen,#dailyScreen,#arcadeScreen{position:absolute;inset:0;z-index:100;background:linear-gradient(180deg,#faf8ef,#f0e6d6);display:flex;flex-direction:column;padding:0;text-align:center;overflow-y:auto}
+  #menuScreen{justify-content:center;align-items:center;padding:24px}
+  #shopScreen{padding:16px;display:none}
+  #profileScreen{padding:16px;display:none;align-items:stretch}
+  #achievementsScreen{padding:16px;display:none;align-items:stretch}
+  #dailyScreen{padding:16px;display:none;align-items:stretch}
+  #arcadeScreen{padding:16px;display:none;align-items:stretch}
+  .shop-sticky-top{position:sticky;top:0;z-index:6;background:#faf8ef}
+  .shop-header{display:flex;align-items:center;justify-content:space-between;padding-bottom:10px;border-bottom:2px solid var(--board-cell)}
+  .shop-tabs{display:flex;flex-wrap:wrap;gap:6px;padding:10px 0}
+  .shop-tab-btn{flex:1 1 auto;min-width:76px;text-align:center;background:var(--panel);color:var(--ink);border:2px solid transparent;border-radius:16px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+  .shop-tab-btn.active{background:var(--green);color:#fff;box-shadow:0 3px 0 #4a9e3f}
+  .shop-header h2{margin:0;font-size:22px;color:var(--ink)}
+  .shop-gold{display:flex;align-items:center;gap:6px;font-size:18px;font-weight:800;color:var(--gold)}
+  .shop-back{background:var(--board);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer}
+  .shop-section{width:100%;margin-bottom:14px}
+  .shop-section-title{font-size:13px;font-weight:800;color:var(--ink);text-align:left;margin-bottom:8px;padding-left:6px;border-left:4px solid var(--green)}
+  .shop-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .shop-item{background:var(--panel);border-radius:12px;padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:5px;border:2px solid transparent;transition:border-color .2s}
+  .shop-item.owned{border-color:var(--green)}
+  .shop-item-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:24px;background:var(--board-cell)}
+  .shop-item-name{font-size:12px;font-weight:700;color:var(--ink)}
+  .shop-item-desc{font-size:9px;color:#a99;line-height:1.3;text-align:center;min-height:22px}
+  .shop-item-btn{background:var(--green);color:#fff;border:none;border-radius:8px;padding:5px 14px;font-size:11px;font-weight:700;cursor:pointer;margin-top:auto}
+  .shop-item-btn:disabled{background:#ccc;cursor:not-allowed}
+  .shop-item-btn.owned-btn{background:var(--blue)}
+  .shop-item-btn.disabled-btn{background:#b9ac9d}
+  .shop-item-owned{font-size:10px;font-weight:700;color:var(--ink);opacity:.65}
+
+  #menuScreen h1{font-size:34px;font-weight:800;color:var(--ink);margin:0 0 6px}
+  #menuScreen .subtitle{font-size:13px;color:#a99;font-weight:600;margin-bottom:20px}
+  .menu-stats{background:var(--panel);border-radius:12px;padding:14px 20px;display:flex;gap:24px;width:100%;box-sizing:border-box;justify-content:center}
+  .menu-stat{text-align:center}
+  .menu-stat .num{font-size:22px;font-weight:800;color:var(--ink)}
+  .menu-stat .lbl{font-size:10px;color:#a99;font-weight:700;text-transform:uppercase}
+  .menu-btn{background:var(--green);color:#fff;border:none;border-radius:10px;padding:14px 48px;font-size:17px;font-weight:800;cursor:pointer;box-shadow:0 4px 0 #4a9e3f,0 6px 12px rgba(0,0,0,.2);transition:transform .1s;margin-bottom:10px;width:220px}
+  .menu-btn:active{transform:translateY(3px);box-shadow:0 1px 0 #4a9e3f,0 2px 4px rgba(0,0,0,.2)}
+  .menu-btn.shop-btn{background:var(--orange);box-shadow:0 4px 0 #e68a33,0 6px 12px rgba(0,0,0,.2)}
+  .menu-btn.shop-btn:active{box-shadow:0 1px 0 #e68a33,0 2px 4px rgba(0,0,0,.2)}
+  .menu-btn.profile-btn{background:var(--blue);box-shadow:0 4px 0 #3a75b3,0 6px 12px rgba(0,0,0,.2)}
+  .menu-btn.profile-btn:active{box-shadow:0 1px 0 #3a75b3,0 2px 4px rgba(0,0,0,.2)}
+  .menu-btn.achievements-btn{background:var(--purple);box-shadow:0 4px 0 #7d3fa8,0 6px 12px rgba(0,0,0,.2)}
+  .menu-btn.achievements-btn:active{box-shadow:0 1px 0 #7d3fa8,0 2px 4px rgba(0,0,0,.2)}
+  .menu-btn.daily-btn{background:var(--pink);box-shadow:0 4px 0 #cc4d78,0 6px 12px rgba(0,0,0,.2);position:relative}
+  .menu-btn.daily-btn:active{box-shadow:0 1px 0 #cc4d78,0 2px 4px rgba(0,0,0,.2)}
+  .daily-btn-dot{position:absolute;top:-4px;right:16px;width:14px;height:14px;border-radius:50%;background:var(--red);border:2px solid #fff;animation:dailyDotPulse 1s ease-in-out infinite alternate}
+  @keyframes dailyDotPulse{from{transform:scale(1)}to{transform:scale(1.25)}}
+  .menu-btn.arcade-btn{background:var(--cyan);box-shadow:0 4px 0 #00a3a4,0 6px 12px rgba(0,0,0,.2)}
+  .menu-btn.arcade-btn:active{box-shadow:0 1px 0 #00a3a4,0 2px 4px rgba(0,0,0,.2)}
+
+  .arcade-level-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:14px 8px}
+  .arcade-level-card{background:var(--panel);border-radius:10px;padding:8px 4px 10px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;border:2px solid transparent;transition:transform .1s}
+  .arcade-level-card:active{transform:scale(.94)}
+  .arcade-level-card.locked{opacity:.4;cursor:not-allowed}
+  .arcade-level-card.perfect{background:linear-gradient(160deg,#fff3c4,#ffd966);border-color:var(--gold)}
+  .arcade-level-card.perfect .arcade-level-num{background:var(--gold);color:#7a5b00}
+  .arcade-level-num{font-size:15px;font-weight:800;color:var(--ink);background:var(--board);color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+  .arcade-level-badges{font-size:10px;min-height:12px;letter-spacing:1px}
+  .arcade-level-stars{font-size:11px;color:var(--gold);letter-spacing:1px}
+  .arcade-level-card.locked .arcade-level-stars{font-size:13px}
+  .arcade-total-stars{font-size:16px;font-weight:800;color:var(--gold);text-align:center;padding:8px 0 6px;text-shadow:0 1px 0 rgba(0,0,0,.15)}
+
+  .arcade-result-stars{font-size:40px;letter-spacing:6px;margin:6px 0}
+  .arcade-star{display:inline-block;filter:drop-shadow(0 0 0 transparent)}
+  .arcade-star.filled{animation:arcadeStarPop .5s cubic-bezier(.34,1.56,.64,1) backwards}
+  .arcade-star.filled:nth-child(1){animation-delay:.05s}
+  .arcade-star.filled:nth-child(2){animation-delay:.2s}
+  .arcade-star.filled:nth-child(3){animation-delay:.35s}
+  @keyframes arcadeStarPop{0%{transform:scale(0) rotate(-40deg);opacity:0}70%{transform:scale(1.3) rotate(10deg);opacity:1}100%{transform:scale(1) rotate(0)}}
+  #arcadeNextBtn{background:var(--cyan);box-shadow:0 4px 0 #00a3a4,0 6px 12px rgba(0,0,0,.2)}
+
+  .daily-days{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:16px}
+  .daily-day{background:var(--panel);border-radius:12px;padding:10px 4px;display:flex;flex-direction:column;align-items:center;gap:4px;border:2px solid transparent;opacity:.5}
+  .daily-day.past{opacity:1}
+  .daily-day.today{opacity:1;border-color:var(--pink);animation:dailyGlow 1s ease-in-out infinite alternate}
+  .daily-day.claimed{opacity:1;border-color:var(--green)}
+  @keyframes dailyGlow{from{box-shadow:0 0 0 rgba(255,107,157,0)}to{box-shadow:0 0 12px 3px rgba(255,107,157,.7)}}
+  .daily-day .dnum{font-size:10px;font-weight:800;color:var(--ink);opacity:.7}
+  .daily-day .dicon{font-size:22px}
+  .daily-day .dlbl{font-size:10px;font-weight:700;color:var(--ink)}
+  .daily-claim-btn{background:var(--pink);color:#fff;border:none;border-radius:10px;padding:14px 40px;font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 4px 0 #cc4d78,0 6px 12px rgba(0,0,0,.2);margin:8px auto 20px}
+  .daily-claim-btn:active{transform:translateY(3px);box-shadow:0 1px 0 #cc4d78,0 2px 4px rgba(0,0,0,.2)}
+  .daily-claim-btn:disabled{background:#b9ac9d;box-shadow:none;cursor:not-allowed}
+  .menu-hint{margin-top:16px;font-size:11px;color:#a99;line-height:1.6;max-width:320px}
+  .menu-hint b{color:var(--ink)}
+
+  .menu-bg-cubes{position:absolute;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+  .bg-cube{position:absolute;top:0;left:0;border-radius:7px;opacity:0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.85);animation:bgCubeFall var(--dur,10s) linear forwards;will-change:transform,opacity}
+  .bg-cube.sparkle{animation:bgCubeFall var(--dur,10s) linear forwards, bgCubeGlow .9s ease-in-out var(--glowDelay,1s) 3}
+  @keyframes bgCubeFall{
+    0%{transform:translateY(-40px) translateX(0) rotate(0deg);opacity:0}
+    10%{opacity:var(--peak,.25)}
+    50%{transform:translateY(calc(var(--travel,600px) * .5)) translateX(var(--sway,0px)) rotate(var(--rotmid,120deg));opacity:var(--peak,.25)}
+    90%{opacity:var(--peak,.25)}
+    100%{transform:translateY(var(--travel,600px)) translateX(0) rotate(var(--rotend,300deg));opacity:0}
+  }
+  @keyframes bgCubeGlow{
+    0%,100%{filter:brightness(1) saturate(1)}
+    50%{filter:brightness(2.1) saturate(1.4)}
+  }
+
+  .sound-toggles{display:flex;gap:8px;justify-content:center;margin-top:16px}
+  .sound-toggle{background:var(--panel);color:var(--ink);border:2px solid var(--board-cell);border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px}
+  .sound-toggle.off{opacity:.5;border-color:transparent}
+
+  .profile-edit{background:var(--panel);border-radius:12px;padding:12px;display:flex;align-items:center;gap:10px;margin-top:4px}
+  .xp-progress{background:var(--panel);border-radius:12px;padding:12px 14px;margin:18px 0;text-align:left;width:100%;box-sizing:border-box}
+  .xp-progress-menu{display:flex;align-items:center;gap:12px}
+  /* ===== Profil şəkli (squircle) + çərçivə sistemi — menyu, oyun içi və profil ekranında paylaşılır ===== */
+  .ppic{position:relative;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+  .ppic-sm{width:34px;height:34px;--orbit-r:19px}
+  .ppic-md{width:44px;height:44px;--orbit-r:24px}
+  .ppic-lg{width:168px;height:168px;--orbit-r:92px}
+  .ppic-inner{width:100%;height:100%;border-radius:28%;overflow:hidden;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;position:relative;z-index:2;box-shadow:inset 0 -3px 0 rgba(0,0,0,.15);border:2px solid rgba(255,255,255,.55)}
+  .ppic-inner img{width:100%;height:100%;object-fit:cover;display:block}
+  .ppic-sm .ppic-level-fallback{font-size:16px}
+  .ppic-md .ppic-level-fallback{font-size:20px}
+  .ppic-lg .ppic-level-fallback{font-size:80px}
+  .ppic-flag-fill{width:100%;height:100%}
+  .ppic-flag-fill img{width:100%;height:100%;object-fit:cover;display:block}
+  .ppic-flag-badge{position:absolute;right:-3px;bottom:-3px;line-height:1;background:#fff;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.4);z-index:5;overflow:hidden}
+  .ppic-flag-badge img{width:100%;height:100%;object-fit:cover;display:block}
+  .ppic-sm .ppic-flag-badge{width:14px;height:14px;right:-2px;bottom:-2px}
+  .ppic-lg .ppic-flag-badge{width:52px;height:52px;right:-8px;bottom:-8px}
+  .ppic-flash-overlay{position:absolute;inset:0;border-radius:28%;pointer-events:none;z-index:4;opacity:0}
+  .ppic-flash-overlay.flash-active{animation:ppicFlash .45s ease-out}
+  @keyframes ppicFlash{0%{opacity:1;box-shadow:0 0 0 0 rgba(255,255,255,.95),inset 0 0 16px 6px rgba(255,255,255,.95)}100%{opacity:0;box-shadow:0 0 0 0 rgba(255,255,255,0),inset 0 0 16px 6px rgba(255,255,255,0)}}
+
+  /* Statik rəngli çərçivələr */
+  .ppic.frame-gold .ppic-inner{border:3px solid #ffd700;box-shadow:0 0 8px 1px rgba(255,215,0,.7),inset 0 -3px 0 rgba(0,0,0,.15)}
+  .ppic.frame-emerald .ppic-inner{border:3px solid #2ecc71;box-shadow:0 0 8px 1px rgba(46,204,113,.7),inset 0 -3px 0 rgba(0,0,0,.15)}
+
+  /* Neon İmpuls: fırlanan konus-qradiyent halə */
+  .ppic.frame-neon::before{content:"";position:absolute;inset:-4px;border-radius:32%;background:conic-gradient(from 0deg,#ff5b5b,#ffb347,#ffe066,#6bdc6b,#57c7ff,#b98bff,#ff5b5b);animation:frameNeonSpin 2.2s linear infinite;z-index:1}
+  .ppic.frame-neon .ppic-inner{border:3px solid rgba(255,255,255,.85)}
+  @keyframes frameNeonSpin{to{transform:rotate(360deg)}}
+
+  /* Alov Çərçivəsi: döyünən istilik parıltısı */
+  .ppic.frame-fire .ppic-inner{border:3px solid #ff6a00;animation:frameFirePulse .5s ease-in-out infinite alternate}
+  @keyframes frameFirePulse{0%{box-shadow:0 0 8px 2px rgba(255,90,0,.6),inset 0 -3px 0 rgba(0,0,0,.15)}100%{box-shadow:0 0 17px 5px rgba(255,150,0,.9),inset 0 -3px 0 rgba(0,0,0,.15)}}
+
+  /* Neon İşıq: əsl neon lampa kimi çaxnaşan/döyünən parlaq işıq haşiyəsi */
+  .ppic.frame-neonlight .ppic-inner{border:3px solid #ff2fd1;animation:neonLightFlicker 2.4s linear infinite}
+  @keyframes neonLightFlicker{
+    0%,2%,5%,34%,37%,100%{box-shadow:0 0 8px 2px #ff2fd1,0 0 18px 5px rgba(255,47,209,.65),0 0 30px 9px rgba(0,229,255,.4),inset 0 -3px 0 rgba(0,0,0,.15)}
+    3%,4%{box-shadow:0 0 2px 1px #ff2fd1,inset 0 -3px 0 rgba(0,0,0,.15)}
+    35%,36%{box-shadow:0 0 4px 1px #ff2fd1,inset 0 -3px 0 rgba(0,0,0,.15)}
+  }
+
+  /* Ulduz Yağışı: ətrafda parpıldayan ulduz zərrəcikləri */
+  .ppic.frame-star .ppic-inner{border:3px solid rgba(255,215,0,.7);box-shadow:0 0 8px 2px rgba(255,215,0,.5)}
+  .ppic-star-orbit{position:absolute;inset:0;pointer-events:none;z-index:3}
+  .ppic-star-twinkle{position:absolute;top:50%;left:50%;font-size:11px;transform:translate(-50%,-50%) rotate(var(--ang,0deg)) translateY(calc(-1 * var(--orbit-r)));animation:starTwinkle 1.3s ease-in-out infinite}
+  @keyframes starTwinkle{0%,100%{opacity:.2;filter:brightness(1) scale(.8)}50%{opacity:1;filter:brightness(1.7) scale(1.15)}}
+
+  .profile-photo-section{display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:6px}
+  .photo-actions{display:flex;gap:8px}
+  .photo-upload-btn,.photo-remove-btn{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:11px;font-weight:700;cursor:pointer;display:inline-block}
+  .photo-remove-btn{background:var(--red)}
+  .flag-picker{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;background:var(--panel);border-radius:10px;padding:10px}
+  .flag-btn{background:transparent;border:2px solid transparent;border-radius:6px;padding:6px 4px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;min-height:34px}
+  .flag-btn img{width:100%;height:24px;object-fit:cover;border-radius:3px;box-shadow:0 0 0 1px rgba(0,0,0,.15);display:block}
+  .flag-btn.active{border-color:var(--green);background:rgba(107,191,89,.15)}
+  .flag-btn.flag-none{font-size:14px;color:var(--ink);font-weight:800}
+  .flag-current-btn{background:var(--panel);border:2px solid transparent;border-radius:10px;padding:8px 18px;cursor:pointer;line-height:1;display:inline-flex;align-items:center;gap:10px}
+  .flag-current-btn img{width:44px;height:30px;object-fit:cover;border-radius:4px;box-shadow:0 0 0 1px rgba(0,0,0,.15);display:block}
+  .flag-current-btn .flag-current-label{font-size:12px;font-weight:700;color:var(--ink)}
+  .modal-overlay{position:absolute;inset:0;background:rgba(58,51,44,.92);display:flex;align-items:center;justify-content:center;z-index:150;opacity:0;pointer-events:none;transition:opacity .3s ease;padding:24px}
+  .modal-overlay.show{opacity:1;pointer-events:auto}
+  .modal-panel{background:var(--bg);border-radius:14px;padding:16px;width:100%;max-width:400px;max-height:80vh;overflow-y:auto;text-align:left}
+  .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .modal-header h3{margin:0;font-size:16px;color:var(--ink)}
+  .modal-close{background:var(--red);color:#fff;border:none;border-radius:50%;width:28px;height:28px;font-size:14px;cursor:pointer;flex-shrink:0}
+  .menu-settings-btn{position:absolute;top:16px;right:16px;font-size:18px;padding:8px 11px;z-index:5}
+  .xp-progress-body{flex:1;min-width:0}
+  .menu-player-name{font-size:13px;font-weight:800;color:var(--ink);text-align:left;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .xp-progress-track{height:10px;border-radius:5px;background:#ddd2c4;overflow:hidden;margin-bottom:6px}
+  .xp-progress-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,#6bbf59,#4a90d9);width:0%;transition:width .4s ease}
+  .xp-progress-text{font-size:11px;font-weight:700;color:var(--ink)}
+  .xp-remaining{font-size:9px;font-weight:700;color:#a99;margin-left:5px}
+  .profile-edit label{font-size:12px;font-weight:700;color:var(--ink)}
+  .profile-edit input{flex:1;border:2px solid var(--board-cell);border-radius:8px;padding:8px 10px;font-size:14px;font-family:inherit;min-width:0}
+  .profile-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+  .profile-stat{background:var(--panel);border-radius:12px;padding:14px 8px;text-align:center}
+  .profile-stat .pnum{font-size:19px;font-weight:800;color:var(--ink)}
+  .profile-stat .plbl{font-size:9px;color:#a99;font-weight:700;text-transform:uppercase;margin-top:3px}
+  .profile-section-title{font-size:13px;font-weight:800;color:var(--ink);text-align:left;margin:18px 0 8px;padding-left:6px;border-left:4px solid var(--orange)}
+  .music-track-list{display:flex;flex-direction:column;gap:6px}
+  .music-track-row{display:flex;align-items:center;gap:8px;background:var(--panel);border-radius:8px;padding:8px 10px}
+  .music-track-name{flex:1;text-align:left;font-size:12px;font-weight:700;color:var(--ink);min-width:0}
+  .music-btn{background:var(--board);color:var(--ink-light);border:none;border-radius:7px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;white-space:nowrap}
+  .music-btn.preview-btn{padding:6px 9px;font-size:13px}
+  .music-btn.slot-btn.active{background:var(--green)}
+  .music-btn.preview-btn.active{background:var(--red)}
+  .records-list,.achievements-list{display:flex;flex-direction:column;gap:6px}
+  .record-row{display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;color:var(--ink)}
+  .record-row .rank{width:22px;height:22px;border-radius:50%;background:var(--board);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
+  .record-row .rscore{flex:1;text-align:left}
+  .record-row .rmeta{font-size:10px;color:#a99;font-weight:600}
+  .empty-hint{font-size:11px;color:#a99;text-align:left;padding:4px 6px}
+  .achievement-row{display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:8px;padding:8px 10px;opacity:.45}
+  .achievement-row.unlocked{opacity:1;background:#e8f5e9}
+  .achievement-icon{font-size:20px;width:30px;text-align:center;flex-shrink:0}
+  .achievement-info{flex:1;text-align:left;min-width:0}
+  .achievement-name{font-size:12px;font-weight:700;color:var(--ink)}
+  .achievement-desc{font-size:9px;color:#a99}
+
+  header{padding:8px 12px 4px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .title{font-size:20px;font-weight:800;color:var(--ink);letter-spacing:.5px}
+  .title small{display:block;font-size:9px;font-weight:600;color:#a99}
+  .badges{display:flex;gap:5px;align-items:center}
+  .badge{background:var(--board);color:var(--ink-light);border-radius:6px;padding:4px 8px;text-align:center;min-width:42px}
+  .badge .lbl{font-size:8px;font-weight:700;opacity:.7}
+  .badge .val{font-size:14px;font-weight:800}
+  .hearts{display:flex;gap:2px;font-size:14px}
+  .heart.lost{opacity:.25}
+  .icon-btn{background:var(--board);color:var(--ink-light);border:none;border-radius:6px;padding:4px 9px;font-size:15px;cursor:pointer;line-height:1}
+  .icon-btn:active{transform:scale(.92)}
+
+  .profile{margin:2px 12px 6px;display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:10px;padding:7px 10px}
+  .profile-info{flex:1;min-width:0}
+  .profile-name{font-size:12px;font-weight:700;color:var(--ink);display:flex;justify-content:space-between;align-items:center}
+  .profile-name-left{display:flex;align-items:center;gap:6px}
+  .level-balloon{display:inline-flex;align-items:center;justify-content:center;background:var(--gold);color:#7a5a00;font-size:10px;font-weight:800;border-radius:10px;padding:2px 7px;line-height:1.4}
+  .combo-text{font-size:10px;font-weight:800;color:var(--orange)}
+  .combo-bar-track{margin-top:3px;height:7px;border-radius:4px;background:#ddd2c4;overflow:hidden}
+  .combo-bar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,#ff9f43,#f2545b);width:0%;transition:width .25s ease}
+  .combo-bar-track.combo-active{animation:comboGlow .6s ease-in-out infinite alternate}
+  .combo-bar-track.combo-active .combo-bar-fill{background:linear-gradient(90deg,#ffd700,#ff6b9d,#a463d6);background-size:200% 100%;animation:comboShift 1s linear infinite}
+  @keyframes comboGlow{from{box-shadow:0 0 0 rgba(255,159,67,0)}to{box-shadow:0 0 10px 2px rgba(255,159,67,.85)}}
+  @keyframes comboShift{from{background-position:0% 0}to{background-position:200% 0}}
+
+  .powerups{margin:0 12px 6px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+  .powerup-btn{width:42px;height:42px;border-radius:10px;background:var(--panel);border:2px solid var(--board-cell);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;position:relative;transition:transform .1s,border-color .2s}
+  .powerup-btn:active{transform:scale(.9)}
+  .powerup-btn .count{position:absolute;bottom:-4px;right:-4px;background:var(--red);color:#fff;font-size:9px;font-weight:800;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+  .powerup-btn:disabled{opacity:.4;cursor:not-allowed}
+
+  .mission{margin:0 12px 8px;background:var(--panel);border-radius:10px;padding:10px 12px}
+  .mission-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .mission-swatch{width:22px;height:22px;border-radius:6px;flex-shrink:0;box-shadow:inset 0 -3px 0 rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;font-size:15px}
+  .mission-text{font-size:13px;font-weight:700;color:var(--ink)}
+  .mission-progress{color:var(--green);font-weight:800}
+  .mission-text b{font-weight:800}
+  .slots{display:flex;flex-wrap:wrap;gap:6px}
+  .slot{width:28px;height:28px;border-radius:7px;border:2px dashed #b9ac9d;background:rgba(255,255,255,.35);transition:transform .25s cubic-bezier(.34,1.56,.64,1),background .25s,border-color .25s;display:flex;align-items:center;justify-content:center;font-size:16px}
+  .slot.filled{border-style:solid;box-shadow:inset 0 -3px 0 rgba(0,0,0,.15);animation:pop .3s cubic-bezier(.34,1.56,.64,1)}
+  @keyframes pop{0%{transform:scale(.3)}70%{transform:scale(1.15)}100%{transform:scale(1)}}
+
+  #field{position:relative;flex:1;margin:0 12px 8px;background:var(--board);border-radius:10px;overflow:hidden}
+  .cube{position:absolute;width:46px;height:46px;border-radius:9px;box-shadow:inset 0 -5px 0 rgba(0,0,0,.18),0 3px 6px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.9);font-size:22px;cursor:pointer;will-change:transform;top:-56px;z-index:5}
+  .cube.flying{transition:transform .45s cubic-bezier(.5,0,.5,1),opacity .45s ease;z-index:20}
+  /* Smayli TAM (kəsilmədən) göstərilir — ürək gözlər, eynək qolları, göz yaşı damcıları kimi
+     dairədən kənara çıxan hissələr görünməli. Toxunma sahəsi isə ayrı, görünməz dairəvi
+     .smiley-hit qatı üzərindən idarə olunur (aşağıya bax) ki, üst-üstə düşəndə künc boşluğuna
+     toxunma bu kubu deyil, altındakını tutsun */
+  .cube.theme-pure-smiley{background:transparent !important;box-shadow:none !important;font-size:44px;pointer-events:none;overflow:visible}
+  .smiley-hit{position:absolute;inset:0;border-radius:50%;pointer-events:auto}
+  .cube.hammer-cube{background:radial-gradient(circle at 35% 30%,#fff3c4,#ffcc33 45%,#ff9f43 80%) !important;box-shadow:0 0 14px 4px rgba(255,215,0,.75),inset 0 -5px 0 rgba(0,0,0,.12),0 3px 6px rgba(0,0,0,.25);animation:hammerPulse .8s ease-in-out infinite alternate;z-index:8}
+  .cube.hammer-cube svg{width:30px;height:30px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35))}
+  @keyframes hammerPulse{from{box-shadow:0 0 10px 2px rgba(255,215,0,.6),inset 0 -5px 0 rgba(0,0,0,.12),0 3px 6px rgba(0,0,0,.25)}to{box-shadow:0 0 22px 7px rgba(255,180,0,.9),inset 0 -5px 0 rgba(0,0,0,.12),0 3px 6px rgba(0,0,0,.25)}}
+
+  /* ALOV: əsl 🔥 emoji (buzun ❄ istifadə etməsi kimi) — tək, birləşmiş animasiya (əvvəlki versiyada
+     iki animasiya eyni transform xassəsini idarə etməyə çalışırdı, bu da sınıq görüntüyə səbəb olurdu) */
+  .cube.fx-fire{box-shadow:inset 0 -5px 0 rgba(0,0,0,.18),0 0 16px 5px rgba(255,110,20,.6),0 3px 6px rgba(0,0,0,.25)}
+  .cube.fx-fire::before{content:"🔥";position:absolute;left:50%;bottom:-15px;font-size:20px;line-height:1;
+    transform-origin:center bottom;
+    filter:drop-shadow(0 0 5px rgba(255,140,20,.85));
+    animation:fireFlicker .4s ease-in-out infinite alternate;
+    pointer-events:none;z-index:1}
+  @keyframes fireFlicker{
+    0%{transform:translateX(-50%) scale(1) rotate(-5deg)}
+    50%{transform:translateX(-50%) scale(1.15) rotate(4deg)}
+    100%{transform:translateX(-53%) scale(1.05) rotate(-2deg)}
+  }
+  .fire-ember{position:absolute;bottom:2px;width:4px;height:4px;border-radius:50%;background:radial-gradient(circle,#ffe9a8,#ff8a3d 70%,transparent);pointer-events:none;animation:emberRise 1.1s ease-in infinite}
+  @keyframes emberRise{0%{transform:translate(0,0) scale(1);opacity:.95}80%{opacity:.5}100%{transform:translate(var(--ex,6px),-30px) scale(.15);opacity:0}}
+
+  /* BUZ: kristal parıltı təbəqəsi + fırlanan dənə + parlayan buz qırıntıları */
+  .cube.fx-ice{box-shadow:inset 0 -5px 0 rgba(0,0,0,.18),0 0 12px 3px rgba(120,210,255,.65),0 3px 6px rgba(0,0,0,.25)}
+  .cube.fx-ice::before{content:"";position:absolute;inset:0;border-radius:9px;
+    background:linear-gradient(135deg,rgba(255,255,255,.4) 0%,transparent 32%,transparent 68%,rgba(255,255,255,.28) 100%);
+    pointer-events:none}
+  .cube.fx-ice::after{content:"❄";position:absolute;top:-9px;right:-5px;font-size:13px;color:#dff4ff;text-shadow:0 0 4px #7ecbff;animation:spin 2.4s linear infinite;pointer-events:none}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .ice-glint{position:absolute;width:5px;height:5px;background:#fff;border-radius:50%;box-shadow:0 0 6px 2px #fff;pointer-events:none;animation:iceGlint 1.6s ease-in-out infinite}
+  @keyframes iceGlint{0%,100%{opacity:0;transform:scale(.3)}50%{opacity:1;transform:scale(1)}}
+
+  /* HAYALET: dalğalı bulanıqlıq + arxada həll olan solğun iz */
+  .cube.fx-ghost{opacity:.78;filter:drop-shadow(0 0 6px rgba(200,190,255,.55));animation:ghostPulse 1.4s ease-in-out infinite, ghostBlur 2.2s ease-in-out infinite}
+  @keyframes ghostPulse{0%,100%{opacity:.82}50%{opacity:.46}}
+  @keyframes ghostBlur{0%,100%{filter:blur(0) drop-shadow(0 0 6px rgba(200,190,255,.55))}50%{filter:blur(.6px) drop-shadow(0 0 9px rgba(200,190,255,.75))}}
+  .ghost-wisp{position:absolute;inset:0;border-radius:9px;background:inherit;opacity:.25;pointer-events:none;animation:ghostWisp 1.4s ease-out infinite}
+  @keyframes ghostWisp{0%{transform:translateY(-3px) scale(1);opacity:.3}100%{transform:translateY(12px) scale(.85);opacity:0}}
+
+  /* YENİ — ELEKTRİK: çaxnaşan parıltı + yan-yana qığılcım oxları */
+  .cube.fx-electric{box-shadow:inset 0 -5px 0 rgba(0,0,0,.18),0 0 10px 3px rgba(140,220,255,.7),0 3px 6px rgba(0,0,0,.25);animation:electricFlicker .22s steps(2) infinite}
+  @keyframes electricFlicker{0%,100%{filter:brightness(1) saturate(1)}50%{filter:brightness(1.6) saturate(1.3)}}
+  .electric-bolt{position:absolute;top:-4px;pointer-events:none;color:#eafcff;text-shadow:0 0 6px #7fe3ff,0 0 12px #3ec6ff;font-size:14px;animation:boltFlash .5s steps(1) infinite}
+  @keyframes boltFlash{0%,40%,100%{opacity:0}45%,55%{opacity:1}}
+
+  /* YENİ — GÖY QURŞAĞI: ətrafda dövr edən rəngli parıltı (kubikin öz əsl rəngi DƏYİŞMİR ki, misya rəngi
+     tanınmaz olmasın — yalnız ətraf halə rəng dəyişir) + parlaq rəngli qığılcımlar */
+  .cube.fx-rainbow{box-shadow:inset 0 -5px 0 rgba(0,0,0,.18),0 3px 6px rgba(0,0,0,.25);animation:rainbowGlow 2.4s linear infinite}
+  @keyframes rainbowGlow{
+    0%{box-shadow:inset 0 -5px 0 rgba(0,0,0,.18),0 3px 6px rgba(0,0,0,.25),0 0 14px 4px rgba(255,90,90,.7)}
+    17%{box-shadow:inset 0 -5px 0 rgba(0,0,0,.18),0 3px 6px rgba(0,0,0,.25),0 0 14px 4px rgba(255,190,60,.7)}
+    34%{box-shadow:inset 0 -5px 0 rgba(0,0,0,.18),0 3px 6px rgba(0,0,0,.25),0 0 14px 4px rgba(255,240,80,.7)}
+    50%{box-shadow:inset 0 -5px 0 rgba(0,0,0,.18),0 3px 6px rgba(0,0,0,.25),0 0 14px 4px rgba(90,220,110,.7)}
+    67%{box-shadow:inset 0 -5px 0 rgba(0,0,0,.18),0 3px 6px rgba(0,0,0,.25),0 0 14px 4px rgba(80,180,255,.7)}
+    84%{box-shadow:inset 0 -5px 0 rgba(0,0,0,.18),0 3px 6px rgba(0,0,0,.25),0 0 14px 4px rgba(180,110,255,.7)}
+    100%{box-shadow:inset 0 -5px 0 rgba(0,0,0,.18),0 3px 6px rgba(0,0,0,.25),0 0 14px 4px rgba(255,90,90,.7)}
+  }
+  .rainbow-spark{position:absolute;width:4px;height:4px;border-radius:50%;pointer-events:none;animation:rainbowSparkle 1s ease-in-out infinite}
+  @keyframes rainbowSparkle{0%,100%{opacity:0;transform:scale(.4)}50%{opacity:1;transform:scale(1.15)}}
+
+  .explosion{position:absolute;width:60px;height:60px;border-radius:50%;background:radial-gradient(circle,rgba(255,200,0,.8) 0%,rgba(255,100,0,.4) 40%,transparent 70%);animation:explode .5s ease-out forwards;pointer-events:none;z-index:25}
+  @keyframes explode{0%{transform:scale(0);opacity:1}100%{transform:scale(3);opacity:0}}
+
+  .floating-text{position:absolute;font-weight:800;font-size:20px;color:#fff;text-shadow:0 2px 4px rgba(0,0,0,.55);pointer-events:none;z-index:22;white-space:nowrap;animation:floatUp .9s ease-out forwards}
+  @keyframes floatUp{0%{transform:translate(-50%,0);opacity:1}100%{transform:translate(-50%,-42px);opacity:0}}
+
+  /* Sınma effektləri: kubik sınanda (səhv toxunuş / çəkic / bomba) yaranan hissəcik animasiyaları */
+  .brk-particle{position:absolute;top:0;left:0;pointer-events:none;z-index:24;will-change:transform,opacity}
+  .brk-shard{border-radius:2px;box-shadow:0 0 3px rgba(0,0,0,.35);animation:brkShardAnim .55s cubic-bezier(.25,.8,.4,1) forwards}
+  @keyframes brkShardAnim{
+    0%{transform:translate(-50%,-50%) rotate(0deg) scale(1);opacity:1}
+    100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) rotate(var(--rot)) scale(.35);opacity:0}
+  }
+  .brk-confetti{border-radius:1px;animation:brkConfettiAnim .7s ease-out forwards}
+  @keyframes brkConfettiAnim{
+    0%{transform:translate(-50%,-50%) rotate(0deg);opacity:1}
+    100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) rotate(var(--rot));opacity:0}
+  }
+  .brk-pixel{animation:brkPixelAnim .5s ease-out forwards}
+  @keyframes brkPixelAnim{
+    0%{transform:translate(-50%,-50%) scale(1);opacity:1}
+    100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(0);opacity:0}
+  }
+  .brk-star{font-size:16px;line-height:1;color:#ffd700;text-shadow:0 0 6px rgba(255,215,0,.9);animation:brkStarAnim .6s ease-out forwards}
+  @keyframes brkStarAnim{
+    0%{transform:translate(-50%,-50%) scale(.3) rotate(0deg);opacity:1}
+    40%{transform:translate(-50%,-50%) scale(1.3) rotate(60deg);opacity:1}
+    100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(.2) rotate(180deg);opacity:0}
+  }
+
+  .mission-flash{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:15;opacity:0;animation:missionFlashFade .85s ease-out forwards}
+  .mission-flash-circle{width:110px;height:110px;border-radius:50%;box-shadow:0 8px 28px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:52px;animation:missionFlashPop .85s cubic-bezier(.34,1.56,.64,1) forwards}
+  @keyframes missionFlashFade{0%{opacity:0}12%{opacity:1}65%{opacity:1}100%{opacity:0}}
+  @keyframes missionFlashPop{0%{transform:scale(.3)}35%{transform:scale(1.2)}60%{transform:scale(1)}100%{transform:scale(1)}}
+
+  .toast{position:absolute;left:50%;top:16px;transform:translateX(-50%);background:rgba(0,0,0,.75);color:#fff;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .25s ease,top .25s ease;z-index:30;white-space:nowrap}
+  .toast.show{opacity:1;top:26px}
+
+  .smash-timer{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#ff9f43,#f2545b);color:#fff;font-weight:800;font-size:16px;padding:6px 16px;border-radius:20px;z-index:40;box-shadow:0 2px 10px rgba(0,0,0,.35);display:none;align-items:center;gap:6px}
+  .slow-timer{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#4a90d9,#00d2d3);color:#fff;font-weight:800;font-size:16px;padding:6px 16px;border-radius:20px;z-index:40;box-shadow:0 2px 10px rgba(0,0,0,.35);display:none;align-items:center;gap:6px}
+  .shield-timer{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#6bbf59,#00d2d3);color:#fff;font-weight:800;font-size:16px;padding:6px 16px;border-radius:20px;z-index:40;box-shadow:0 2px 10px rgba(0,0,0,.35);display:none;align-items:center;gap:6px}
+  .fast-timer{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#a463d6,#ff6b9d);color:#fff;font-weight:800;font-size:16px;padding:6px 16px;border-radius:20px;z-index:40;box-shadow:0 2px 10px rgba(0,0,0,.35);display:none;align-items:center;gap:6px}
+
+  .overlay{position:absolute;inset:0;background:rgba(58,51,44,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center;padding:24px;z-index:50;opacity:0;pointer-events:none;transition:opacity .3s ease}
+  .overlay.show{opacity:1;pointer-events:auto}
+  .overlay h2{font-size:26px;margin:0 0 6px;font-weight:800}
+  .overlay p{margin:4px 0;opacity:.85;font-size:14px}
+  .overlay button{margin-top:14px;background:var(--green);color:#fff;border:none;border-radius:8px;padding:12px 28px;font-size:15px;font-weight:800;cursor:pointer}
+  .overlay button.menu-return{background:var(--blue);margin-top:8px}
+  .overlay button.danger{background:var(--red)}
+  .overlay .sound-toggles{margin-top:6px}
+  .overlay .sound-toggle{background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.3)}
+
+  .slow-overlay{position:absolute;inset:0;background:rgba(100,200,255,.08);pointer-events:none;z-index:3;opacity:0;transition:opacity .3s}
+  .slow-overlay.active{opacity:1}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div id="menuScreen">
+    <div class="menu-bg-cubes" id="menuBgCubes"></div>
+    <button class="icon-btn menu-settings-btn" id="settingsBtn" title="Parametrlər">⚙️</button>
+    <h1>🔥 Rəngli Kublar</h1>
+    <div class="subtitle">MİSYA REJİMİ</div>
+    <div class="menu-stats">
+      <div class="menu-stat"><div class="num" id="menuLvl">1</div><div class="lbl">Səviyyə</div></div>
+      <div class="menu-stat"><div class="num" id="menuGold">0</div><div class="lbl">Qızıl</div></div>
+      <div class="menu-stat"><div class="num" id="menuMissions">0</div><div class="lbl">Misyalar</div></div>
+    </div>
+    <div class="xp-progress xp-progress-menu">
+      <div class="ppic ppic-md" id="menuPhoto"></div>
+      <div class="xp-progress-body">
+        <div class="menu-player-name" id="menuPlayerName">Oyunçu</div>
+        <div class="xp-progress-track"><div class="xp-progress-fill" id="menuXpFill"></div></div>
+        <div class="xp-progress-text" id="menuXpText">0 / 3000 XP</div>
+      </div>
+    </div>
+    <button class="menu-btn" id="startBtn">▶ Oyna</button>
+    <button class="menu-btn shop-btn" id="shopBtn">🛒 Mağaza</button>
+    <button class="menu-btn profile-btn" id="profileBtn">👤 Profil</button>
+    <button class="menu-btn achievements-btn" id="achievementsBtn">🎖️ Nailiyyətlər</button>
+    <button class="menu-btn daily-btn" id="dailyBtn">🎁 Gündəlik Mükafat<span class="daily-btn-dot" id="dailyBtnDot" style="display:none"></span></button>
+    <button class="menu-btn arcade-btn" id="arcadeBtn">🕹️ Arkada Rejimi</button>
+    <div class="menu-hint">
+      <b>Qaydalar:</b><br>
+      Düşən kubiklərdən misyadakı rəngləri yığ.<br>
+      Səhv rəngə toxunma — can itirərsən!<br>
+      <b>Heç bir kubik yerə düşməsin!</b><br>
+      Hər kubikə toxunmalısan.
+    </div>
+    <div class="sound-toggles">
+      <button class="sound-toggle" id="musicToggleMenu">🎵 Musiqi</button>
+      <button class="sound-toggle" id="sfxToggleMenu">🔔 Səs effekti</button>
+    </div>
+  </div>
+
+  <div id="shopScreen">
+    <div class="shop-sticky-top">
+      <div class="shop-header">
+        <button class="shop-back" id="shopBack">← Geri</button>
+        <h2>🛒 Mağaza</h2>
+        <div class="shop-gold">🪙 <span id="shopGoldVal">0</span></div>
+      </div>
+      <div class="shop-tabs" id="shopTabs"></div>
+    </div>
+    <div id="shopContent"></div>
+  </div>
+
+  <div id="profileScreen">
+    <div class="shop-header">
+      <button class="shop-back" id="profileBack">← Geri</button>
+      <h2>👤 Profil</h2>
+    </div>
+    <div class="profile-photo-section">
+      <div class="ppic ppic-lg" id="profilePhotoBig"></div>
+      <div class="photo-actions">
+        <label class="photo-upload-btn" for="photoInput">📷 Şəkil yüklə</label>
+        <input type="file" id="photoInput" accept="image/*" style="display:none">
+        <button class="photo-remove-btn" id="photoRemoveBtn">🗑️ Sil</button>
+      </div>
+    </div>
+    <div class="profile-edit">
+      <label for="nameInput">Ad:</label>
+      <input type="text" id="nameInput" maxlength="14" placeholder="Adınız">
+    </div>
+    <div class="profile-section-title">🚩 Ölkə Bayrağı</div>
+    <button class="flag-current-btn" id="flagCurrentBtn"></button>
+    <div class="xp-progress">
+      <div class="xp-progress-track"><div class="xp-progress-fill" id="profileXpFill"></div></div>
+      <div class="xp-progress-text" id="profileXpText">0 / 3000 XP</div>
+    </div>
+    <div class="profile-stats-grid">
+      <div class="profile-stat"><div class="pnum" id="statLevel">1</div><div class="plbl">Səviyyə</div></div>
+      <div class="profile-stat"><div class="pnum" id="statXpTotal">0</div><div class="plbl">Ümumi xal</div></div>
+      <div class="profile-stat"><div class="pnum" id="statGames">0</div><div class="plbl">Oyun sayı</div></div>
+      <div class="profile-stat"><div class="pnum" id="statMissions">0</div><div class="plbl">Keçilən misya</div></div>
+      <div class="profile-stat"><div class="pnum" id="statGoldTotal">0</div><div class="plbl">Ümumi qızıl</div></div>
+      <div class="profile-stat"><div class="pnum" id="statGoldNow">0</div><div class="plbl">Hazırkı qızıl</div></div>
+      <div class="profile-stat"><div class="pnum" id="statPowerups">0</div><div class="plbl">İstifadə edilən ulti</div></div>
+      <div class="profile-stat"><div class="pnum" id="statTime">0 san</div><div class="plbl">Oyun vaxtı</div></div>
+    </div>
+
+    <div class="profile-section-title">🎵 Jenerik Musiqilər</div>
+    <div class="music-track-list" id="customMusicList"></div>
+
+    <div class="profile-section-title">🏆 Rekordlar (ən yaxşı 10)</div>
+    <div class="records-list" id="recordsList"></div>
+  </div>
+
+  <div id="achievementsScreen">
+    <div class="shop-header">
+      <button class="shop-back" id="achievementsBack">← Geri</button>
+      <h2>🎖️ Nailiyyətlər</h2>
+    </div>
+    <div class="achievements-list" id="achievementsList"></div>
+  </div>
+
+  <div id="dailyScreen">
+    <div class="shop-header">
+      <button class="shop-back" id="dailyBack">← Geri</button>
+      <h2>🎁 Gündəlik Mükafat</h2>
+    </div>
+    <div class="daily-days" id="dailyDays"></div>
+    <button class="daily-claim-btn" id="dailyClaimBtn">Mükafatı al</button>
+  </div>
+
+  <div id="arcadeScreen">
+    <div class="shop-sticky-top">
+      <div class="shop-header">
+        <button class="shop-back" id="arcadeBack">← Geri</button>
+        <h2>🕹️ Arkada Rejimi</h2>
+      </div>
+      <div class="arcade-total-stars" id="arcadeTotalStars">⭐ 0</div>
+    </div>
+    <div class="arcade-level-grid" id="arcadeLevelGrid"></div>
+  </div>
+
+  <header>
+    <div class="title">Rəngli Kublar<small>MİSYA REJİMİ</small></div>
+    <div class="badges">
+      <div class="badge" id="levelBadge" style="display:none"><div class="lbl">LEVEL</div><div class="val" id="levelBadgeVal">1</div></div>
+      <div class="badge"><div class="lbl">MİSYA</div><div class="val" id="missionVal">0</div></div>
+      <div class="badge"><div class="lbl">XAL</div><div class="val" id="xpVal">0</div></div>
+      <div class="badge"><div class="lbl">CAN</div><div class="val hearts" id="livesVal"></div></div>
+      <button class="icon-btn" id="pauseBtn" title="Pauza">⏸️</button>
+    </div>
+  </header>
+
+  <div class="profile">
+    <div class="ppic ppic-sm" id="gamePhoto"></div>
+    <div class="profile-info">
+      <div class="profile-name">
+        <span class="profile-name-left">
+          <span id="playerName">Oyunçu</span>
+          <span class="level-balloon" id="levelBalloon">Lv. 1</span>
+          <span class="xp-remaining" id="xpRemaining">+3000xp</span>
+        </span>
+        <span class="combo-text" id="comboText"></span>
+      </div>
+      <div class="combo-bar-track" id="comboBarTrack"><div class="combo-bar-fill" id="comboFill"></div></div>
+    </div>
+  </div>
+
+  <div class="powerups" id="powerups">
+    <button class="powerup-btn" id="puShield">🛡️<span class="count" id="puShieldCount">0</span></button>
+    <button class="powerup-btn" id="puSlow">⏱️<span class="count" id="puSlowCount">0</span></button>
+    <button class="powerup-btn" id="puFast">⏩<span class="count" id="puFastCount">0</span></button>
+    <button class="powerup-btn" id="puBomb">💣<span class="count" id="puBombCount">0</span></button>
+    <button class="powerup-btn" id="puHammer">🔨<span class="count" id="puHammerCount">0</span></button>
+    <button class="powerup-btn" id="puShuffle">🎲<span class="count" id="puShuffleCount">0</span></button>
+    <button class="powerup-btn" id="puRewind">⏪<span class="count" id="puRewindCount">0</span></button>
+  </div>
+
+  <div id="field">
+    <div class="slow-overlay" id="slowOverlay"></div>
+    <div class="smash-timer" id="smashTimer">🔨 <span id="smashTimerVal">5</span>s</div>
+    <div class="slow-timer" id="slowTimer">⏱️ <span id="slowTimerVal">15</span>s</div>
+    <div class="shield-timer" id="shieldTimer">🛡️ <span id="shieldTimerVal">20</span>s</div>
+    <div class="fast-timer" id="fastTimer">⏩ <span id="fastTimerVal">15</span>s</div>
+    <div class="toast" id="toast"></div>
+    <div class="overlay" id="overlay">
+      <h2>Oyun bitdi</h2>
+      <p id="overlayStats"></p>
+      <button id="restartBtn">Yenidən başla</button>
+      <button class="menu-return" id="menuReturnBtn">Menyu</button>
+    </div>
+    <div class="overlay" id="pauseOverlay">
+      <div id="pauseMainPanel">
+        <h2>⏸️ Pauza</h2>
+        <div class="sound-toggles">
+          <button class="sound-toggle" id="musicTogglePause">🎵 Musiqi</button>
+          <button class="sound-toggle" id="sfxTogglePause">🔔 Səs effekti</button>
+        </div>
+        <button id="resumeBtn">▶ Davam et</button>
+        <button class="menu-return" id="pauseRestartBtn">🔄 Yenidən başla</button>
+        <button class="menu-return" id="pauseLevelsBtn" style="display:none;">🕹️ Levellər</button>
+        <button class="menu-return" id="pauseMenuReturnBtn">🏠 Ana Menyu</button>
+      </div>
+      <div id="pauseConfirmPanel" style="display:none;">
+        <h2>⚠️ Diqqət</h2>
+        <p id="pauseConfirmText">Ana menyuya qayıtsanız oyun yarımçıq qalacaq.<br>Əminsiniz?</p>
+        <button class="danger" id="confirmQuitBtn">🏠 Bəli, çıx</button>
+        <button class="menu-return" id="cancelQuitBtn">↩ Ləğv et</button>
+      </div>
+    </div>
+    <div class="overlay" id="arcadeResultOverlay">
+      <h2 id="arcadeResultTitle">🎉 Level Tamamlandı!</h2>
+      <div class="arcade-result-stars" id="arcadeResultStars"></div>
+      <p id="arcadeResultStats"></p>
+      <button id="arcadeNextBtn">▶ Növbəti Level</button>
+      <button class="menu-return" id="arcadeRetryBtn">🔄 Təkrar et</button>
+      <button class="menu-return" id="arcadeLevelsBtn">🕹️ Levellər</button>
+      <button class="menu-return" id="arcadeMenuBtn">🏠 Ana Menyu</button>
+    </div>
+  </div>
+
+  <div class="mission">
+    <div class="mission-head">
+      <div class="mission-swatch" id="missionSwatch"></div>
+      <div class="mission-text"><span class="mission-progress" id="missionProgress"></span>Misya: <b id="missionText">7 qırmızı kub</b></div>
+    </div>
+    <div class="slots" id="slots"></div>
+  </div>
+
+  <div class="modal-overlay" id="settingsModalOverlay">
+    <div class="modal-panel">
+      <div class="modal-header">
+        <h3>⚙️ Parametrlər</h3>
+        <button class="modal-close" id="settingsModalClose">✕</button>
+      </div>
+      <div class="profile-section-title">🎵 Jenerik Musiqilər</div>
+      <div class="music-track-list" id="settingsMusicList"></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="flagModalOverlay">
+    <div class="modal-panel">
+      <div class="modal-header">
+        <h3>🚩 Bayraq seç</h3>
+        <button class="modal-close" id="flagModalClose">✕</button>
+      </div>
+      <div class="flag-picker" id="flagPicker"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  var BASE_COLORS = [
+    {id:"red", hex:getVar("--red"), name:"qırmızı"},
+    {id:"blue", hex:getVar("--blue"), name:"mavi"},
+    {id:"green", hex:getVar("--green"), name:"yaşıl"},
+    {id:"yellow", hex:getVar("--yellow"), name:"sarı"},
+    {id:"purple", hex:getVar("--purple"), name:"bənövşəyi"},
+    {id:"orange", hex:getVar("--orange"), name:"narıncı"}
+  ];
+  var PREMIUM_COLORS = [
+    {id:"pink", hex:getVar("--pink"), name:"çəhrayı"},
+    {id:"cyan", hex:getVar("--cyan"), name:"mavi-yaşıl"},
+    {id:"gold", hex:getVar("--gold"), name:"qızılı"}
+  ];
+  var MONO_COLORS = [
+    {id:"mblack", hex:getVar("--mono-black"), name:"qara"},
+    {id:"mgray", hex:getVar("--mono-gray"), name:"boz"},
+    {id:"mwhite", hex:getVar("--mono-white"), name:"ağ"}
+  ];
+  var ALL_COLORS = BASE_COLORS.slice();
+  // Ana menyunun arxa fon dekorasiyası bütün rəng çeşidini göstərsin deyə sahiblik yoxlanmadan istifadə olunur
+  var MENU_BG_COLORS = BASE_COLORS.concat(PREMIUM_COLORS, MONO_COLORS);
+
+  var EMOJIS = ["😀","😎","🤩","😍","🥳","🤠","👻","👽","🤖","💩","🦄","🐱","🐶","🦊","🐼","🐸","🐙","🌵","🍄","🍕","🍔","🍩","🍦","⚽","🎸","🚀","💎","🔥","❄️","⚡"];
+  var PURE_SMILEYS = ["😀","😂","😍","😎","😭","😡","🤔","😱","🥳","😴","🤢","🥶"];
+  // Hər rəngə SABİT, unikal smayli — hash-əsaslı bölgü toqquşmalara səbəb olurdu
+  // (məs. "mavi" və "yaşıl" eyni smayliyə düşürdü), ona görə bu birbaşa xəritə istifadə olunur
+  var PURE_SMILEY_MAP = {
+    red:"😀", blue:"😂", green:"😍", yellow:"😎", purple:"😭", orange:"😡",
+    pink:"🤔", cyan:"😱", gold:"🥳",
+    mblack:"😴", mgray:"🤢", mwhite:"🥶"
+  };
+
+  // BMT-yə üzv 193 dövlət + Vatikan + Fələstin — bütün rəsmi tanınan ölkə bayraqları
+  // Bayraq şəkilləri flagcdn.com-dan yüklənir (kod = ISO 3166-1 alpha-2) — emoji bayraqlar
+  // bəzi platformalarda (məs. Windows) ölkə kodu kimi mətn göstərdiyi üçün əsl şəkillərə keçirilib
+  function flagImgUrl(code){
+    return "https://flagcdn.com/" + code + ".svg";
+  }
+  var COUNTRY_FLAGS = [
+    // Afrika
+    {c:"dz",n:"Əlcəzair"},{c:"ao",n:"Anqola"},{c:"bj",n:"Benin"},{c:"bw",n:"Botsvana"},
+    {c:"bf",n:"Burkina-Faso"},{c:"bi",n:"Burundi"},{c:"cv",n:"Kabo-Verde"},{c:"cm",n:"Kamerun"},
+    {c:"cf",n:"Mərkəzi Afrika Respublikası"},{c:"td",n:"Çad"},{c:"km",n:"Komor adaları"},{c:"cg",n:"Konqo"},
+    {c:"cd",n:"Konqo DR"},{c:"ci",n:"Kot-d'İvuar"},{c:"dj",n:"Cibuti"},{c:"eg",n:"Misir"},
+    {c:"gq",n:"Ekvatorial Qvineya"},{c:"er",n:"Eritreya"},{c:"sz",n:"Esvatini"},{c:"et",n:"Efiopiya"},
+    {c:"ga",n:"Qabon"},{c:"gm",n:"Qambiya"},{c:"gh",n:"Qana"},{c:"gn",n:"Qvineya"},
+    {c:"gw",n:"Qvineya-Bisau"},{c:"ke",n:"Keniya"},{c:"ls",n:"Lesoto"},{c:"lr",n:"Liberiya"},
+    {c:"ly",n:"Liviya"},{c:"mg",n:"Madaqaskar"},{c:"mw",n:"Malavi"},{c:"ml",n:"Mali"},
+    {c:"mr",n:"Mavritaniya"},{c:"mu",n:"Mavriki"},{c:"ma",n:"Mərakeş"},{c:"mz",n:"Mozambik"},
+    {c:"na",n:"Namibiya"},{c:"ne",n:"Niger"},{c:"ng",n:"Nigeriya"},{c:"rw",n:"Ruanda"},
+    {c:"st",n:"San-Tome və Prinsipi"},{c:"sn",n:"Seneqal"},{c:"sc",n:"Seyşel adaları"},{c:"sl",n:"Syerra-Leone"},
+    {c:"so",n:"Somali"},{c:"za",n:"Cənubi Afrika Respublikası"},{c:"ss",n:"Cənubi Sudan"},{c:"sd",n:"Sudan"},
+    {c:"tz",n:"Tanzaniya"},{c:"tg",n:"Toqo"},{c:"tn",n:"Tunis"},{c:"ug",n:"Uqanda"},
+    {c:"zm",n:"Zambiya"},{c:"zw",n:"Zimbabve"},
+    // Amerika
+    {c:"ag",n:"Antiqua və Barbuda"},{c:"ar",n:"Argentina"},{c:"bs",n:"Baham adaları"},{c:"bb",n:"Barbados"},
+    {c:"bz",n:"Beliz"},{c:"bo",n:"Boliviya"},{c:"br",n:"Braziliya"},{c:"ca",n:"Kanada"},
+    {c:"cl",n:"Çili"},{c:"co",n:"Kolumbiya"},{c:"cr",n:"Kosta-Rika"},{c:"cu",n:"Kuba"},
+    {c:"dm",n:"Dominika"},{c:"do",n:"Dominikan Respublikası"},{c:"ec",n:"Ekvador"},{c:"sv",n:"Salvador"},
+    {c:"gd",n:"Qrenada"},{c:"gt",n:"Qvatemala"},{c:"gy",n:"Qayana"},{c:"ht",n:"Haiti"},
+    {c:"hn",n:"Honduras"},{c:"jm",n:"Yamayka"},{c:"mx",n:"Meksika"},{c:"ni",n:"Nikaraqua"},
+    {c:"pa",n:"Panama"},{c:"py",n:"Paraqvay"},{c:"pe",n:"Peru"},{c:"kn",n:"Sent-Kits və Nevis"},
+    {c:"lc",n:"Sent-Lüsiya"},{c:"vc",n:"Sent-Vinsent və Qrenadinlər"},{c:"sr",n:"Surinam"},{c:"tt",n:"Trinidad və Tobaqo"},
+    {c:"us",n:"ABŞ"},{c:"uy",n:"Uruqvay"},{c:"ve",n:"Venesuela"},
+    // Asiya
+    {c:"af",n:"Əfqanıstan"},{c:"am",n:"Ermənistan"},{c:"az",n:"Azərbaycan"},{c:"bh",n:"Bəhreyn"},
+    {c:"bd",n:"Banqladeş"},{c:"bt",n:"Butan"},{c:"bn",n:"Bruney"},{c:"kh",n:"Kamboca"},
+    {c:"cn",n:"Çin"},{c:"cy",n:"Kipr"},{c:"ge",n:"Gürcüstan"},{c:"in",n:"Hindistan"},
+    {c:"id",n:"İndoneziya"},{c:"ir",n:"İran"},{c:"iq",n:"İraq"},{c:"il",n:"İsrail"},
+    {c:"jp",n:"Yaponiya"},{c:"jo",n:"İordaniya"},{c:"kz",n:"Qazaxıstan"},{c:"kw",n:"Küveyt"},
+    {c:"kg",n:"Qırğızıstan"},{c:"la",n:"Laos"},{c:"lb",n:"Livan"},{c:"my",n:"Malayziya"},
+    {c:"mv",n:"Maldiv adaları"},{c:"mn",n:"Monqolustan"},{c:"mm",n:"Myanma"},{c:"np",n:"Nepal"},
+    {c:"kp",n:"Şimali Koreya"},{c:"om",n:"Oman"},{c:"pk",n:"Pakistan"},{c:"ph",n:"Filippin"},
+    {c:"qa",n:"Qətər"},{c:"sa",n:"Səudiyyə Ərəbistanı"},{c:"sg",n:"Sinqapur"},{c:"kr",n:"Cənubi Koreya"},
+    {c:"lk",n:"Şri-Lanka"},{c:"sy",n:"Suriya"},{c:"tj",n:"Tacikistan"},{c:"th",n:"Tailand"},
+    {c:"tl",n:"Şərqi Timor"},{c:"tr",n:"Türkiyə"},{c:"tm",n:"Türkmənistan"},{c:"ae",n:"BƏƏ"},
+    {c:"uz",n:"Özbəkistan"},{c:"vn",n:"Vyetnam"},{c:"ye",n:"Yəmən"},
+    // Avropa
+    {c:"al",n:"Albaniya"},{c:"ad",n:"Andorra"},{c:"at",n:"Avstriya"},{c:"by",n:"Belarus"},
+    {c:"be",n:"Belçika"},{c:"ba",n:"Bosniya və Herseqovina"},{c:"bg",n:"Bolqarıstan"},{c:"hr",n:"Xorvatiya"},
+    {c:"cz",n:"Çexiya"},{c:"dk",n:"Danimarka"},{c:"ee",n:"Estoniya"},{c:"fi",n:"Finlandiya"},
+    {c:"fr",n:"Fransa"},{c:"de",n:"Almaniya"},{c:"gr",n:"Yunanıstan"},{c:"hu",n:"Macarıstan"},
+    {c:"is",n:"İslandiya"},{c:"ie",n:"İrlandiya"},{c:"it",n:"İtaliya"},{c:"lv",n:"Latviya"},
+    {c:"li",n:"Lixtenşteyn"},{c:"lt",n:"Litva"},{c:"lu",n:"Lüksemburq"},{c:"mt",n:"Malta"},
+    {c:"md",n:"Moldova"},{c:"mc",n:"Monako"},{c:"me",n:"Monteneqro"},{c:"nl",n:"Niderland"},
+    {c:"mk",n:"Şimali Makedoniya"},{c:"no",n:"Norveç"},{c:"pl",n:"Polşa"},{c:"pt",n:"Portuqaliya"},
+    {c:"ro",n:"Rumıniya"},{c:"ru",n:"Rusiya"},{c:"sm",n:"San-Marino"},{c:"rs",n:"Serbiya"},
+    {c:"sk",n:"Slovakiya"},{c:"si",n:"Sloveniya"},{c:"es",n:"İspaniya"},{c:"se",n:"İsveç"},
+    {c:"ch",n:"İsveçrə"},{c:"ua",n:"Ukrayna"},{c:"gb",n:"Böyük Britaniya"},{c:"va",n:"Vatikan"},
+    // Okeaniya
+    {c:"au",n:"Avstraliya"},{c:"fj",n:"Fici"},{c:"ki",n:"Kiribati"},{c:"mh",n:"Marşall adaları"},
+    {c:"fm",n:"Mikroneziya"},{c:"nr",n:"Nauru"},{c:"nz",n:"Yeni Zelandiya"},{c:"pw",n:"Palau"},
+    {c:"pg",n:"Papua-Yeni Qvineya"},{c:"ws",n:"Samoa"},{c:"sb",n:"Solomon adaları"},{c:"to",n:"Tonqa"},
+    {c:"tv",n:"Tuvalu"},{c:"vu",n:"Vanuatu"},
+    // Digər
+    {c:"ps",n:"Fələstin"}
+  ];
+
+  var HAMMER_SVG = '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">' +
+    '<g transform="rotate(-40 50 50)">' +
+    '<rect x="46" y="44" width="46" height="13" rx="3" fill="#3a2a1c"/>' +
+    '<rect x="66" y="47" width="7" height="7" fill="#e0a52c"/>' +
+    '<rect x="16" y="26" width="30" height="30" rx="5" fill="#d7dbe0"/>' +
+    '<rect x="16" y="26" width="30" height="10" rx="4" fill="#f4f6f8"/>' +
+    '<rect x="9" y="29" width="10" height="24" rx="3" fill="#9a9fa8"/>' +
+    '</g></svg>';
+
+  var SHOP_CATEGORIES = [
+    {
+      title: "⚡ Ultilər",
+      tab: "⚡ Ultilər",
+      items: [
+        {id:"shield", name:"Qalxan", desc:"20 saniyə buraxılan kubiklər can aparmır", price:100, icon:"🛡️", type:"consumable"},
+        {id:"slow", name:"Yavaşlatma", desc:"15 saniyə yavaşlat", price:80, icon:"⏱️", type:"consumable"},
+        {id:"fast", name:"Sürətləndirmə", desc:"15 saniyə 2x sürət", price:70, icon:"⏩", type:"consumable"},
+        {id:"bomb", name:"Bomba", desc:"Səhv rəngləri partlat", price:120, icon:"💣", type:"consumable"},
+        {id:"hammer", name:"Çəkic", desc:"5 saniyə bütün kubikləri sındır", price:150, icon:"🔨", type:"consumable"},
+        {id:"shuffle", name:"Rəng Qarışdırma", desc:"Ekrandakı rənglərin yerini qarışdırır", price:90, icon:"🎲", type:"consumable"},
+        {id:"rewind", name:"Geri Sarma", desc:"Kubikləri öz sürətinə görə geri aparır", price:110, icon:"⏪", type:"consumable"}
+      ]
+    },
+    {
+      title: "🔥 Düşmə Effektləri",
+      tab: "🔥 Effekt",
+      items: [
+        {id:"fxNone", name:"Normal", desc:"Heç bir əlavə effekt olmadan düşür", price:0, icon:"⬜", type:"effect"},
+        {id:"fxFire", name:"Alov", desc:"Kubiklər alovlanıb qığılcım saçaraq düşür", price:200, icon:"🔥", type:"effect"},
+        {id:"fxIce", name:"Buz", desc:"Kubiklər kristal buz təbəqəsi və parıltı ilə düşür", price:250, icon:"❄️", type:"effect"},
+        {id:"fxGhost", name:"Hayalet", desc:"Kubiklər hayalet kimi üzərək, iz buraxaraq düşür", price:350, icon:"👻", type:"effect"},
+        {id:"fxElectric", name:"Elektrik", desc:"Kubiklər çaxnaşan qığılcımlarla düşür", price:320, icon:"⚡", type:"effect"},
+        {id:"fxRainbow", name:"Göy Qurşağı", desc:"Kubiklər rəng dəyişən parıltı ilə düşür", price:400, icon:"🌈", type:"effect"}
+      ]
+    },
+    {
+      title: "🎭 Kubik Temaları",
+      tab: "🎭 Tema",
+      items: [
+        {id:"themeNormal", name:"Normal", desc:"Sadə rəngli kubiklər, tema yoxdur", price:0, icon:"🟦", type:"theme", themeValue:"color"},
+        {id:"emojiPack", name:"Smayliklər", desc:"Kubiklərdə qarışıq smayliklər", price:150, icon:"😀", type:"theme", themeValue:"emoji"},
+        {id:"pureSmileyPack", name:"Əsas Smaylilər", desc:"7 klassik smayli, kubiksiz düşür", price:180, icon:"😎", type:"theme", themeValue:"puresmiley"},
+        {id:"colorPack", name:"Premium Rənglər", desc:"3 yeni rəng əlavə et", price:300, icon:"🎨", type:"unlock"},
+        {id:"monoPack", name:"Mono Rənglər", desc:"Qara, boz və ağ rəng əlavə et", price:280, icon:"⬛", type:"unlock"}
+      ]
+    },
+    {
+      title: "💥 Sınma Effektləri",
+      tab: "💥 Sınma",
+      items: [
+        {id:"brkNone", name:"Normal", desc:"Sadəcə silkələnib yox olur", price:0, icon:"⬜", type:"breakfx", breakValue:"none"},
+        {id:"brkShatter", name:"Qırılma", desc:"Kubik şüşə kimi qəlpələrə parçalanır", price:180, icon:"💥", type:"breakfx", breakValue:"shatter"},
+        {id:"brkConfetti", name:"Konfeti", desc:"Rəngli konfeti partlayışı ilə sınır", price:220, icon:"🎊", type:"breakfx", breakValue:"confetti"},
+        {id:"brkPixel", name:"Piksel", desc:"Kubik piksel-piksel dağılır", price:260, icon:"🧩", type:"breakfx", breakValue:"pixel"},
+        {id:"brkStar", name:"Ulduz Partlayışı", desc:"Parlaq ulduzlarla partlayaraq sınır", price:300, icon:"✨", type:"breakfx", breakValue:"star"}
+      ]
+    },
+    {
+      title: "🖼️ Çərçivələr",
+      tab: "🖼️ Çərçivə",
+      items: [
+        {id:"frameNone", name:"Normal", desc:"Sadə haşiyə", price:0, icon:"⬜", type:"frame", frameValue:"none"},
+        {id:"frameGold", name:"Qızıl Çərçivə", desc:"Parlaq qızıl haşiyə", price:150, icon:"🟡", type:"frame", frameValue:"gold"},
+        {id:"frameEmerald", name:"Zümrüd Çərçivə", desc:"Yaşıl zümrüd haşiyə", price:150, icon:"🟢", type:"frame", frameValue:"emerald"},
+        {id:"frameNeon", name:"Neon İmpuls", desc:"Fırlanan rəngli neon çərçivə, kub tutanda parlayır", price:300, icon:"🌀", type:"frame", frameValue:"neon"},
+        {id:"frameFire", name:"Alov Çərçivəsi", desc:"Yanan alov haşiyə, kub tutanda alovlanır", price:350, icon:"🔥", type:"frame", frameValue:"fire"},
+        {id:"frameNeonLight", name:"Neon İşıq", desc:"Əsl neon lampa kimi çaxnaşan parlaq haşiyə, kub tutanda güclənir", price:320, icon:"💡", type:"frame", frameValue:"neonlight"},
+        {id:"frameStar", name:"Ulduz Yağışı", desc:"Fırlanan ulduz zərrəcikləri, kub tutanda parlayır", price:380, icon:"✨", type:"frame", frameValue:"star"}
+      ]
+    }
+  ];
+
+  // ===== Arkada Rejimi: SONSUZ level — hər level konfiqurasiyası tələb olunanda düsturla
+  // hesablanır (əvvəlcədən massiv kimi saxlanmır), ona görə oyunçu bacardığı qədər irəli gedə bilər =====
+  var ARCADE_TIER_INFO = [
+    {min:1, name:"Başlanğıc"},
+    {min:6, name:"Sürət"},
+    {min:11, name:"Kölgə Palitra"},
+    {min:16, name:"Geniş Spektr"},
+    {min:21, name:"Ultisiz Sınaq"},
+    {min:26, name:"Xaos"},
+    {min:36, name:"Reflex"},
+    {min:46, name:"Əfsanə"},
+    {min:56, name:"Final"},
+    {min:76, name:"Əfsanəvi"},
+    {min:101, name:"Sonsuzluq"},
+    {min:151, name:"Kabus"},
+    {min:201, name:"Mifik"}
+  ];
+  function arcadeTierName(n){
+    var name = ARCADE_TIER_INFO[0].name;
+    ARCADE_TIER_INFO.forEach(function(t){ if(n >= t.min) name = t.name; });
+    return name;
+  }
+  // Misya sayı: 1-15-ci levellərdə 7-dən 15-ə qədər sürətlə artır, 15-dən sonra hər 5 leveldə +1
+  function arcadeMissionsForLevel(n){
+    if(n <= 15) return Math.min(15, 6 + n);
+    return 15 + Math.ceil((n - 15) / 5);
+  }
+  // Rəng sayı: ilk 3 leveldə 3 rəng, sonra hər 5 leveldə +1 (maksimum 12 — bütün rənglər)
+  function arcadeColorCountForLevel(n){
+    if(n <= 3) return 3;
+    return Math.min(12, 3 + Math.ceil((n - 3) / 5));
+  }
+  function buildArcadeLevel(n){
+    var missionsRequired = arcadeMissionsForLevel(n);
+    var speedMult = Math.round((1 + (n-1) * 0.01) * 100) / 100;
+    var colorCount = arcadeColorCountForLevel(n);
+    var forcePureSmiley = n >= 11 && (n % 3 === 0);
+    var noPowerups = n >= 21 && (n % 4 === 0);
+    var goldReward = 20 + n * 4;
+    return {
+      n: n,
+      name: arcadeTierName(n) + " " + n,
+      missionsRequired: missionsRequired,
+      speedMult: speedMult,
+      colorCount: colorCount,
+      forcePureSmiley: forcePureSmiley,
+      noPowerups: noPowerups,
+      goldReward: goldReward
+    };
+  }
+
+  var MISSION_MILESTONES = [1,10,50,100,250,500,1000,2000,3000,5000,10000,20000,40000,60000,1000000];
+  var GOLD_MILESTONES = [50,100,250,500,1000,2000,3000,5000,10000,20000,40000,60000,1000000];
+  var TIME_MILESTONES_MIN = [5,15,30,60,120,300,600,1440,4320,10080];
+  var LOGIN_MILESTONES = [3,7,15,30,60,150,240,300,365];
+  var ACHIEVEMENT_GOLD_REWARD = 50;
+
+  function formatMinutesLabel(min){
+    if(min < 60) return min + " dəqiqə";
+    if(min < 1440) return (min/60) + " saat";
+    return (min/1440) + " gün";
+  }
+
+  var ACHIEVEMENTS = [
+    {id:"level_5", name:"İnkişaf Edən", desc:"5-ci levelə çat", icon:"⭐", check:function(p){ return (p.level||1) >= 5; }},
+    {id:"level_10", name:"Təcrübəli", desc:"10-cu levelə çat", icon:"🌟", check:function(p){ return (p.level||1) >= 10; }},
+    {id:"games_10", name:"Davamlı Oyunçu", desc:"10 oyun oyna", icon:"🎮", check:function(p){ return (p.gamesPlayed||0) >= 10; }},
+    {id:"powerup_10", name:"Ulti Ustası", desc:"10 ulti istifadə et", icon:"⚡", check:function(p){ return (p.powerupsUsed||0) >= 10; }},
+    {id:"combo_5", name:"Combo Ustası", desc:"Combo rejimini 5 dəfə aktivləşdir", icon:"🔥", check:function(p){ return (p.comboActivations||0) >= 5; }}
+  ];
+
+  MISSION_MILESTONES.forEach(function(n){
+    ACHIEVEMENTS.push({
+      id: "mission_" + n,
+      name: n + " Misya",
+      desc: n + " misya tamamla",
+      icon: n >= 1000 ? "🏆" : "📦",
+      check: function(p){ return (p.missionsDone||0) >= n; }
+    });
+  });
+
+  GOLD_MILESTONES.forEach(function(n){
+    ACHIEVEMENTS.push({
+      id: "gold_" + n,
+      name: n + " Qızıl",
+      desc: "Ümumi " + n + " qızıl qazan",
+      icon: n >= 10000 ? "💎" : "🪙",
+      check: function(p){ return (p.totalGoldEarned||0) >= n; }
+    });
+  });
+
+  TIME_MILESTONES_MIN.forEach(function(min){
+    var label = formatMinutesLabel(min);
+    ACHIEVEMENTS.push({
+      id: "time_" + min,
+      name: label + " Oyun",
+      desc: label + " oyun oyna",
+      icon: "⏳",
+      check: function(p){ return (p.totalPlayTimeMs||0) >= min * 60000; }
+    });
+  });
+
+  LOGIN_MILESTONES.forEach(function(n){
+    ACHIEVEMENTS.push({
+      id: "login_" + n,
+      name: n + " Gün Giriş",
+      desc: n + " gün oyuna daxil ol",
+      icon: n >= 100 ? "📅" : "🗓️",
+      check: function(p){ return (p.totalLoginDays||0) >= n; }
+    });
+  });
+
+  function getVar(name){
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+
+  var field = document.getElementById("field");
+  var slotsEl = document.getElementById("slots");
+  var missionTextEl = document.getElementById("missionText");
+  var missionSwatchEl = document.getElementById("missionSwatch");
+  var missionProgressEl = document.getElementById("missionProgress");
+  var toastEl = document.getElementById("toast");
+  var overlayEl = document.getElementById("overlay");
+  var overlayStatsEl = document.getElementById("overlayStats");
+  var livesValEl = document.getElementById("livesVal");
+  var missionValEl = document.getElementById("missionVal");
+  var xpValEl = document.getElementById("xpVal");
+  var levelBadge = document.getElementById("levelBadge");
+  var levelBadgeVal = document.getElementById("levelBadgeVal");
+  var levelBalloonEl = document.getElementById("levelBalloon");
+  var comboTextEl = document.getElementById("comboText");
+  var comboFillEl = document.getElementById("comboFill");
+  var comboBarTrackEl = document.getElementById("comboBarTrack");
+  var playerNameEl = document.getElementById("playerName");
+  var menuScreen = document.getElementById("menuScreen");
+  var menuBgContainer = document.getElementById("menuBgCubes");
+  var shopScreen = document.getElementById("shopScreen");
+  var profileScreen = document.getElementById("profileScreen");
+  var achievementsScreen = document.getElementById("achievementsScreen");
+  var dailyScreen = document.getElementById("dailyScreen");
+  var arcadeScreen = document.getElementById("arcadeScreen");
+  var arcadeResultOverlay = document.getElementById("arcadeResultOverlay");
+  var powerupsEl = document.getElementById("powerups");
+  var shopContent = document.getElementById("shopContent");
+  var shopGoldVal = document.getElementById("shopGoldVal");
+  var slowOverlay = document.getElementById("slowOverlay");
+  var pauseBtn = document.getElementById("pauseBtn");
+  var pauseOverlay = document.getElementById("pauseOverlay");
+  var pauseMainPanel = document.getElementById("pauseMainPanel");
+  var pauseConfirmPanel = document.getElementById("pauseConfirmPanel");
+  var pauseConfirmTextEl = document.getElementById("pauseConfirmText");
+  var pauseLevelsBtn = document.getElementById("pauseLevelsBtn");
+  var smashTimerEl = document.getElementById("smashTimer");
+  var smashTimerValEl = document.getElementById("smashTimerVal");
+  var slowTimerEl = document.getElementById("slowTimer");
+  var slowTimerValEl = document.getElementById("slowTimerVal");
+  var shieldTimerEl = document.getElementById("shieldTimer");
+  var shieldTimerValEl = document.getElementById("shieldTimerVal");
+  var fastTimerEl = document.getElementById("fastTimer");
+  var fastTimerValEl = document.getElementById("fastTimerVal");
+
+  var STORAGE_KEY = "rengliKublar_v4";
+  var MAX_LIVES = 3;
+  var MAX_CONCURRENT_CUBES = 30;
+
+  // Level: 1-ci leveldən 2-yə keçmək üçün 3000 xp, hər sonrakı level 20% çox tələb edir
+  var LEVEL_BASE_XP = 3000;
+  var LEVEL_GROWTH = 1.2;
+
+  function levelFromXp(xp){
+    var level = 1;
+    var total = 0;
+    var need = LEVEL_BASE_XP;
+    while(xp >= total + need){
+      total += need;
+      need *= LEVEL_GROWTH;
+      level++;
+      if(level > 999) break;
+    }
+    return level;
+  }
+
+  // Verilən level neçə cəmi xp-də başlayır (yəni bu levelə çatmaq üçün lazım olan cəmi xp)
+  function xpAtLevelStart(level){
+    var total = 0;
+    var need = LEVEL_BASE_XP;
+    for(var i=1;i<level;i++){
+      total += need;
+      need *= LEVEL_GROWTH;
+    }
+    return total;
+  }
+
+  // Bu leveldən növbətiyə keçmək üçün lazım olan xp miqdarı
+  function xpNeededForLevel(level){
+    return LEVEL_BASE_XP * Math.pow(LEVEL_GROWTH, level - 1);
+  }
+
+  var profile = loadProfile();
+  var mission = null;
+  var prevMissionColorId = null;
+  var lives = MAX_LIVES;
+  var spawnTimer = null;
+  var burstTimeouts = [];
+  var spawning = false;
+  var gameActive = false;
+  var fieldCubes = [];
+  var slowMode = false;
+  var slowTimeout = null;
+  var slowEndsAt = 0;
+  var slowTimerInterval = null;
+  var currentFallDuration = 120000;
+  var missionCount = 0;
+
+  // ===== Arkada Rejimi: level-əsaslı, ulduz reytinqli rejim (Misya Rejimindən ayrı) =====
+  var gameMode = "endless"; // "endless" (Misya Rejimi) | "arcade"
+  var arcadeLevelNum = null;
+  var arcadeMissionsRequired = 0;
+  var arcadeSpeedMult = 1;
+  var arcadeColorCount = null; // null (arkada deyil) | 3..12 aktiv rəng sayı
+  var arcadeThemeOverride = null; // null | "puresmiley"
+  var arcadeNoPowerups = false;
+
+  var recentSpawnColors = [];
+  var urgentColorId = null;
+  var urgentUntil = 0;
+  var missingColorStreak = 0;
+  var lastSpawnTime = {};
+  var SPAWN_COOLDOWN_MS = 2500;
+  var waveState = "calm";
+  var waveEndsAt = 0;
+  var paused = false;
+  var pauseStart = 0;
+  var sessionStartTime = 0;
+  var sessionXpEarned = 0;
+  var sessionGoldEarned = 0;
+
+  // Combo
+  var comboCount = 0;
+  var comboActive = false;
+  var lastCatchTime = 0;
+  var COMBO_WINDOW_MS = 2400;
+  var COMBO_THRESHOLD = 5;
+  var CUBE_XP = 5;
+  var CUBE_GOLD = 1;
+  var MISSION_XP = 20;
+  var MISSION_GOLD = 2;
+  var HAMMER_BREAK_XP = 9;
+
+  // Çəkic / sındırma rejimi
+  var hammerEndsAt = 0;
+  var smashModeActive = false;
+  var smashModeEndsAt = 0;
+  var smashTimerInterval = null;
+
+  // Qalxan: buraxılan kubiklər can aparmır
+  var shieldActive = false;
+  var shieldEndsAt = 0;
+  var shieldTimeout = null;
+  var shieldTimerInterval = null;
+
+  // Sürətləndirmə: 2x sürət
+  var fastMode = false;
+  var fastEndsAt = 0;
+  var fastTimeout = null;
+  var fastTimerInterval = null;
+
+  // Hər ultidən oyun ərzində maksimum neçə dəfə istifadə edilə bilər
+  var USE_LIMIT_PER_GAME = 3;
+  var usesThisGame = {};
+
+  function loadProfile(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        var p = JSON.parse(raw);
+        if(!p.inventory) p.inventory = {};
+        if(!p.unlocks) p.unlocks = {};
+        if(!p.activeEffect) p.activeEffect = "none";
+        if(!p.activeTheme) p.activeTheme = "color";
+        if(!p.activeBreakEffect) p.activeBreakEffect = "none";
+        if(typeof p.musicMuted !== "boolean") p.musicMuted = (typeof p.muted === "boolean") ? p.muted : false;
+        if(typeof p.sfxMuted !== "boolean") p.sfxMuted = (typeof p.muted === "boolean") ? p.muted : false;
+        if(!p.totalPlayTimeMs) p.totalPlayTimeMs = 0;
+        if(!p.gamesPlayed) p.gamesPlayed = 0;
+        if(!p.totalGoldEarned) p.totalGoldEarned = 0;
+        if(!p.xp) p.xp = 0;
+        if(!p.powerupsUsed) p.powerupsUsed = 0;
+        if(!p.comboActivations) p.comboActivations = 0;
+        if(!p.records) p.records = [];
+        if(!p.unlockedAchievements) p.unlockedAchievements = {};
+        if(!p.totalLoginDays) p.totalLoginDays = 0;
+        if(!p.lastLoginDate) p.lastLoginDate = null;
+        if(typeof p.rewardDayIndex !== "number") p.rewardDayIndex = 0;
+        if(typeof p.dailyClaimedToday !== "boolean") p.dailyClaimedToday = false;
+        if(!p.enabledUnlocks) p.enabledUnlocks = {};
+        // Əvvəldən sahib olunan paketlər bu yeniləmədən sonra da aktiv qalsın (default: aktiv)
+        Object.keys(p.unlocks).forEach(function(k){
+          if(p.unlocks[k] && typeof p.enabledUnlocks[k] !== "boolean") p.enabledUnlocks[k] = true;
+        });
+        if(!p.customMusic) p.customMusic = {menu:null, game:null};
+        if(typeof p.countryFlag !== "string") p.countryFlag = null;
+        // Köhnə versiya bayrağı emoji kimi saxlayırdı (məs. "🇦🇿") — indi ISO kodu (məs. "az") istifadə olunur
+        if(p.countryFlag && !/^[a-z]{2}$/i.test(p.countryFlag)) p.countryFlag = null;
+        if(typeof p.photoDataUrl !== "string") p.photoDataUrl = null;
+        if(!p.activeFrame) p.activeFrame = "none";
+        if(!p.arcade) p.arcade = {stars:{}, unlockedLevel:1};
+        if(!p.arcade.stars) p.arcade.stars = {};
+        if(!p.arcade.unlockedLevel) p.arcade.unlockedLevel = 1;
+        p.level = levelFromXp(p.xp);
+        return p;
+      }
+    }catch(e){}
+    return {name:"Oyunçu", xp:0, gold:0, level:1, missionsDone:0, inventory:{}, unlocks:{}, activeEffect:"none", activeTheme:"color", activeBreakEffect:"none", musicMuted:false, sfxMuted:false, totalPlayTimeMs:0, gamesPlayed:0, totalGoldEarned:0, powerupsUsed:0, comboActivations:0, records:[], unlockedAchievements:{}, totalLoginDays:0, lastLoginDate:null, rewardDayIndex:0, dailyClaimedToday:false, enabledUnlocks:{}, customMusic:{menu:null, game:null}, countryFlag:null, photoDataUrl:null, activeFrame:"none", arcade:{stars:{}, unlockedLevel:1}};
+  }
+  function saveProfile(){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(profile)); }catch(e){}
+  }
+
+  function rebuildColorPool(){
+    // Arkada rejimi hər levelə görə sabit sayda rəng istifadə edir (oyunçunun öz mağaza seçimlərinə toxunmadan)
+    if(arcadeColorCount){
+      ALL_COLORS = MENU_BG_COLORS.slice(0, Math.min(arcadeColorCount, MENU_BG_COLORS.length));
+      return;
+    }
+    var pool = BASE_COLORS.slice();
+    var premiumOn = profile.unlocks.colorPack && profile.enabledUnlocks.colorPack !== false;
+    var monoOn = profile.unlocks.monoPack && profile.enabledUnlocks.monoPack !== false;
+    if(premiumOn) pool = pool.concat(PREMIUM_COLORS);
+    if(monoOn) pool = pool.concat(MONO_COLORS);
+    ALL_COLORS = pool;
+  }
+
+  function getFallDuration(){
+    return Math.max(15000, currentFallDuration / (arcadeSpeedMult || 1));
+  }
+
+  // Kubik/misya render kodunda profile.activeTheme birbaşa oxumaq əvəzinə bunu çağırır —
+  // arkada rejimi bəzi levellərdə temanı müvəqqəti məcbur edə bilir (oyunçunun öz seçimini pozmadan)
+  function currentTheme(){
+    return arcadeThemeOverride || profile.activeTheme;
+  }
+  // Dalğa rejimi (sıx "dalğa" + boş "sakit" fazası) hələlik LƏĞV EDİLİB — aşağıdakı funksiyalar
+  // sonradan yenidən aktivləşdirmək üçün saxlanılır, amma hazırda loop() onları çağırmır
+  function getSpawnInterval(){
+    return 301 + Math.random() * 589;
+  }
+  function getCalmInterval(){
+    return 1800 + Math.random() * 1400;
+  }
+  function getWavePhaseDuration(){
+    return 3000 + Math.random() * 1200;
+  }
+  function getCalmPhaseDuration(){
+    return 2800 + Math.random() * 1100;
+  }
+  // Dalğa əvəzinə: tək, sabit-amma-xaotik aralıq — nə yığın yaradacaq qədər tez, nə də
+  // oyunçunu gözlədəcək qədər gecikən. Ardıcıl, öngörülə bilməyən amma tarazlı fasilə.
+  function getSteadySpawnInterval(){
+    return 500 + Math.random() * 500;
+  }
+  function getHammerInterval(){
+    return 80000 + Math.random() * 10000;
+  }
+
+  // Bu oyunda tamamlanan hər misya kubiklərin sürətini tədricən artırır (hər misya +3%, maksimum 75%-ə qədər)
+  function applySpeedFromMissions(){
+    var speedupPct = Math.min(75, missionCount * 1.8); // əvvəlki 3%-dən 40% az (1.8%)
+    currentFallDuration = Math.max(20000, 120000 * (1 - speedupPct/100));
+  }
+
+  function formatDuration(ms){
+    var totalSec = Math.floor(ms/1000);
+    var h = Math.floor(totalSec/3600);
+    var m = Math.floor((totalSec%3600)/60);
+    var s = totalSec%60;
+    if(h>0) return h + "s " + m + "d";
+    if(m>0) return m + "d " + s + "san";
+    return s + " san";
+  }
+
+  // Bütün XP qazanma buradan keçir: level yenilənməsini və sürəti də idarə edir
+  function addXp(amount){
+    profile.xp += amount;
+    sessionXpEarned += amount;
+    var newLevel = levelFromXp(profile.xp);
+    if(newLevel > (profile.level || 1)){
+      profile.level = newLevel;
+      showToast("⭐ Səviyyə " + newLevel + "!");
+    }
+    saveProfile();
+    renderProfile();
+  }
+
+  function addGold(amount){
+    profile.gold += amount;
+    profile.totalGoldEarned = (profile.totalGoldEarned||0) + amount;
+    sessionGoldEarned += amount;
+    saveProfile();
+    renderProfile();
+  }
+
+  function renderXpProgress(){
+    var level = profile.level || 1;
+    var startXp = xpAtLevelStart(level);
+    var neededXp = xpNeededForLevel(level);
+    var intoLevel = Math.max(0, profile.xp - startXp);
+    var remaining = Math.max(0, Math.round(neededXp - intoLevel));
+    var pct = Math.min(100, (intoLevel / neededXp) * 100);
+    var text = Math.round(intoLevel) + " / " + Math.round(neededXp) + " XP";
+    [document.getElementById("menuXpFill"), document.getElementById("profileXpFill")].forEach(function(el){
+      el.style.width = pct + "%";
+    });
+    [document.getElementById("menuXpText"), document.getElementById("profileXpText")].forEach(function(el){
+      el.textContent = text;
+    });
+    var xpRemainingEl = document.getElementById("xpRemaining");
+    if(xpRemainingEl) xpRemainingEl.textContent = "+" + remaining + "xp";
+  }
+
+  // Kilidi yeni açılan naliyyətlərə qızıl mükafatı verir (hər biri yalnız BİR dəfə)
+  function checkAchievements(){
+    var newlyUnlocked = [];
+    ACHIEVEMENTS.forEach(function(a){
+      if(!profile.unlockedAchievements[a.id] && a.check(profile)){
+        profile.unlockedAchievements[a.id] = true;
+        newlyUnlocked.push(a);
+      }
+    });
+    if(newlyUnlocked.length){
+      var totalGold = newlyUnlocked.length * ACHIEVEMENT_GOLD_REWARD;
+      profile.gold += totalGold;
+      profile.totalGoldEarned = (profile.totalGoldEarned||0) + totalGold;
+      sessionGoldEarned += totalGold;
+      showToast("🎖️ " + newlyUnlocked[newlyUnlocked.length-1].name + "! +" + totalGold + " qızıl");
+      saveProfile();
+    }
+  }
+
+  // Profil şəklini (foto/bayraq/səviyyə ehtiyat) + aktiv çərçivəni verilən konteynerə çəkir.
+  // Menyu, oyun içi və profil ekranında eyni funksiya istifadə olunur ki, hamısı sinxron qalsın.
+  function renderPhotoInto(containerId, size){
+    var container = document.getElementById(containerId);
+    if(!container) return;
+    container.className = "ppic ppic-" + size + " frame-" + (profile.activeFrame || "none");
+    container.innerHTML = "";
+
+    var inner = document.createElement("div");
+    inner.className = "ppic-inner";
+    if(profile.photoDataUrl){
+      var img = document.createElement("img");
+      img.src = profile.photoDataUrl;
+      inner.appendChild(img);
+    } else if(profile.countryFlag){
+      var flagFill = document.createElement("div");
+      flagFill.className = "ppic-flag-fill";
+      var flagFillImg = document.createElement("img");
+      flagFillImg.src = flagImgUrl(profile.countryFlag);
+      flagFill.appendChild(flagFillImg);
+      inner.appendChild(flagFill);
+    } else {
+      var fallback = document.createElement("span");
+      fallback.className = "ppic-level-fallback";
+      fallback.textContent = profile.level || 1;
+      inner.appendChild(fallback);
+    }
+    container.appendChild(inner);
+
+    var flashOverlay = document.createElement("div");
+    flashOverlay.className = "ppic-flash-overlay";
+    flashOverlay.id = containerId + "FlashOverlay";
+    container.appendChild(flashOverlay);
+
+    if(profile.photoDataUrl && profile.countryFlag){
+      var badge = document.createElement("div");
+      badge.className = "ppic-flag-badge";
+      var badgeImg = document.createElement("img");
+      badgeImg.src = flagImgUrl(profile.countryFlag);
+      badge.appendChild(badgeImg);
+      container.appendChild(badge);
+    }
+
+    if(profile.activeFrame === "star"){
+      var starWrap = document.createElement("div");
+      starWrap.className = "ppic-star-orbit";
+      [0, 90, 180, 270].forEach(function(deg, i){
+        var s = document.createElement("span");
+        s.className = "ppic-star-twinkle";
+        s.textContent = "✨";
+        s.style.setProperty("--ang", deg + "deg");
+        s.style.animationDelay = (i * 0.3) + "s";
+        starWrap.appendChild(s);
+      });
+      container.appendChild(starWrap);
+    }
+  }
+
+  // Neon/Alov/Ulduz kimi "reaktiv" çərçivələr üçün: kub tutulanda qısa parıltı effekti
+  var REACTIVE_FRAMES = {neon:true, fire:true, star:true, neonlight:true};
+  function flashGamePhotoIfReactive(){
+    if(!REACTIVE_FRAMES[profile.activeFrame]) return;
+    var overlay = document.getElementById("gamePhotoFlashOverlay");
+    if(!overlay) return;
+    overlay.classList.remove("flash-active");
+    void overlay.offsetWidth; // animasiyanı yenidən başlatmaq üçün reflow
+    overlay.classList.add("flash-active");
+  }
+
+  function handlePhotoUpload(file){
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e){
+      var img = new Image();
+      img.onload = function(){
+        var size = 200;
+        var canvas = document.createElement("canvas");
+        canvas.width = size; canvas.height = size;
+        var ctx = canvas.getContext("2d");
+        var srcSize = Math.min(img.width, img.height);
+        var sx = (img.width - srcSize) / 2, sy = (img.height - srcSize) / 2;
+        ctx.drawImage(img, sx, sy, srcSize, srcSize, 0, 0, size, size);
+        profile.photoDataUrl = canvas.toDataURL("image/jpeg", 0.85);
+        saveProfile();
+        renderProfile();
+        renderProfileScreen();
+        showToast("📷 Profil şəkli yükləndi!");
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function renderFlagPicker(){
+    var currentBtn = document.getElementById("flagCurrentBtn");
+    if(currentBtn){
+      currentBtn.innerHTML = profile.countryFlag ?
+        '<img src="' + flagImgUrl(profile.countryFlag) + '">' + '<span class="flag-current-label">Dəyiş</span>' :
+        '🏳️<span class="flag-current-label">Bayraq seç</span>';
+    }
+    var container = document.getElementById("flagPicker");
+    if(!container) return;
+    container.innerHTML = COUNTRY_FLAGS.map(function(c){
+      return '<button class="flag-btn' + (profile.countryFlag === c.c ? " active" : "") + '" data-flag="' + c.c + '" title="' + c.n + '"><img src="' + flagImgUrl(c.c) + '" alt="' + c.n + '"></button>';
+    }).join("") + '<button class="flag-btn flag-none' + (!profile.countryFlag ? " active" : "") + '" data-flag="" title="Yoxdur">✕</button>';
+    container.querySelectorAll("button[data-flag]").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        profile.countryFlag = this.getAttribute("data-flag") || null;
+        saveProfile();
+        renderProfile();
+        renderProfileScreen();
+        closeFlagModal();
+      });
+    });
+  }
+
+  function openFlagModal(){
+    document.getElementById("flagModalOverlay").classList.add("show");
+  }
+  function closeFlagModal(){
+    document.getElementById("flagModalOverlay").classList.remove("show");
+  }
+
+  var settingsAutoPaused = false;
+  function openSettingsModal(){
+    renderCustomMusicList();
+    if(gameActive && !paused){
+      pauseGame();
+      pauseOverlay.classList.remove("show");
+      pauseBtn.textContent = "⏸️";
+      settingsAutoPaused = true;
+    }
+    document.getElementById("settingsModalOverlay").classList.add("show");
+  }
+  function closeSettingsModal(){
+    document.getElementById("settingsModalOverlay").classList.remove("show");
+    if(settingsAutoPaused){
+      settingsAutoPaused = false;
+      resumeGame();
+    }
+  }
+
+  function renderProfile(){
+    checkAchievements();
+    missionValEl.textContent = missionCount || 0;
+    xpValEl.textContent = sessionXpEarned || 0;
+    playerNameEl.textContent = profile.name;
+    levelBalloonEl.textContent = "Lv. " + (profile.level || 1);
+    document.getElementById("menuLvl").textContent = profile.level || 1;
+    document.getElementById("menuPlayerName").textContent = profile.name;
+    document.getElementById("menuGold").textContent = profile.gold;
+    document.getElementById("menuMissions").textContent = profile.missionsDone || 0;
+    shopGoldVal.textContent = profile.gold;
+    renderXpProgress();
+    renderPhotoInto("menuPhoto", "md");
+    renderPhotoInto("gamePhoto", "sm");
+  }
+
+  function renderProfileScreen(){
+    renderPhotoInto("profilePhotoBig", "lg");
+    renderFlagPicker();
+    document.getElementById("nameInput").value = profile.name;
+    document.getElementById("statLevel").textContent = profile.level || 1;
+    document.getElementById("statXpTotal").textContent = profile.xp || 0;
+    document.getElementById("statGames").textContent = profile.gamesPlayed || 0;
+    document.getElementById("statMissions").textContent = profile.missionsDone || 0;
+    document.getElementById("statGoldTotal").textContent = profile.totalGoldEarned || 0;
+    document.getElementById("statGoldNow").textContent = profile.gold || 0;
+    document.getElementById("statPowerups").textContent = profile.powerupsUsed || 0;
+    var liveMs = (profile.totalPlayTimeMs || 0) + (sessionStartTime ? (performance.now() - sessionStartTime) : 0);
+    document.getElementById("statTime").textContent = formatDuration(liveMs);
+
+    var recordsListEl = document.getElementById("recordsList");
+    var records = (profile.records || []).slice(0, 10);
+    if(!records.length){
+      recordsListEl.innerHTML = '<div class="empty-hint">Hələ nəticə yoxdur — bir oyun bitir!</div>';
+    } else {
+      recordsListEl.innerHTML = records.map(function(r, i){
+        return '<div class="record-row"><span class="rank">' + (i+1) + '</span>' +
+          '<span class="rscore">' + r.score + ' xal</span>' +
+          '<span class="rmeta">Lv.' + r.level + ' · ' + r.missions + ' misya</span></div>';
+      }).join("");
+    }
+  }
+
+  function renderAchievementsScreen(){
+    var achListEl = document.getElementById("achievementsList");
+    achListEl.innerHTML = ACHIEVEMENTS.map(function(a){
+      var unlocked = a.check(profile);
+      return '<div class="achievement-row' + (unlocked ? " unlocked" : "") + '">' +
+        '<div class="achievement-icon">' + (unlocked ? a.icon : "🔒") + '</div>' +
+        '<div class="achievement-info"><div class="achievement-name">' + a.name + '</div><div class="achievement-desc">' + a.desc + '</div></div></div>';
+    }).join("");
+  }
+
+  // Gündəlik giriş mükafatı: 1,2,4,5,7-ci günlər qızıl; 3 və 6-cı günlər rastgələ ulti
+  var DAILY_REWARDS = [
+    {type:"gold", amount:20},
+    {type:"gold", amount:30},
+    {type:"ulti"},
+    {type:"gold", amount:40},
+    {type:"gold", amount:50},
+    {type:"ulti"},
+    {type:"gold", amount:70}
+  ];
+  var ULTI_IDS = ["shield","slow","fast","bomb","hammer","shuffle","rewind"];
+  var ULTI_LABELS = {shield:"🛡️ Qalxan", slow:"⏱️ Yavaşlatma", fast:"⏩ Sürətləndirmə", bomb:"💣 Bomba", hammer:"🔨 Çəkic", shuffle:"🎲 Rəng Qarışdırma", rewind:"⏪ Geri Sarma"};
+
+  function getTodayStr(){
+    var d = new Date();
+    return d.getFullYear() + "-" + (d.getMonth()+1) + "-" + d.getDate();
+  }
+
+  function daysBetweenStr(a, b){
+    var pa = a.split("-").map(Number);
+    var pb = b.split("-").map(Number);
+    var da = new Date(pa[0], pa[1]-1, pa[2]);
+    var db = new Date(pb[0], pb[1]-1, pb[2]);
+    return Math.round((db - da) / 86400000);
+  }
+
+  // Oyun açılanda bir dəfə çağırılır: gündəlik sayğacı və 7 günlük dövrü yeniləyir
+  function checkDailyLogin(){
+    var todayStr = getTodayStr();
+    if(profile.lastLoginDate === todayStr) return;
+    if(profile.lastLoginDate){
+      var diff = daysBetweenStr(profile.lastLoginDate, todayStr);
+      profile.rewardDayIndex = (diff === 1) ? ((profile.rewardDayIndex + 1) % 7) : 0;
+    } else {
+      profile.rewardDayIndex = 0;
+    }
+    profile.dailyClaimedToday = false;
+    profile.totalLoginDays = (profile.totalLoginDays||0) + 1;
+    profile.lastLoginDate = todayStr;
+    saveProfile();
+  }
+
+  function renderDailyScreen(){
+    var daysEl = document.getElementById("dailyDays");
+    var todayIdx = profile.rewardDayIndex || 0;
+    daysEl.innerHTML = DAILY_REWARDS.map(function(r, i){
+      var cls = "daily-day";
+      if(i < todayIdx) cls += " past";
+      else if(i === todayIdx) cls += profile.dailyClaimedToday ? " claimed" : " today";
+      var icon = r.type === "gold" ? "🪙" : "🎁";
+      var lbl = r.type === "gold" ? ("+" + r.amount) : "Ulti";
+      return '<div class="' + cls + '"><div class="dnum">' + (i+1) + '-ci gün</div><div class="dicon">' + icon + '</div><div class="dlbl">' + lbl + '</div></div>';
+    }).join("");
+    var claimBtn = document.getElementById("dailyClaimBtn");
+    if(profile.dailyClaimedToday){
+      claimBtn.disabled = true;
+      claimBtn.textContent = "Bu gün alınıb ✓";
+    } else {
+      claimBtn.disabled = false;
+      claimBtn.textContent = "Mükafatı al";
+    }
+  }
+
+  function claimDailyReward(){
+    if(profile.dailyClaimedToday) return;
+    var reward = DAILY_REWARDS[profile.rewardDayIndex || 0];
+    if(reward.type === "gold"){
+      addGold(reward.amount);
+      showToast("🎁 Gündəlik mükafat: +" + reward.amount + " qızıl!");
+    } else {
+      var pick = ULTI_IDS[Math.floor(Math.random()*ULTI_IDS.length)];
+      profile.inventory[pick] = (profile.inventory[pick]||0) + 1;
+      showToast("🎁 Gündəlik mükafat: 1 " + ULTI_LABELS[pick] + "!");
+    }
+    profile.dailyClaimedToday = true;
+    saveProfile();
+    renderProfile();
+    renderDailyScreen();
+    renderPowerups();
+    updateDailyBtnDot();
+  }
+
+  function updateDailyBtnDot(){
+    var dot = document.getElementById("dailyBtnDot");
+    if(dot) dot.style.display = profile.dailyClaimedToday ? "none" : "";
+  }
+
+  function renderCombo(){
+    var pct = Math.min(100, (comboCount / COMBO_THRESHOLD) * 100);
+    comboFillEl.style.width = pct + "%";
+    comboBarTrackEl.classList.toggle("combo-active", comboActive);
+    comboTextEl.textContent = comboActive ? "🔥 x2 XP" : "";
+  }
+
+  function resetCombo(){
+    if(comboCount > 0 || comboActive){
+      comboCount = 0;
+      comboActive = false;
+      renderCombo();
+    }
+  }
+
+  function renderLives(){
+    var out = "";
+    for(var i=0;i<MAX_LIVES;i++){
+      out += '<span class="heart' + (i < lives ? "" : " lost") + '">' + (i < lives ? "❤️" : "🖤") + "</span>";
+    }
+    livesValEl.innerHTML = out;
+  }
+
+  function setPowerupVisibility(id, count){
+    document.getElementById(id).style.display = (count && count > 0) ? "" : "none";
+  }
+
+  function renderPowerups(){
+    var inv = profile.inventory;
+    setPowerupVisibility("puShield", inv.shield);
+    setPowerupVisibility("puSlow", inv.slow);
+    setPowerupVisibility("puFast", inv.fast);
+    setPowerupVisibility("puBomb", inv.bomb);
+    setPowerupVisibility("puHammer", inv.hammer);
+    setPowerupVisibility("puShuffle", inv.shuffle);
+    setPowerupVisibility("puRewind", inv.rewind);
+    document.getElementById("puShieldCount").textContent = inv.shield || 0;
+    document.getElementById("puSlowCount").textContent = inv.slow || 0;
+    document.getElementById("puFastCount").textContent = inv.fast || 0;
+    document.getElementById("puBombCount").textContent = inv.bomb || 0;
+    document.getElementById("puHammerCount").textContent = inv.hammer || 0;
+    document.getElementById("puShuffleCount").textContent = inv.shuffle || 0;
+    document.getElementById("puRewindCount").textContent = inv.rewind || 0;
+    document.getElementById("puShield").disabled = !inv.shield || inv.shield <= 0 || shieldActive || !canUseThisGame("shield");
+    document.getElementById("puSlow").disabled = !inv.slow || inv.slow <= 0 || slowMode || fastMode || !canUseThisGame("slow");
+    document.getElementById("puFast").disabled = !inv.fast || inv.fast <= 0 || fastMode || slowMode || !canUseThisGame("fast");
+    document.getElementById("puBomb").disabled = !inv.bomb || inv.bomb <= 0 || !canUseThisGame("bomb");
+    document.getElementById("puHammer").disabled = !inv.hammer || inv.hammer <= 0 || smashModeActive || !canUseThisGame("hammer");
+    document.getElementById("puShuffle").disabled = !inv.shuffle || inv.shuffle <= 0 || !canUseThisGame("shuffle");
+    document.getElementById("puRewind").disabled = !inv.rewind || inv.rewind <= 0 || !canUseThisGame("rewind");
+  }
+
+  function pickMissionColor(){
+    var pool = ALL_COLORS.slice();
+    if(prevMissionColorId){
+      pool = pool.filter(function(c){ return c.id !== prevMissionColorId; });
+    }
+    // Finişə (aşağıya) ən yaxın kubiklərin rəngi namizəd olur (əvvəlki misyanın rəngi istisna)
+    var closestTop = {};
+    fieldCubes.forEach(function(c){
+      if(c.caught || c.isHammer) return;
+      var t = c.y || 0;
+      if(!(c.color.id in closestTop) || t > closestTop[c.color.id]){
+        closestTop[c.color.id] = t;
+      }
+    });
+    var candidates = pool.filter(function(c){ return c.id in closestTop; });
+    if(!candidates.length){
+      return pool[Math.floor(Math.random()*pool.length)];
+    }
+    var bestTop = -Infinity;
+    candidates.forEach(function(c){
+      if(closestTop[c.id] > bestTop) bestTop = closestTop[c.id];
+    });
+    var nearest = candidates.filter(function(c){ return closestTop[c.id] === bestTop; });
+    return nearest[Math.floor(Math.random()*nearest.length)];
+  }
+
+  function updateMissionProgressDisplay(){
+    if(!missionProgressEl) return;
+    if(gameMode === "arcade" && arcadeMissionsRequired){
+      missionProgressEl.textContent = missionCount + "/" + arcadeMissionsRequired + " ";
+    } else {
+      missionProgressEl.textContent = "";
+    }
+  }
+
+  function newMission(){
+    updateMissionProgressDisplay();
+    var color = pickMissionColor();
+    // Oyunun ilk 5 misyası həmişə asan olsun (2-4). Sonra tələb olunan say ekrandakı
+    // bu rəngin sayına görə tənzimlənir: rəng çoxdursa daha çox, azdırsa daha az tələb olunur —
+    // oyunçu nadir rəngi tapmaq üçün sonsuz gözləməsin.
+    var count;
+    if(missionCount < 5){
+      count = 2 + Math.floor(Math.random()*3);
+    } else {
+      var colorCountOnScreen = fieldCubes.filter(function(c){
+        return !c.caught && !c.isHammer && c.color && c.color.id === color.id;
+      }).length;
+      var maxFeasible = Math.max(3, colorCountOnScreen + 2);
+      var desired = 4 + Math.floor(Math.random()*4);
+      count = Math.min(desired, maxFeasible, 8);
+    }
+    mission = {color:color, count:count, filled:0};
+    prevMissionColorId = color.id;
+    if(currentTheme() === "puresmiley"){
+      missionSwatchEl.style.background = "transparent";
+      missionSwatchEl.style.boxShadow = "none";
+      missionSwatchEl.textContent = pureSmileyFor(color);
+    } else {
+      missionSwatchEl.style.background = color.hex;
+      missionSwatchEl.style.boxShadow = "";
+      missionSwatchEl.textContent = "";
+    }
+    missionTextEl.textContent = count + " " + color.name + " kub";
+    slotsEl.innerHTML = "";
+    for(var i=0;i<count;i++){
+      var s = document.createElement("div");
+      s.className = "slot";
+      slotsEl.appendChild(s);
+    }
+    // Bildiriş yazmaq əvəzinə rəng birbaşa yuxarıdakı göstəricidə (swatch) görünür
+    flashMissionColor(color);
+  }
+
+  // Yeni misya gələndə oyunçu aşağı baxmadan rəngi dərhal görsün deyə ekranın ortasında qısa parıltı göstərir
+  function flashMissionColor(color){
+    var flash = document.createElement("div");
+    flash.className = "mission-flash";
+    var circle = document.createElement("div");
+    circle.className = "mission-flash-circle";
+    if(currentTheme() === "puresmiley"){
+      circle.style.background = "transparent";
+      circle.textContent = pureSmileyFor(color);
+    } else {
+      circle.style.background = color.hex;
+    }
+    flash.appendChild(circle);
+    field.appendChild(flash);
+    setTimeout(function(){ if(flash.parentNode) flash.parentNode.removeChild(flash); }, 900);
+  }
+
+  function showToast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(function(){ toastEl.classList.remove("show"); }, 1500);
+  }
+
+  function showFloatingText(x, y, text){
+    var el = document.createElement("div");
+    el.className = "floating-text";
+    el.textContent = text;
+    el.style.left = x + "px";
+    el.style.top = y + "px";
+    field.appendChild(el);
+    setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); }, 900);
+  }
+
+  function completeMission(){
+    addXp(MISSION_XP);
+    addGold(MISSION_GOLD);
+    profile.missionsDone = (profile.missionsDone||0) + 1;
+    saveProfile();
+    renderProfile();
+    playMissionSound();
+    showToast("✅ Misya tamamlandı! +" + MISSION_XP + " XP, +" + MISSION_GOLD + " qızıl");
+    missionCount++;
+    updateMissionProgressDisplay();
+    if(gameMode !== "arcade") applySpeedFromMissions();
+    renderProfile();
+    if(gameMode === "arcade" && missionCount >= arcadeMissionsRequired){
+      arcadeLevelEnd(true);
+      return;
+    }
+    // Kubiklər silinmir, oyun fasiləsiz davam edir — yeni misya gözləmədən dərhal verilir
+    newMission();
+  }
+
+  function fillNextSlot(){
+    var empties = slotsEl.querySelectorAll(".slot:not(.filled)");
+    if(!empties.length) return null;
+    var slot = empties[0];
+    slot.classList.add("filled");
+    slot.style.borderColor = mission.color.hex;
+    if(currentTheme() === "puresmiley"){
+      slot.style.background = "transparent";
+      slot.textContent = pureSmileyFor(mission.color);
+    } else {
+      slot.style.background = mission.color.hex;
+    }
+    mission.filled++;
+    if(mission.filled >= mission.count){
+      completeMission();
+    }
+    return slot;
+  }
+
+  function loseLife(reason){
+    if(shieldActive && reason === "Kubik düşdü!"){
+      showToast("🛡️ Qalxan qorudu!");
+      return;
+    }
+    lives--;
+    renderLives();
+    renderPowerups();
+    resetCombo();
+    playBreakSound();
+    if(reason) showToast("💔 " + reason);
+    if(lives <= 0){
+      setTimeout(gameOver, 400);
+    }
+  }
+
+  function accumulatePlayTime(){
+    if(sessionStartTime){
+      profile.totalPlayTimeMs = (profile.totalPlayTimeMs||0) + (performance.now() - sessionStartTime);
+      sessionStartTime = 0;
+      saveProfile();
+    }
+  }
+
+  function gameOver(){
+    spawning = false;
+    gameActive = false;
+    clearTimeout(spawnTimer);
+    clearBurstTimeouts();
+    clearFallingCubes();
+    stopGameMusic();
+    playGameOverSound();
+    accumulatePlayTime();
+
+    if(gameMode === "arcade"){
+      saveProfile();
+      arcadeLevelEnd(false);
+      return;
+    }
+
+    var sessionDurationMs = sessionStartTime ? (performance.now() - sessionStartTime) : 0;
+    profile.records = profile.records || [];
+    profile.records.push({score: sessionXpEarned, gold: sessionGoldEarned, level: profile.level||1, missions: missionCount});
+    profile.records.sort(function(a,b){ return b.score - a.score; });
+    profile.records = profile.records.slice(0, 10);
+    saveProfile();
+
+    overlayStatsEl.innerHTML = "Bu oyunda: <b>" + sessionXpEarned + " xal</b><br>Qızıl: <b>" + sessionGoldEarned + "</b> · Vaxt: <b>" + formatDuration(sessionDurationMs) + "</b><br>Tamamlanan misyalar: <b>" + missionCount + "</b>";
+    overlayEl.classList.add("show");
+  }
+
+  function clearFallingCubes(){
+    fieldCubes.forEach(function(c){
+      c.caught = true;
+      if(c.rafId) cancelAnimationFrame(c.rafId);
+      if(c.el && c.el.parentNode) c.el.parentNode.removeChild(c.el);
+    });
+    fieldCubes = [];
+  }
+
+  // Rənglər bərabər ehtimalla düşür, eyni rəng 2-3 saniyə "soyuyur" və ardıcıl təkrarlanmır — kaotik düşüş
+  function pickSpawnColor(){
+    var now = performance.now();
+
+    var candidates = ALL_COLORS.filter(function(c){
+      var last = lastSpawnTime[c.id];
+      return !last || (now - last) > SPAWN_COOLDOWN_MS;
+    });
+    if(!candidates.length) candidates = ALL_COLORS.slice();
+
+    if(recentSpawnColors.length >= 2 &&
+       recentSpawnColors[recentSpawnColors.length-1] === recentSpawnColors[recentSpawnColors.length-2]){
+      var lastId = recentSpawnColors[recentSpawnColors.length-1];
+      var withoutLast = candidates.filter(function(c){ return c.id !== lastId; });
+      if(withoutLast.length) candidates = withoutLast;
+    }
+
+    var chosen = null;
+
+    // Balanslama: HƏR kubik (rəngindən asılı olmayaraq) finişə çatanda can aparır — ona görə
+    // ekranı yad rənglərlə doldurmaq təhlükəlidir. Misya rəngi tamam yoxdursa güclü/tavanlı
+    // məcburiyyət var; hətta bir dənə vardırsa belə, davamlı axın üçün baza meyl saxlanılır ki,
+    // oyunçu "yanlış" kubiklərin altında qalıb canlarını itirməsin
+    if(mission){
+      var missionColorCount = fieldCubes.filter(function(c){
+        return !c.caught && !c.isHammer && c.color && c.color.id === mission.color.id;
+      }).length;
+      if(missionColorCount === 0){
+        if(missingColorStreak >= 2 || Math.random() < 0.7){
+          chosen = mission.color;
+        } else {
+          missingColorStreak++;
+        }
+      } else {
+        missingColorStreak = 0;
+        if(Math.random() < 0.35){
+          chosen = mission.color;
+        }
+      }
+    }
+
+    // Təcili: finişə çox yaxınlaşmış rəng varsa, onu gücləndir
+    if(!chosen && urgentColorId && now < urgentUntil && Math.random() < 0.5){
+      chosen = candidates.filter(function(c){ return c.id === urgentColorId; })[0] || null;
+    }
+
+    if(!chosen){
+      chosen = candidates[Math.floor(Math.random()*candidates.length)];
+    }
+
+    if(mission && chosen.id === mission.color.id) missingColorStreak = 0;
+
+    lastSpawnTime[chosen.id] = now;
+    recentSpawnColors.push(chosen.id);
+    if(recentSpawnColors.length > 4) recentSpawnColors.shift();
+    return chosen;
+  }
+
+  function hashColorId(colorId){
+    return Math.abs(colorId.split("").reduce(function(a,b){return a+b.charCodeAt(0);},0));
+  }
+
+  function pureSmileyFor(color){
+    return PURE_SMILEY_MAP[color.id] || PURE_SMILEYS[hashColorId(color.id) % PURE_SMILEYS.length];
+  }
+
+  function getCubeContent(color){
+    if(currentTheme() === "puresmiley"){
+      return pureSmileyFor(color);
+    }
+    if(currentTheme() === "emoji"){
+      return EMOJIS[Math.floor(Math.random()*EMOJIS.length)];
+    }
+    return "";
+  }
+
+  // Kubiklər tam üst-üstə düşməsin: yuxarı zonadakı kubiklərdən minimum məsafədə olan mövqe axtarılır
+  function pickSpawnX(fw, cubeSize){
+    var margin = 6;
+    var usableWidth = Math.max(cubeSize, fw - margin*2);
+    var maxX = margin + usableWidth - cubeSize;
+    var minSeparation = cubeSize * 0.85;
+
+    // Kubiklərin sürəti dəyişkəndir (misya rəngi, az kub, yavaşlatma, sürətləndirmə) — sürətli kub
+    // aşağıdakı yavaş kubu "tuta" bilər, ona görə yalnız ən yuxarını deyil, yuxarı zonanın hamısını yoxla
+    var nearTopXs = [];
+    fieldCubes.forEach(function(c){
+      if(c.caught) return;
+      if((c.y || 0) < 160){
+        nearTopXs.push(parseFloat(c.el.style.left) || margin);
+      }
+    });
+
+    var bestX = margin, bestDist = -1;
+    for(var attempt=0; attempt<25; attempt++){
+      var candidateX = margin + Math.random() * Math.max(0, usableWidth - cubeSize);
+      var minDist = nearTopXs.length ? Infinity : minSeparation;
+      for(var k=0;k<nearTopXs.length;k++){
+        var d = Math.abs(candidateX - nearTopXs[k]);
+        if(d < minDist) minDist = d;
+      }
+      if(minDist >= minSeparation) return candidateX;
+      if(minDist > bestDist){
+        bestDist = minDist;
+        bestX = candidateX;
+      }
+    }
+    return Math.max(margin, Math.min(bestX, maxX));
+  }
+
+  // Düşmə effektinə uyğun kiçik "canlı" hissəciklər (qığılcım/parıltı/iz) kubikin öz uşaq elementləri kimi
+  // əlavə olunur — beləliklə valideynin transform-u (düşmə mövqeyi) JS tərəfindən idarə olunsa belə
+  // bu hissəciklər öz sərbəst animasiyalarını itirmirlər
+  function applyFallEffectDecor(el, fx){
+    if(fx === "fire"){
+      for(var i=0;i<3;i++){
+        var ember = document.createElement("span");
+        ember.className = "fire-ember";
+        ember.style.left = (13 + Math.random()*18) + "px";
+        ember.style.setProperty("--ex", (Math.random()*16-8) + "px");
+        ember.style.animationDelay = (Math.random()*1.1) + "s";
+        el.appendChild(ember);
+      }
+    } else if(fx === "ice"){
+      for(var j=0;j<2;j++){
+        var glint = document.createElement("span");
+        glint.className = "ice-glint";
+        glint.style.left = (6 + Math.random()*30) + "px";
+        glint.style.top = (6 + Math.random()*30) + "px";
+        glint.style.animationDelay = (Math.random()*1.5) + "s";
+        el.appendChild(glint);
+      }
+    } else if(fx === "ghost"){
+      var wisp = document.createElement("span");
+      wisp.className = "ghost-wisp";
+      el.appendChild(wisp);
+    } else if(fx === "electric"){
+      for(var k=0;k<2;k++){
+        var bolt = document.createElement("span");
+        bolt.className = "electric-bolt";
+        bolt.textContent = "⚡";
+        if(k===0) bolt.style.left = "-7px"; else bolt.style.right = "-7px";
+        bolt.style.animationDelay = (Math.random()*0.5) + "s";
+        el.appendChild(bolt);
+      }
+    } else if(fx === "rainbow"){
+      var cols = ["#ff5b5b","#ffb347","#ffe066","#6bdc6b","#57c7ff","#b98bff"];
+      for(var m=0;m<4;m++){
+        var spark = document.createElement("span");
+        spark.className = "rainbow-spark";
+        spark.style.left = (Math.random()*38) + "px";
+        spark.style.top = (Math.random()*38) + "px";
+        spark.style.background = cols[Math.floor(Math.random()*cols.length)];
+        spark.style.animationDelay = (Math.random()*1) + "s";
+        el.appendChild(spark);
+      }
+    }
+  }
+
+  function spawnCube(opts){
+    if(!gameActive) return;
+    opts = opts || {};
+    // Ekran həddindən artıq izdihamlı olmasın deyə maksimum sayı aşanda spawn ötürülür —
+    // AMMA misyadakı rəng ekranda heç yoxdursa bu qoruma keçilir, yoxsa oyunçu lazımlı rəngi əbədi gözləyər
+    if(fieldCubes.length >= MAX_CONCURRENT_CUBES && !opts.fastStart){
+      var missionColorOnScreen = mission && fieldCubes.some(function(c){
+        return !c.caught && !c.isHammer && c.color && c.color.id === mission.color.id;
+      });
+      if(missionColorOnScreen) return;
+    }
+    var fw = field.clientWidth;
+    var cubeSize = 46;
+    var color = pickSpawnColor();
+    var el = document.createElement("div");
+    el.className = "cube";
+
+    var content = getCubeContent(color);
+    var smileyHitEl = null;
+    var smileyGlyphEl = null;
+    if(currentTheme() === "puresmiley"){
+      el.classList.add("theme-pure-smiley");
+      // Glif öz ayrıca span-ında saxlanılır ki, sonradan (məs. Rəng Qarışdırma ultisi) mətni
+      // yeniləyəndə .smiley-hit toxunma qatı el.textContent tərəfindən silinməsin
+      smileyGlyphEl = document.createElement("span");
+      smileyGlyphEl.className = "smiley-glyph";
+      smileyGlyphEl.textContent = content;
+      el.appendChild(smileyGlyphEl);
+      smileyHitEl = document.createElement("div");
+      smileyHitEl.className = "smiley-hit";
+      el.appendChild(smileyHitEl);
+    } else {
+      el.style.background = color.hex;
+      if(content) el.textContent = content;
+    }
+
+    // Kaotik, amma üst-üstə düşməyən mövqe: hazırda yuxarıda olan kubiklərlə toqquşmayan mövqe seçilir
+    var x = pickSpawnX(fw, cubeSize);
+    el.style.left = x + "px";
+
+    var fx = profile.activeEffect || "none";
+    if(fx !== "none"){
+      el.classList.add("fx-" + fx);
+      applyFallEffectDecor(el, fx);
+    }
+
+    field.appendChild(el);
+
+    var duration = getFallDuration();
+
+    var record = {el:el, color:color, caught:false, y:0, rafId:null, lastFrame:performance.now(), animate:null, accumTime:0, smileyGlyphEl:smileyGlyphEl};
+    fieldCubes.push(record);
+
+    var targetTop = field.clientHeight + 20;
+    var travel = targetTop + 56;
+
+    // Yalnız oyun başlanğıcındakı "burst" kubiklər sahənin yarısına qədər 5x sürətlə düşür
+    var fastStart = !!opts.fastStart;
+    var fastFrac = 0.5;
+    var fastDistance = travel * fastFrac;
+    var fastDuration = (duration * fastFrac) / 5;
+    var normalPhaseDuration = duration * (1 - fastFrac);
+    var urgentFlagged = false;
+
+    function animate(now){
+      if(record.caught || !gameActive || paused) return;
+      var dt = now - record.lastFrame;
+      record.lastFrame = now;
+      var rate;
+      if(slowMode){
+        rate = 0.2; // Yavaşlatma: kubiklər ~80% yavaşıyır, geriyə sıçramır
+      } else if(fastMode){
+        rate = 2; // Sürətləndirmə: 2x sürət
+      } else {
+        // Misyadakı rəngdən ekranda YARIYADƏK görünən kubik yoxdursa sürət 5x artır (kub top:-56px-dən başlayır, 46px hündürlüyündə)
+        var missionColorHalfVisible = mission && fieldCubes.some(function(c){
+          return !c.caught && !c.isHammer && c.color && c.color.id === mission.color.id && (c.y || 0) >= 33;
+        });
+        var missionColorMissing = mission && !missionColorHalfVisible;
+        if(missionColorMissing){
+          rate = 5;
+        } else {
+          // Ekranda 10-dan az kubik varsa, yolun yarısına qədər sürətlənib sonra normal tempə qayıdır
+          var onScreenCount = fieldCubes.length;
+          var pastMidpoint = (record.y || 0) / travel >= 0.5;
+          rate = (onScreenCount < 10 && !pastMidpoint) ? 2 : 1;
+        }
+      }
+      record.accumTime = Math.max(0, record.accumTime + dt * rate);
+      var posY;
+      if(fastStart){
+        if(record.accumTime < fastDuration){
+          posY = fastDistance * (record.accumTime / fastDuration);
+        } else {
+          var t2 = record.accumTime - fastDuration;
+          var progress2 = t2 / normalPhaseDuration;
+          if(progress2 >= 1){
+            var idx = fieldCubes.indexOf(record);
+            if(idx>=0) fieldCubes.splice(idx,1);
+            if(el.parentNode) el.parentNode.removeChild(el);
+            loseLife("Kubik düşdü!");
+            return;
+          }
+          posY = fastDistance + (travel - fastDistance) * progress2;
+        }
+      } else {
+        var progress = record.accumTime / duration;
+        if(progress >= 1){
+          var idx2 = fieldCubes.indexOf(record);
+          if(idx2>=0) fieldCubes.splice(idx2,1);
+          if(el.parentNode) el.parentNode.removeChild(el);
+          loseLife("Kubik düşdü!");
+          return;
+        }
+        posY = travel * progress;
+      }
+
+      // Kubik finişə çox yaxınlaşdıqda o rəngin düşürülməsini müvəqqəti artır
+      if(!urgentFlagged && posY / travel >= 0.8){
+        urgentFlagged = true;
+        urgentColorId = color.id;
+        urgentUntil = performance.now() + 4000;
+      }
+
+      record.y = posY;
+      el.style.transform = "translateY(" + posY + "px)";
+      record.rafId = requestAnimationFrame(animate);
+    }
+    record.animate = animate;
+    record.rafId = requestAnimationFrame(animate);
+
+    function onTap(ev){
+      ev.preventDefault();
+      ev.stopPropagation();
+      onCubeTap(record);
+    }
+    var tapTarget = smileyHitEl || el;
+    tapTarget.addEventListener("click", onTap);
+    tapTarget.addEventListener("touchstart", onTap, {passive:false});
+  }
+
+  // Nadir bonus: Çəkic kubiki. Yerə düşərsə can getmir (sadəcə bonus fürsəti itir).
+  function spawnHammerCube(){
+    if(!gameActive) return;
+    var fw = field.clientWidth;
+    var cubeSize = 46;
+    var el = document.createElement("div");
+    el.className = "cube hammer-cube";
+    el.innerHTML = HAMMER_SVG;
+    var x = pickSpawnX(fw, cubeSize);
+    el.style.left = x + "px";
+    field.appendChild(el);
+
+    var duration = getFallDuration();
+
+    var record = {el:el, color:null, caught:false, y:0, rafId:null, lastFrame:performance.now(), animate:null, isHammer:true};
+    fieldCubes.push(record);
+
+    var targetTop = field.clientHeight + 20;
+    var travel = targetTop + 56;
+    var accumTime = 0;
+
+    function animate(now){
+      if(record.caught || !gameActive || paused) return;
+      var dt = now - record.lastFrame;
+      record.lastFrame = now;
+      var rate = slowMode ? 0.2 : 1;
+      accumTime += dt * rate;
+      var progress = accumTime / duration;
+      if(progress >= 1){
+        var idx = fieldCubes.indexOf(record);
+        if(idx>=0) fieldCubes.splice(idx,1);
+        if(el.parentNode) el.parentNode.removeChild(el);
+        return;
+      }
+      record.y = travel * progress;
+      el.style.transform = "translateY(" + record.y + "px)";
+      record.rafId = requestAnimationFrame(animate);
+    }
+    record.animate = animate;
+    record.rafId = requestAnimationFrame(animate);
+
+    function onTap(ev){
+      ev.preventDefault();
+      ev.stopPropagation();
+      if(record.caught || !gameActive || paused) return;
+      record.caught = true;
+      if(record.rafId) cancelAnimationFrame(record.rafId);
+      var idx = fieldCubes.indexOf(record);
+      if(idx>=0) fieldCubes.splice(idx,1);
+      if(el.parentNode) el.parentNode.removeChild(el);
+      activateSmashMode();
+    }
+    el.addEventListener("click", onTap);
+    el.addEventListener("touchstart", onTap, {passive:false});
+  }
+
+  function activateSmashMode(){
+    smashModeActive = true;
+    smashModeEndsAt = performance.now() + 5000;
+    smashTimerEl.style.display = "flex";
+    playComboSound();
+    showToast("🔨 Sındırma rejimi! Bütün kubiklərə toxun!");
+    renderPowerups();
+    clearInterval(smashTimerInterval);
+    smashTimerInterval = setInterval(function(){
+      if(!smashModeActive){ clearInterval(smashTimerInterval); return; }
+      var remaining = smashModeEndsAt - performance.now();
+      if(remaining <= 0){
+        smashModeActive = false;
+        smashTimerEl.style.display = "none";
+        clearInterval(smashTimerInterval);
+        renderPowerups();
+        return;
+      }
+      smashTimerValEl.textContent = Math.ceil(remaining/1000);
+    }, 100);
+  }
+
+  // Oyun başlayanda ekranı dərhal doldurmaq üçün ilkin "burst": kubiklər 5x sürətlə sahənin yarısına enir (təsadüfi mövqelərdə)
+  function spawnStartBurst(){
+    var count = 24;
+    for(var i=0;i<count;i++){
+      var id = setTimeout(function(){
+        if(gameActive && !paused) spawnCube({fastStart:true});
+      }, i * 280 + Math.random() * 120);
+      burstTimeouts.push(id);
+    }
+  }
+
+  function clearBurstTimeouts(){
+    burstTimeouts.forEach(function(id){ clearTimeout(id); });
+    burstTimeouts = [];
+  }
+
+  // Səhv rəngə toxunulanda / sındırma rejimində: düşməni dayandır, kiçik silkələnmə ilə çıxar
+  function shakeAndRemove(record){
+    var el = record.el;
+    var baseY = record.y || 0;
+    var start = performance.now();
+    function step(now){
+      var t = now - start;
+      if(t >= 320){
+        if(el.parentNode) el.parentNode.removeChild(el);
+        return;
+      }
+      var offset = Math.sin((t/320) * Math.PI * 5) * 6;
+      el.style.transform = "translate(" + offset + "px," + baseY + "px)";
+      requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  // Seçilmiş "sınma effekti"nə uyğun kiçik hissəcik partlayışı yaradır (mağazadan seçilir)
+  function makeBrkParticle(cls, relX, relY, dx, dy, rot, extraStyle){
+    var el = document.createElement("div");
+    el.className = "brk-particle " + cls;
+    el.style.left = relX + "px";
+    el.style.top = relY + "px";
+    el.style.setProperty("--dx", dx + "px");
+    el.style.setProperty("--dy", dy + "px");
+    el.style.setProperty("--rot", rot + "deg");
+    if(extraStyle){
+      for(var k in extraStyle){ el.style[k] = extraStyle[k]; }
+    }
+    field.appendChild(el);
+    setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); }, 750);
+    return el;
+  }
+
+  function spawnShatterShards(relX, relY, colorHex){
+    var n = 7;
+    for(var i=0;i<n;i++){
+      var angle = (Math.PI*2/n)*i + (Math.random()*0.5 - 0.25);
+      var dist = 26 + Math.random()*22;
+      var dx = Math.cos(angle)*dist, dy = Math.sin(angle)*dist;
+      var w = 6 + Math.random()*7, h = 6 + Math.random()*7;
+      makeBrkParticle("brk-shard", relX, relY, dx, dy, Math.random()*360-180, {width:w+"px", height:h+"px", background: colorHex || "#999"});
+    }
+  }
+
+  function spawnConfettiBurst(relX, relY){
+    var colors = [getVar("--red"),getVar("--blue"),getVar("--green"),getVar("--yellow"),getVar("--purple"),getVar("--orange"),getVar("--pink"),getVar("--cyan")];
+    var n = 10;
+    for(var i=0;i<n;i++){
+      var angle = Math.random()*Math.PI*2;
+      var dist = 22 + Math.random()*34;
+      var dx = Math.cos(angle)*dist, dy = Math.sin(angle)*dist - 10;
+      var size = 5 + Math.random()*4;
+      var col = colors[Math.floor(Math.random()*colors.length)];
+      makeBrkParticle("brk-confetti", relX, relY, dx, dy, Math.random()*360-180, {width:size+"px", height:(size*2)+"px", background:col});
+    }
+  }
+
+  function spawnPixelDissolve(relX, relY, colorHex){
+    var grid = 4, cell = 9;
+    for(var r=0;r<grid;r++){
+      for(var c=0;c<grid;c++){
+        var ox = (c-(grid-1)/2)*cell, oy = (r-(grid-1)/2)*cell;
+        var dx = ox*1.8 + (Math.random()*8-4), dy = oy*1.8 + (Math.random()*8-4);
+        makeBrkParticle("brk-pixel", relX+ox, relY+oy, dx, dy, 0, {width:cell+"px", height:cell+"px", background: colorHex || "#999"});
+      }
+    }
+  }
+
+  function spawnStarBurst(relX, relY){
+    var n = 6;
+    var stars = ["✦","✨","⭐"];
+    for(var i=0;i<n;i++){
+      var angle = (Math.PI*2/n)*i;
+      var dist = 30 + Math.random()*24;
+      var dx = Math.cos(angle)*dist, dy = Math.sin(angle)*dist;
+      var el = makeBrkParticle("brk-star", relX, relY, dx, dy, Math.random()*180-90);
+      el.textContent = stars[Math.floor(Math.random()*stars.length)];
+    }
+  }
+
+  // Mağazada seçilmiş sınma effektinə görə düzgün funksiyanı çağırır ("none" olanda heç nə çıxarmır)
+  function spawnBreakEffect(relX, relY, colorHex){
+    var style = profile.activeBreakEffect || "none";
+    if(style === "none") return;
+    if(style === "shatter") spawnShatterShards(relX, relY, colorHex);
+    else if(style === "confetti") spawnConfettiBurst(relX, relY);
+    else if(style === "pixel") spawnPixelDissolve(relX, relY, colorHex);
+    else if(style === "star") spawnStarBurst(relX, relY);
+  }
+
+  function onCubeTap(record){
+    if(record.caught || !spawning || !gameActive || paused) return;
+    record.caught = true;
+    if(record.rafId) cancelAnimationFrame(record.rafId);
+
+    var idx = fieldCubes.indexOf(record);
+    if(idx>=0) fieldCubes.splice(idx,1);
+
+    var el = record.el;
+    var cubeRect = el.getBoundingClientRect();
+    var brkFrect = field.getBoundingClientRect();
+    var brkX = cubeRect.left - brkFrect.left + cubeRect.width/2;
+    var brkY = cubeRect.top - brkFrect.top + cubeRect.height/2;
+
+    if(smashModeActive){
+      playBreakSound();
+      addXp(HAMMER_BREAK_XP);
+      spawnBreakEffect(brkX, brkY, record.color ? record.color.hex : null);
+      shakeAndRemove(record);
+      return;
+    }
+
+    if(record.color.id !== mission.color.id){
+      loseLife();
+      spawnBreakEffect(brkX, brkY, record.color.hex);
+      shakeAndRemove(record);
+      return;
+    }
+
+    // Combo izləmə: sürətli ardıcıl düzgün toxunuşlar
+    var now = performance.now();
+    if(comboCount > 0 && (now - lastCatchTime) > COMBO_WINDOW_MS){
+      comboCount = 0;
+      comboActive = false;
+    }
+    comboCount++;
+    lastCatchTime = now;
+    if(comboCount >= COMBO_THRESHOLD && !comboActive){
+      comboActive = true;
+      profile.comboActivations = (profile.comboActivations||0) + 1;
+      saveProfile();
+      showToast("🔥 Combo aktiv! 2x XP");
+      playComboSound();
+    }
+    renderCombo();
+
+    var cubeXp = comboActive ? CUBE_XP * 2 : CUBE_XP;
+    addXp(cubeXp);
+    addGold(CUBE_GOLD);
+    playCatchSound();
+
+    // Toxunulan kubikin yanında "qalan say" effekti (yuxarıdakı yazı əvəzinə)
+    var remainingAfterThisCatch = (mission.count - mission.filled) - 1;
+    var frect = field.getBoundingClientRect();
+    var relX = cubeRect.left - frect.left + cubeRect.width/2;
+    var relY = cubeRect.top - frect.top;
+    showFloatingText(relX, relY, remainingAfterThisCatch > 0 ? (remainingAfterThisCatch + " qaldı") : "Tamamlandı! 🎉");
+
+    var slot = fillNextSlot();
+    var baseY = record.y || 0;
+    if(slot){
+      var slotRect = slot.getBoundingClientRect();
+      var dx = (slotRect.left + slotRect.width/2) - (cubeRect.left + cubeRect.width/2);
+      var dy = (slotRect.top + slotRect.height/2) - (cubeRect.top + cubeRect.height/2);
+      requestAnimationFrame(function(){
+        el.classList.add("flying");
+        el.style.transform = "translate(" + dx + "px," + (baseY+dy) + "px) scale(.5)";
+        el.style.opacity = "0.4";
+      });
+      el.addEventListener("transitionend", function handler(){
+        el.removeEventListener("transitionend", handler);
+        if(el.parentNode) el.parentNode.removeChild(el);
+      });
+    } else {
+      if(el.parentNode) el.parentNode.removeChild(el);
+    }
+    flashGamePhotoIfReactive();
+  }
+
+  function loop(){
+    if(!spawning || !gameActive || paused) return;
+    var now = performance.now();
+    // Dalğa/sakit fazası hələlik ləğv edilib — sabit-amma-xaotik tək aralıqla davam edir
+    if(now >= hammerEndsAt){
+      hammerEndsAt = now + getHammerInterval();
+      spawnHammerCube();
+    }
+
+    spawnCube();
+    var next = getSteadySpawnInterval();
+    if(slowMode) next *= 1.5;
+    spawnTimer = setTimeout(loop, next);
+  }
+
+  function pauseGame(){
+    if(!gameActive || paused) return;
+    paused = true;
+    pauseStart = performance.now();
+    clearTimeout(spawnTimer);
+    if(slowMode) clearInterval(slowTimerInterval);
+    if(slowMode) clearTimeout(slowTimeout);
+    if(fastMode) clearInterval(fastTimerInterval);
+    if(fastMode) clearTimeout(fastTimeout);
+    if(shieldActive) clearInterval(shieldTimerInterval);
+    if(shieldActive) clearTimeout(shieldTimeout);
+    if(smashModeActive) clearInterval(smashTimerInterval);
+    fieldCubes.forEach(function(c){
+      if(c.rafId){ cancelAnimationFrame(c.rafId); c.rafId = null; }
+    });
+    pauseBtn.textContent = "▶️";
+    pauseMainPanel.style.display = "";
+    pauseConfirmPanel.style.display = "none";
+    pauseLevelsBtn.style.display = (gameMode === "arcade") ? "" : "none";
+    pauseOverlay.classList.add("show");
+  }
+
+  function startSlowTimerInterval(){
+    clearInterval(slowTimerInterval);
+    slowTimerInterval = setInterval(function(){
+      if(!slowMode){ clearInterval(slowTimerInterval); return; }
+      var remaining = slowEndsAt - performance.now();
+      if(remaining <= 0){
+        endSlowMode();
+        return;
+      }
+      slowTimerValEl.textContent = Math.ceil(remaining/1000);
+    }, 100);
+  }
+
+  function resumeGame(){
+    if(!gameActive || !paused) return;
+    var pausedFor = performance.now() - pauseStart;
+    paused = false;
+    fieldCubes.forEach(function(c){
+      c.lastFrame = performance.now();
+      if(c.animate) c.rafId = requestAnimationFrame(c.animate);
+    });
+    waveEndsAt += pausedFor;
+    hammerEndsAt += pausedFor;
+    if(slowMode){
+      slowEndsAt += pausedFor;
+      var remaining = Math.max(0, slowEndsAt - performance.now());
+      slowTimeout = setTimeout(endSlowMode, remaining);
+      startSlowTimerInterval();
+    }
+    if(fastMode){
+      fastEndsAt += pausedFor;
+      var remainingFast = Math.max(0, fastEndsAt - performance.now());
+      fastTimeout = setTimeout(endFast, remainingFast);
+      startFastTimerInterval();
+    }
+    if(shieldActive){
+      shieldEndsAt += pausedFor;
+      var remainingShield = Math.max(0, shieldEndsAt - performance.now());
+      shieldTimeout = setTimeout(endShield, remainingShield);
+      startShieldTimerInterval();
+    }
+    if(smashModeActive){
+      smashModeEndsAt += pausedFor;
+      smashTimerInterval = setInterval(function(){
+        if(!smashModeActive){ clearInterval(smashTimerInterval); return; }
+        var remaining2 = smashModeEndsAt - performance.now();
+        if(remaining2 <= 0){
+          smashModeActive = false;
+          smashTimerEl.style.display = "none";
+          clearInterval(smashTimerInterval);
+          renderPowerups();
+          return;
+        }
+        smashTimerValEl.textContent = Math.ceil(remaining2/1000);
+      }, 100);
+    }
+    pauseBtn.textContent = "⏸️";
+    pauseOverlay.classList.remove("show");
+    loop();
+  }
+
+  function togglePause(){
+    if(paused) resumeGame(); else pauseGame();
+  }
+
+  var pauseQuitTarget = "menu";
+  function askQuitConfirm(target){
+    pauseQuitTarget = target || "menu";
+    pauseConfirmTextEl.textContent = pauseQuitTarget === "levels" ?
+      "Levellər bölməsinə qayıtsanız oyun yarımçıq qalacaq. Əminsiniz?" :
+      "Ana menyuya qayıtsanız oyun yarımçıq qalacaq. Əminsiniz?";
+    pauseMainPanel.style.display = "none";
+    pauseConfirmPanel.style.display = "";
+  }
+
+  function cancelQuit(){
+    pauseConfirmPanel.style.display = "none";
+    pauseMainPanel.style.display = "";
+  }
+
+  function canUseThisGame(id){
+    return (usesThisGame[id] || 0) < USE_LIMIT_PER_GAME;
+  }
+
+  function usePowerup(id){
+    profile.powerupsUsed = (profile.powerupsUsed||0) + 1;
+    usesThisGame[id] = (usesThisGame[id] || 0) + 1;
+    saveProfile();
+  }
+
+  function useShield(){
+    if(paused) return;
+    if(!profile.inventory.shield || profile.inventory.shield <= 0) return;
+    if(shieldActive) return;
+    if(!canUseThisGame("shield")){ showToast("🛡️ Bu oyunda limit doldu (maks. " + USE_LIMIT_PER_GAME + ")"); return; }
+    profile.inventory.shield--;
+    usePowerup("shield");
+    saveProfile();
+    renderPowerups();
+    shieldActive = true;
+    shieldTimerEl.style.display = "flex";
+    shieldTimerValEl.textContent = "20";
+    showToast("🛡️ Qalxan aktivdir! 20 saniyə kubiklər can aparmır");
+    shieldEndsAt = performance.now() + 20000;
+    startShieldTimerInterval();
+    shieldTimeout = setTimeout(endShield, 20000);
+  }
+
+  function endShield(){
+    shieldActive = false;
+    shieldTimerEl.style.display = "none";
+    clearInterval(shieldTimerInterval);
+    renderPowerups();
+    showToast("🛡️ Qalxan bitdi");
+  }
+
+  function startShieldTimerInterval(){
+    clearInterval(shieldTimerInterval);
+    shieldTimerInterval = setInterval(function(){
+      if(!shieldActive){ clearInterval(shieldTimerInterval); return; }
+      var remaining = shieldEndsAt - performance.now();
+      if(remaining <= 0){ endShield(); return; }
+      shieldTimerValEl.textContent = Math.ceil(remaining/1000);
+    }, 100);
+  }
+
+  function useFast(){
+    if(paused) return;
+    if(!profile.inventory.fast || profile.inventory.fast <= 0) return;
+    if(fastMode || slowMode) return;
+    if(!canUseThisGame("fast")){ showToast("⏩ Bu oyunda limit doldu (maks. " + USE_LIMIT_PER_GAME + ")"); return; }
+    profile.inventory.fast--;
+    usePowerup("fast");
+    saveProfile();
+    renderPowerups();
+    fastMode = true;
+    fastTimerEl.style.display = "flex";
+    fastTimerValEl.textContent = "15";
+    showToast("⏩ Sürətləndirmə aktivdir!");
+    fastEndsAt = performance.now() + 15000;
+    startFastTimerInterval();
+    fastTimeout = setTimeout(endFast, 15000);
+  }
+
+  function endFast(){
+    fastMode = false;
+    fastTimerEl.style.display = "none";
+    clearInterval(fastTimerInterval);
+    renderPowerups();
+    showToast("⏩ Normal sürət");
+  }
+
+  function startFastTimerInterval(){
+    clearInterval(fastTimerInterval);
+    fastTimerInterval = setInterval(function(){
+      if(!fastMode){ clearInterval(fastTimerInterval); return; }
+      var remaining = fastEndsAt - performance.now();
+      if(remaining <= 0){ endFast(); return; }
+      fastTimerValEl.textContent = Math.ceil(remaining/1000);
+    }, 100);
+  }
+
+  function useShuffle(){
+    if(paused) return;
+    if(!profile.inventory.shuffle || profile.inventory.shuffle <= 0) return;
+    if(!canUseThisGame("shuffle")){ showToast("🎲 Bu oyunda limit doldu (maks. " + USE_LIMIT_PER_GAME + ")"); return; }
+    var candidates = fieldCubes.filter(function(c){ return !c.caught && !c.isHammer; });
+    if(candidates.length < 2){ showToast("🎲 Qarışdırmaq üçün kifayət qədər kubik yoxdur"); return; }
+    profile.inventory.shuffle--;
+    usePowerup("shuffle");
+    saveProfile();
+    renderPowerups();
+    var colors = candidates.map(function(c){ return c.color; });
+    for(var i=colors.length-1;i>0;i--){
+      var j = Math.floor(Math.random()*(i+1));
+      var tmp = colors[i]; colors[i] = colors[j]; colors[j] = tmp;
+    }
+    candidates.forEach(function(c, i){
+      c.color = colors[i];
+      var content = getCubeContent(colors[i]);
+      if(currentTheme() === "puresmiley"){
+        if(c.smileyGlyphEl) c.smileyGlyphEl.textContent = content;
+      } else {
+        c.el.style.background = colors[i].hex;
+        c.el.textContent = content || "";
+      }
+    });
+    showToast("🎲 Rənglər qarışdı!");
+  }
+
+  function useRewind(){
+    if(paused) return;
+    if(!profile.inventory.rewind || profile.inventory.rewind <= 0) return;
+    if(!canUseThisGame("rewind")){ showToast("⏪ Bu oyunda limit doldu (maks. " + USE_LIMIT_PER_GAME + ")"); return; }
+    var candidates = fieldCubes.filter(function(c){ return !c.caught && !c.isHammer; });
+    if(!candidates.length){ showToast("⏪ Geri sarmaq üçün kubik yoxdur"); return; }
+    profile.inventory.rewind--;
+    usePowerup("rewind");
+    saveProfile();
+    renderPowerups();
+    // Sabit miqdar çıxartmaq əvəzinə hər kubiki ÖZ irəliləməsinə nisbətən geri çəkir —
+    // yoxsa yuxarıya yaxın olan bütün kubiklər eyni anda 0-a düşüb bir-birinin üstünə yığılır
+    candidates.forEach(function(c){
+      c.accumTime = c.accumTime * 0.55;
+    });
+    showToast("⏪ Kubiklər geri sarıldı!");
+  }
+
+  function endSlowMode(){
+    slowMode = false;
+    slowOverlay.classList.remove("active");
+    slowTimerEl.style.display = "none";
+    clearInterval(slowTimerInterval);
+    renderPowerups();
+    showToast("⏱️ Normal sürət");
+  }
+
+  function useSlow(){
+    if(paused) return;
+    if(!profile.inventory.slow || profile.inventory.slow <= 0) return;
+    if(slowMode || fastMode) return;
+    if(!canUseThisGame("slow")){ showToast("⏱️ Bu oyunda limit doldu (maks. " + USE_LIMIT_PER_GAME + ")"); return; }
+    profile.inventory.slow--;
+    usePowerup("slow");
+    saveProfile();
+    renderPowerups();
+    slowMode = true;
+    slowOverlay.classList.add("active");
+    showToast("⏱️ Zaman yavaşladı!");
+    slowEndsAt = performance.now() + 15000;
+    slowTimerEl.style.display = "flex";
+    slowTimerValEl.textContent = "15";
+    startSlowTimerInterval();
+    slowTimeout = setTimeout(endSlowMode, 15000);
+  }
+
+  function useBomb(){
+    if(paused) return;
+    if(!profile.inventory.bomb || profile.inventory.bomb <= 0) return;
+    if(!canUseThisGame("bomb")){ showToast("💣 Bu oyunda limit doldu (maks. " + USE_LIMIT_PER_GAME + ")"); return; }
+    profile.inventory.bomb--;
+    usePowerup("bomb");
+    saveProfile();
+    renderPowerups();
+    var removed = 0;
+    var toRemove = [];
+    fieldCubes.forEach(function(c){
+      if(!c.caught && !c.isHammer && c.color.id !== mission.color.id) toRemove.push(c);
+    });
+    toRemove.forEach(function(c){
+      var exp = document.createElement("div");
+      exp.className = "explosion";
+      var rect = c.el.getBoundingClientRect();
+      var frect = field.getBoundingClientRect();
+      var bombCx = rect.left - frect.left + rect.width/2;
+      var bombCy = rect.top - frect.top + rect.height/2;
+      exp.style.left = (bombCx - 30) + "px";
+      exp.style.top = (bombCy - 30) + "px";
+      field.appendChild(exp);
+      setTimeout(function(){ if(exp.parentNode) exp.parentNode.removeChild(exp); }, 500);
+      spawnBreakEffect(bombCx, bombCy, c.color ? c.color.hex : null);
+      c.caught = true;
+      if(c.rafId) cancelAnimationFrame(c.rafId);
+      var idx = fieldCubes.indexOf(c);
+      if(idx>=0) fieldCubes.splice(idx,1);
+      if(c.el.parentNode) c.el.parentNode.removeChild(c.el);
+      removed++;
+    });
+    showToast("💣 " + removed + " kub partladı!");
+  }
+
+  function useHammer(){
+    if(paused) return;
+    if(!profile.inventory.hammer || profile.inventory.hammer <= 0) return;
+    if(smashModeActive) return;
+    if(!canUseThisGame("hammer")){ showToast("🔨 Bu oyunda limit doldu (maks. " + USE_LIMIT_PER_GAME + ")"); return; }
+    profile.inventory.hammer--;
+    usePowerup("hammer");
+    saveProfile();
+    renderPowerups();
+    activateSmashMode();
+  }
+
+  var activeShopTab = 0;
+
+  function renderShopTabs(){
+    var tabsEl = document.getElementById("shopTabs");
+    tabsEl.innerHTML = SHOP_CATEGORIES.map(function(cat, i){
+      return '<button class="shop-tab-btn' + (i === activeShopTab ? " active" : "") + '" data-idx="' + i + '">' + cat.tab + '</button>';
+    }).join("");
+    tabsEl.querySelectorAll("button").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        activeShopTab = parseInt(this.getAttribute("data-idx"), 10);
+        renderShop();
+        shopScreen.scrollTop = 0;
+      });
+    });
+  }
+
+  function renderShopItemCard(item){
+    var div = document.createElement("div");
+    div.className = "shop-item";
+    var owned = false;
+    var isActive = false;
+    if(item.type === "unlock" || item.type === "effect" || item.type === "theme" || item.type === "breakfx" || item.type === "frame"){
+      owned = profile.unlocks[item.id] || item.price === 0;
+      if(owned && item.type === "effect"){
+        isActive = profile.activeEffect === item.id.replace("fx","").toLowerCase();
+      } else if(owned && item.type === "theme"){
+        isActive = profile.activeTheme === item.themeValue;
+      } else if(owned && item.type === "unlock"){
+        isActive = profile.enabledUnlocks[item.id] !== false;
+      } else if(owned && item.type === "breakfx"){
+        isActive = profile.activeBreakEffect === item.breakValue;
+      } else if(owned && item.type === "frame"){
+        isActive = profile.activeFrame === item.frameValue;
+      }
+    }
+    // Yaşıl çərçivə yalnız HAZIRKI aktiv olan effekt/tema/paket üçün
+    if(isActive) div.classList.add("owned");
+    var btnText;
+    if(!owned){ btnText = item.price + " 🪙"; }
+    else if(item.type === "unlock"){ btnText = isActive ? "Aktiv" : "Deaktiv"; }
+    else if(isActive){ btnText = "Aktiv"; }
+    else { btnText = "Seç"; }
+    var btnClass = "shop-item-btn";
+    if(owned && item.type === "unlock"){ btnClass += isActive ? " owned-btn" : " disabled-btn"; }
+    else if(isActive){ btnClass += " owned-btn"; }
+    var disabled = !owned && profile.gold < item.price ? "disabled" : "";
+    var ownedCountHtml = "";
+    if(item.type === "consumable"){
+      var ownedCount = profile.inventory[item.id] || 0;
+      if(ownedCount > 0) ownedCountHtml = '<div class="shop-item-owned">Sahibsiniz: ' + ownedCount + '</div>';
+    }
+    div.innerHTML = '<div class="shop-item-icon">' + item.icon + '</div>' +
+      '<div class="shop-item-name">' + item.name + '</div>' +
+      '<div class="shop-item-desc">' + item.desc + '</div>' +
+      ownedCountHtml +
+      '<button class="' + btnClass + '" ' + disabled + ' data-id="' + item.id + '">' + btnText + '</button>';
+    return div;
+  }
+
+  // Tab-əsaslı mağaza: eyni anda YALNIZ seçilmiş kateqoriya göstərilir ki, oyunçu bütün
+  // siyahını axtarmaq üçün scroll etməli olmasın — birbaşa istədiyi kateqoriyaya keçir
+  function renderShop(){
+    renderShopTabs();
+    shopContent.innerHTML = "";
+    var cat = SHOP_CATEGORIES[activeShopTab];
+    if(!cat) return;
+    var section = document.createElement("div");
+    section.className = "shop-section";
+    var title = document.createElement("div");
+    title.className = "shop-section-title";
+    title.textContent = cat.title;
+    section.appendChild(title);
+    var grid = document.createElement("div");
+    grid.className = "shop-grid";
+    cat.items.forEach(function(item){
+      grid.appendChild(renderShopItemCard(item));
+    });
+    section.appendChild(grid);
+    shopContent.appendChild(section);
+    shopContent.querySelectorAll("button").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        buyItem(this.getAttribute("data-id"));
+      });
+    });
+  }
+
+  function buyItem(id){
+    var item = null;
+    SHOP_CATEGORIES.forEach(function(c){
+      c.items.forEach(function(i){ if(i.id === id) item = i; });
+    });
+    if(!item) return;
+
+    if(item.type === "unlock" || item.type === "effect" || item.type === "theme" || item.type === "breakfx" || item.type === "frame"){
+      var alreadyOwned = profile.unlocks[id] || item.price === 0;
+      if(alreadyOwned){
+        profile.unlocks[id] = true;
+        if(item.type === "effect"){ profile.activeEffect = id.replace("fx","").toLowerCase(); saveProfile(); renderProfile(); showToast("✨ Effekt seçildi!"); }
+        if(item.type === "theme"){ profile.activeTheme = item.themeValue; saveProfile(); renderProfile(); showToast("😀 Tema seçildi!"); }
+        if(item.type === "breakfx"){ profile.activeBreakEffect = item.breakValue; saveProfile(); renderProfile(); showToast("💥 Sınma effekti seçildi!"); }
+        if(item.type === "frame"){ profile.activeFrame = item.frameValue; saveProfile(); renderProfile(); showToast("🖼️ Çərçivə seçildi!"); }
+        if(item.type === "unlock"){
+          var nowEnabled = profile.enabledUnlocks[id] === false;
+          profile.enabledUnlocks[id] = nowEnabled;
+          rebuildColorPool();
+          saveProfile();
+          showToast(nowEnabled ? ("✅ " + item.name + " aktivləşdirildi!") : ("⛔ " + item.name + " deaktiv edildi!"));
+        }
+        renderShop();
+        return;
+      }
+      if(profile.gold < item.price) return;
+      profile.gold -= item.price;
+      profile.unlocks[id] = true;
+      if(item.type === "unlock"){ profile.enabledUnlocks[id] = true; rebuildColorPool(); }
+      if(item.type === "effect") profile.activeEffect = id.replace("fx","").toLowerCase();
+      if(item.type === "theme") profile.activeTheme = item.themeValue;
+      if(item.type === "breakfx") profile.activeBreakEffect = item.breakValue;
+      if(item.type === "frame") profile.activeFrame = item.frameValue;
+      saveProfile();
+      renderProfile();
+      renderShop();
+      showToast("🎉 " + item.name + " alındı!");
+    } else {
+      if(profile.gold < item.price) return;
+      profile.gold -= item.price;
+      profile.inventory[id] = (profile.inventory[id] || 0) + 1;
+      saveProfile();
+      renderProfile();
+      renderShop();
+      renderPowerups();
+      showToast("🛒 " + item.name + " alındı!");
+    }
+  }
+
+  // ===== Səs: Web Audio API ilə proseduraldan yaradılan musiqi və effektlər =====
+  var audioCtx = null;
+  var musicGain = null;
+  var sfxGain = null;
+  var musicIntervalId = null;
+  var musicStepIndex = 0;
+  var MUSIC_STEP_MS = 180;
+  // Şən, rəqs edən 16 addımlıq dövr: bas + lead melodiya + kick vurğusu
+  var MUSIC_LEAD = [523.25,659.25,783.99,659.25, 587.33,0,523.25,587.33, 659.25,783.99,880.00,783.99, 659.25,587.33,523.25,0];
+  var MUSIC_BASS = [130.81,0,98.00,0, 130.81,0,98.00,0, 130.81,0,98.00,0, 130.81,0,146.83,0];
+  var MUSIC_KICK_STEPS = {0:true, 8:true};
+
+  // ===== Jenerik (istifadəçi tərəfindən əlavə olunan) musiqilər — Web Audio ilə sonsuz, kəsilməz döngü =====
+  var CUSTOM_TRACKS = [
+    {id:"candy_tile", name:"Candy Tile"},
+    {id:"candy_tile_alt", name:"Candy Tile (Alt)"},
+    {id:"neon_coin_rush", name:"Neon Coin Rush"},
+    {id:"neon_coin_rush_alt", name:"Neon Coin Rush (Alt)"},
+    {id:"pixel_rush", name:"Pixel Rush"},
+    {id:"pixel_rush_alt", name:"Pixel Rush (Alt)"},
+    {id:"puzzle_pop", name:"Puzzle Pop"},
+    {id:"puzzle_pop_alt", name:"Puzzle Pop (Alt)"}
+  ];
+  var customTrackBuffers = {};
+  var menuMusicSource = null;
+  var gameMusicSource = null;
+  var previewSource = null;
+  var previewingId = null;
+
+  function customTrackUrl(id){
+    return "Jenerik/loop/" + id + ".mp3";
+  }
+
+  function loadCustomTrack(id, cb){
+    if(customTrackBuffers[id]){ cb(customTrackBuffers[id]); return; }
+    ensureAudio();
+    if(!audioCtx){ cb(null); return; }
+    fetch(customTrackUrl(id)).then(function(r){ return r.arrayBuffer(); })
+      .then(function(buf){ return audioCtx.decodeAudioData(buf); })
+      .then(function(decoded){
+        customTrackBuffers[id] = decoded;
+        cb(decoded);
+      })
+      .catch(function(err){ console.error("Jenerik musiqi yüklənmədi:", id, err); cb(null); });
+  }
+
+  // Sample-dəqiqliyində, kəsilməz sonsuz döngü — fayllar əvvəlcədən "loop/" qovluğunda
+  // son 2.5 saniyəsi başlanğıcla qarışdırılaraq tikişsiz hazırlanıb
+  function playCustomLoop(id, onStarted){
+    loadCustomTrack(id, function(buffer){
+      if(!buffer || !audioCtx || !musicGain) return;
+      var src = audioCtx.createBufferSource();
+      src.buffer = buffer;
+      src.loop = true;
+      src.connect(musicGain);
+      src.start(0);
+      if(onStarted) onStarted(src);
+    });
+  }
+
+  function stopSource(srcRef){
+    if(srcRef){ try{ srcRef.stop(); }catch(e){} try{ srcRef.disconnect(); }catch(e){} }
+  }
+
+  function startMenuMusic(){
+    if(profile.customMusic.menu){
+      playCustomLoop(profile.customMusic.menu, function(src){ menuMusicSource = src; });
+    } else {
+      startMusic();
+    }
+  }
+
+  function stopMenuMusic(){
+    stopMusic();
+    stopSource(menuMusicSource);
+    menuMusicSource = null;
+  }
+
+  function startGameMusic(){
+    if(profile.customMusic.game){
+      playCustomLoop(profile.customMusic.game, function(src){ gameMusicSource = src; });
+    } else {
+      startMusic();
+    }
+  }
+
+  function stopGameMusic(){
+    stopMusic();
+    stopSource(gameMusicSource);
+    gameMusicSource = null;
+  }
+
+  function togglePreviewTrack(id){
+    if(previewingId === id){
+      stopSource(previewSource);
+      previewSource = null;
+      previewingId = null;
+      startMenuMusic();
+      renderCustomMusicList();
+      return;
+    }
+    stopMenuMusic();
+    stopSource(previewSource);
+    previewingId = id;
+    renderCustomMusicList();
+    playCustomLoop(id, function(src){
+      if(previewingId !== id){ stopSource(src); return; }
+      previewSource = src;
+    });
+  }
+
+  function stopPreviewIfAny(){
+    if(previewingId){
+      stopSource(previewSource);
+      previewSource = null;
+      previewingId = null;
+      startMenuMusic();
+    }
+  }
+
+  function selectCustomMusic(slot, id){
+    profile.customMusic[slot] = id || null;
+    saveProfile();
+    if(slot === "menu" && !previewingId){
+      stopMenuMusic();
+      startMenuMusic();
+    }
+    renderCustomMusicList();
+  }
+
+  function renderCustomMusicList(){
+    var rows = CUSTOM_TRACKS.map(function(t){
+      var isMenu = profile.customMusic.menu === t.id;
+      var isGame = profile.customMusic.game === t.id;
+      var isPreview = previewingId === t.id;
+      return '<div class="music-track-row">' +
+        '<button class="music-btn preview-btn' + (isPreview ? " active" : "") + '" data-action="preview" data-id="' + t.id + '">' + (isPreview ? "⏹" : "▶️") + '</button>' +
+        '<div class="music-track-name">' + t.name + '</div>' +
+        '<button class="music-btn slot-btn' + (isMenu ? " active" : "") + '" data-action="menu" data-id="' + t.id + '">🏠 Menyu</button>' +
+        '<button class="music-btn slot-btn' + (isGame ? " active" : "") + '" data-action="game" data-id="' + t.id + '">🎮 Oyun</button>' +
+        '</div>';
+    }).join("");
+    var normalRow = '<div class="music-track-row">' +
+      '<span class="music-btn preview-btn" style="visibility:hidden">▶️</span>' +
+      '<div class="music-track-name">🔇 Normal (prosedural)</div>' +
+      '<button class="music-btn slot-btn' + (!profile.customMusic.menu ? " active" : "") + '" data-action="menu" data-id="">🏠 Menyu</button>' +
+      '<button class="music-btn slot-btn' + (!profile.customMusic.game ? " active" : "") + '" data-action="game" data-id="">🎮 Oyun</button>' +
+      '</div>';
+    var html = rows + normalRow;
+    ["customMusicList", "settingsMusicList"].forEach(function(id){
+      var container = document.getElementById(id);
+      if(!container) return;
+      container.innerHTML = html;
+      container.querySelectorAll("button[data-action]").forEach(function(btn){
+        btn.addEventListener("click", function(){
+          var action = this.getAttribute("data-action");
+          var trackId = this.getAttribute("data-id");
+          if(action === "preview") togglePreviewTrack(trackId);
+          else selectCustomMusic(action, trackId || null);
+        });
+      });
+    });
+  }
+
+  function ensureAudio(){
+    if(!audioCtx){
+      try{
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        musicGain = audioCtx.createGain();
+        musicGain.gain.value = profile.musicMuted ? 0 : 0.16;
+        musicGain.connect(audioCtx.destination);
+        sfxGain = audioCtx.createGain();
+        sfxGain.gain.value = profile.sfxMuted ? 0 : 0.35;
+        sfxGain.connect(audioCtx.destination);
+      }catch(e){}
+    }
+    // Brauzerlər AudioContext-i "suspended" vəziyyətdə yaradır (autoplay siyasəti) — resume edilməsə heç bir səs çıxmır
+    if(audioCtx && audioCtx.state === "suspended"){
+      audioCtx.resume().catch(function(){});
+    }
+  }
+
+  function playTone(freq, duration, type, startFreq){
+    if(!audioCtx) return;
+    var t = audioCtx.currentTime;
+    var osc = audioCtx.createOscillator();
+    var g = audioCtx.createGain();
+    osc.type = type || "sine";
+    osc.frequency.setValueAtTime(startFreq || freq, t);
+    if(startFreq) osc.frequency.exponentialRampToValueAtTime(freq, t + duration*0.6);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.9, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + duration);
+    osc.connect(g);
+    g.connect(sfxGain);
+    osc.start(t);
+    osc.stop(t + duration + 0.02);
+  }
+
+  function playCatchSound(){
+    if(!audioCtx) return;
+    playTone(880, 0.12, "sine", 560);
+  }
+
+  function playBreakSound(){
+    if(!audioCtx) return;
+    var t = audioCtx.currentTime;
+    var bufferSize = Math.floor(audioCtx.sampleRate * 0.18);
+    var buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    var data = buffer.getChannelData(0);
+    for(var i=0;i<bufferSize;i++){
+      data[i] = (Math.random()*2-1) * (1 - i/bufferSize);
+    }
+    var noise = audioCtx.createBufferSource();
+    noise.buffer = buffer;
+    var filter = audioCtx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(1800, t);
+    filter.frequency.exponentialRampToValueAtTime(200, t+0.18);
+    var g = audioCtx.createGain();
+    g.gain.setValueAtTime(0.9, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t+0.18);
+    noise.connect(filter);
+    filter.connect(g);
+    g.connect(sfxGain);
+    noise.start(t);
+    noise.stop(t+0.2);
+  }
+
+  function playMissionSound(){
+    if(!audioCtx) return;
+    [660, 880, 1100].forEach(function(f, i){
+      setTimeout(function(){ playTone(f, 0.15, "triangle"); }, i*90);
+    });
+  }
+
+  function playComboSound(){
+    if(!audioCtx) return;
+    [700, 1000, 1300].forEach(function(f, i){
+      setTimeout(function(){ playTone(f, 0.1, "square"); }, i*60);
+    });
+  }
+
+  function playGameOverSound(){
+    if(!audioCtx) return;
+    playTone(220, 0.5, "sawtooth", 440);
+  }
+
+  function playMusicKick(){
+    if(!audioCtx || !musicGain) return;
+    var t = audioCtx.currentTime;
+    var osc = audioCtx.createOscillator();
+    var g = audioCtx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(150, t);
+    osc.frequency.exponentialRampToValueAtTime(48, t+0.12);
+    g.gain.setValueAtTime(0.9, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t+0.14);
+    osc.connect(g);
+    g.connect(musicGain);
+    osc.start(t);
+    osc.stop(t+0.16);
+  }
+
+  function startMusic(){
+    ensureAudio();
+    if(!audioCtx || musicIntervalId) return;
+    musicStepIndex = 0;
+    musicIntervalId = setInterval(function(){
+      var step = musicStepIndex % MUSIC_LEAD.length;
+      musicStepIndex++;
+      if(!audioCtx || !musicGain) return;
+      var t = audioCtx.currentTime;
+
+      var leadFreq = MUSIC_LEAD[step];
+      if(leadFreq > 0){
+        var osc = audioCtx.createOscillator();
+        var g = audioCtx.createGain();
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(leadFreq, t);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.7, t+0.015);
+        g.gain.exponentialRampToValueAtTime(0.0001, t+0.2);
+        osc.connect(g);
+        g.connect(musicGain);
+        osc.start(t);
+        osc.stop(t+0.22);
+      }
+
+      var bassFreq = MUSIC_BASS[step];
+      if(bassFreq > 0){
+        var bosc = audioCtx.createOscillator();
+        var bg = audioCtx.createGain();
+        bosc.type = "square";
+        bosc.frequency.setValueAtTime(bassFreq, t);
+        bg.gain.setValueAtTime(0.0001, t);
+        bg.gain.exponentialRampToValueAtTime(0.45, t+0.015);
+        bg.gain.exponentialRampToValueAtTime(0.0001, t+0.3);
+        bosc.connect(bg);
+        bg.connect(musicGain);
+        bosc.start(t);
+        bosc.stop(t+0.32);
+      }
+
+      if(MUSIC_KICK_STEPS[step]) playMusicKick();
+    }, MUSIC_STEP_MS);
+  }
+
+  function stopMusic(){
+    if(musicIntervalId){ clearInterval(musicIntervalId); musicIntervalId = null; }
+  }
+
+  function toggleMusic(){
+    ensureAudio();
+    profile.musicMuted = !profile.musicMuted;
+    saveProfile();
+    updateSoundUI();
+    if(musicGain) musicGain.gain.value = profile.musicMuted ? 0 : 0.16;
+  }
+
+  function toggleSfx(){
+    ensureAudio();
+    profile.sfxMuted = !profile.sfxMuted;
+    saveProfile();
+    updateSoundUI();
+    if(sfxGain) sfxGain.gain.value = profile.sfxMuted ? 0 : 0.35;
+  }
+
+  function updateSoundUI(){
+    var musicOn = !profile.musicMuted;
+    var sfxOn = !profile.sfxMuted;
+    [document.getElementById("musicToggleMenu"), document.getElementById("musicTogglePause")].forEach(function(btn){
+      btn.textContent = (musicOn ? "🎵" : "🔇") + " Musiqi";
+      btn.classList.toggle("off", !musicOn);
+    });
+    [document.getElementById("sfxToggleMenu"), document.getElementById("sfxTogglePause")].forEach(function(btn){
+      btn.textContent = (sfxOn ? "🔔" : "🔕") + " Səs effekti";
+      btn.classList.toggle("off", !sfxOn);
+    });
+  }
+
+  // ===== Ana menyunun arxa fonu: kaotik şəkildə, solğun/transparan düşən (rəngli + temalı) kubiklər — sonsuz döngü =====
+  var menuBgActive = false;
+  var menuBgTimer = null;
+
+  function spawnMenuBgCube(){
+    if(!menuBgActive || !menuBgContainer) return;
+    var w = menuScreen.clientWidth || 320;
+    var h = menuScreen.clientHeight || 600;
+    var size = 14 + Math.random()*26;
+    var el = document.createElement("div");
+    el.className = "bg-cube";
+
+    // ~40% ehtimalla emoji/tema görünüşü, qalanı sadə rəngli kub — "kubik temalı kubiklər" qarışığı
+    var isEmoji = Math.random() < 0.4;
+    if(isEmoji){
+      var pool = Math.random() < 0.5 ? EMOJIS : PURE_SMILEYS;
+      el.textContent = pool[Math.floor(Math.random()*pool.length)];
+      el.style.fontSize = size + "px";
+      el.style.lineHeight = size + "px";
+    } else {
+      var col = MENU_BG_COLORS[Math.floor(Math.random()*MENU_BG_COLORS.length)];
+      el.style.width = size + "px";
+      el.style.height = size + "px";
+      el.style.background = col.hex;
+      el.style.boxShadow = "inset 0 -3px 0 rgba(0,0,0,.15)";
+    }
+
+    var startX = Math.random() * Math.max(0, w - size);
+    el.style.left = startX + "px";
+
+    // Xaotik hərəkət: hər kubik fərqli sürət, yellənmə (sway) və fırlanma alır
+    var travel = h + size + 60;
+    var dur = 7 + Math.random()*9;
+    var sway = (Math.random()*70 - 35);
+    var rotMid = (Math.random()*260 - 130);
+    var rotEnd = rotMid + (Math.random()*260 - 130);
+    var peak = 0.10 + Math.random()*0.24; // solğun/transparan görünüş üçün aşağı maksimum opaklıq
+    el.style.setProperty("--travel", travel + "px");
+    el.style.setProperty("--sway", sway + "px");
+    el.style.setProperty("--rotmid", rotMid + "deg");
+    el.style.setProperty("--rotend", rotEnd + "deg");
+    el.style.setProperty("--peak", peak);
+    el.style.setProperty("--dur", dur + "s");
+
+    // Bəzən bəziləri işıldasın (~5-də 1)
+    if(Math.random() < 0.22){
+      el.classList.add("sparkle");
+      el.style.setProperty("--glowDelay", (dur * (0.15 + Math.random()*0.5)) + "s");
+    }
+
+    menuBgContainer.appendChild(el);
+    setTimeout(function(){
+      if(el.parentNode) el.parentNode.removeChild(el);
+    }, dur*1000 + 150);
+  }
+
+  function menuBgLoop(){
+    if(!menuBgActive) return;
+    spawnMenuBgCube();
+    menuBgTimer = setTimeout(menuBgLoop, 260 + Math.random()*420);
+  }
+
+  function startMenuBgAnim(){
+    if(menuBgActive || !menuBgContainer) return;
+    menuBgActive = true;
+    // Menyu açılan kimi ekran boş görünməsin deyə bir neçəsini dərhal başlat
+    for(var i=0;i<6;i++){
+      (function(){
+        setTimeout(function(){ if(menuBgActive) spawnMenuBgCube(); }, i*180);
+      })();
+    }
+    menuBgLoop();
+  }
+
+  function stopMenuBgAnim(){
+    menuBgActive = false;
+    clearTimeout(menuBgTimer);
+    if(menuBgContainer) menuBgContainer.innerHTML = "";
+  }
+
+  function applyArcadeModifiers(conf){
+    arcadeMissionsRequired = conf.missionsRequired;
+    arcadeSpeedMult = conf.speedMult;
+    arcadeColorCount = conf.colorCount;
+    arcadeThemeOverride = conf.forcePureSmiley ? "puresmiley" : null;
+    arcadeNoPowerups = conf.noPowerups;
+    rebuildColorPool();
+    powerupsEl.style.display = arcadeNoPowerups ? "none" : "";
+  }
+
+  function clearArcadeModifiers(){
+    arcadeMissionsRequired = 0;
+    arcadeSpeedMult = 1;
+    arcadeColorCount = null;
+    arcadeThemeOverride = null;
+    arcadeNoPowerups = false;
+    rebuildColorPool();
+    powerupsEl.style.display = "";
+  }
+
+  function startArcadeLevel(n){
+    if(n < 1) return;
+    if(n > profile.arcade.unlockedLevel) return;
+    gameMode = "arcade";
+    arcadeLevelNum = n;
+    startGame();
+  }
+
+  function arcadeLevelEnd(won){
+    spawning = false;
+    gameActive = false;
+    clearTimeout(spawnTimer);
+    clearBurstTimeouts();
+    clearFallingCubes();
+    stopGameMusic();
+    accumulatePlayTime();
+    var conf = buildArcadeLevel(arcadeLevelNum);
+    var stars = won ? Math.max(1, Math.min(3, lives)) : 0;
+    if(won){
+      playMissionSound();
+      var prevStars = profile.arcade.stars[arcadeLevelNum] || 0;
+      if(stars > prevStars) profile.arcade.stars[arcadeLevelNum] = stars;
+      if(arcadeLevelNum >= profile.arcade.unlockedLevel){
+        profile.arcade.unlockedLevel = arcadeLevelNum + 1;
+      }
+      addGold(conf.goldReward);
+    } else {
+      playGameOverSound();
+    }
+    saveProfile();
+    renderProfile();
+    showArcadeResult(won, stars, conf);
+  }
+
+  function showArcadeResult(won, stars, conf){
+    var titleEl = document.getElementById("arcadeResultTitle");
+    var starsEl = document.getElementById("arcadeResultStars");
+    var statsEl = document.getElementById("arcadeResultStats");
+    var nextBtn = document.getElementById("arcadeNextBtn");
+    titleEl.textContent = won ? "🎉 Level Tamamlandı!" : "💔 Uğursuz oldun";
+    starsEl.innerHTML = [1,2,3].map(function(i){
+      return '<span class="arcade-star' + (i <= stars ? " filled" : "") + '">' + (i <= stars ? "⭐" : "☆") + '</span>';
+    }).join("");
+    if(won){
+      statsEl.innerHTML = conf.name + "<br>Qalan can: <b>" + lives + "</b> · Qazanılan qızıl: <b>+" + conf.goldReward + "</b>";
+    } else {
+      statsEl.innerHTML = conf.name + "<br>Tələb olunan: <b>" + arcadeMissionsRequired + " misya</b> · Tamamlanan: <b>" + missionCount + "</b>";
+    }
+    nextBtn.style.display = won ? "" : "none";
+    arcadeResultOverlay.classList.add("show");
+  }
+
+  function openArcadeMenu(){
+    menuScreen.style.display = "none";
+    stopMenuBgAnim();
+    arcadeScreen.style.display = "flex";
+    renderArcadeLevelSelect();
+  }
+
+  function closeArcadeMenu(){
+    arcadeScreen.style.display = "none";
+    menuScreen.style.display = "";
+    startMenuBgAnim();
+  }
+
+  // Levellər sonsuz olduğu üçün hamısı əvvəlcədən yox, yalnız açılmış + bir neçə "önizləmə" level göstərilir
+  var ARCADE_PREVIEW_BUFFER = 11;
+  function renderArcadeLevelSelect(){
+    var grid = document.getElementById("arcadeLevelGrid");
+    var maxShown = profile.arcade.unlockedLevel + ARCADE_PREVIEW_BUFFER;
+    var totalStars = 0;
+    Object.keys(profile.arcade.stars).forEach(function(k){ totalStars += profile.arcade.stars[k] || 0; });
+    document.getElementById("arcadeTotalStars").textContent = "⭐ " + totalStars;
+    var html = "";
+    for(var n=1; n<=maxShown; n++){
+      var conf = buildArcadeLevel(n);
+      var unlocked = n <= profile.arcade.unlockedLevel;
+      var stars = profile.arcade.stars[n] || 0;
+      var badges = '<span title="Rəng sayı">🎨' + conf.colorCount + '</span>';
+      if(conf.forcePureSmiley) badges += '<span title="Yalnız smaylidən tanı">😎</span>';
+      if(conf.noPowerups) badges += '<span title="Ultilər söndürülüb">🚫</span>';
+      if(conf.speedMult >= 1.5) badges += '<span title="Yüksək sürət">⚡</span>';
+      var starsHtml = unlocked ? [1,2,3].map(function(i){ return i <= stars ? "⭐" : "☆"; }).join("") : "🔒";
+      html += '<div class="arcade-level-card' + (unlocked ? "" : " locked") + (stars >= 3 ? " perfect" : "") + '" data-n="' + n + '">' +
+        '<div class="arcade-level-num">' + n + '</div>' +
+        '<div class="arcade-level-badges">' + badges + '</div>' +
+        '<div class="arcade-level-stars">' + starsHtml + '</div>' +
+        '</div>';
+    }
+    grid.innerHTML = html;
+    grid.querySelectorAll(".arcade-level-card:not(.locked)").forEach(function(card){
+      card.addEventListener("click", function(){
+        startArcadeLevel(parseInt(this.getAttribute("data-n"), 10));
+      });
+    });
+  }
+
+  function startGame(){
+    ensureAudio();
+    stopMenuBgAnim();
+    menuScreen.style.display = "none";
+    shopScreen.style.display = "none";
+    profileScreen.style.display = "none";
+    achievementsScreen.style.display = "none";
+    dailyScreen.style.display = "none";
+    arcadeScreen.style.display = "none";
+    overlayEl.classList.remove("show");
+    pauseOverlay.classList.remove("show");
+    arcadeResultOverlay.classList.remove("show");
+    if(gameMode === "arcade" && arcadeLevelNum){
+      applyArcadeModifiers(buildArcadeLevel(arcadeLevelNum));
+      levelBadge.style.display = "";
+      levelBadgeVal.textContent = arcadeLevelNum;
+    } else {
+      clearArcadeModifiers();
+      levelBadge.style.display = "none";
+    }
+    spawning = false;
+    gameActive = false;
+    clearTimeout(spawnTimer);
+    clearBurstTimeouts();
+    clearFallingCubes();
+    paused = false;
+    pauseBtn.textContent = "⏸️";
+    smashModeActive = false;
+    smashTimerEl.style.display = "none";
+    clearInterval(smashTimerInterval);
+    shieldActive = false;
+    shieldTimerEl.style.display = "none";
+    clearInterval(shieldTimerInterval);
+    clearTimeout(shieldTimeout);
+    fastMode = false;
+    fastTimerEl.style.display = "none";
+    clearInterval(fastTimerInterval);
+    clearTimeout(fastTimeout);
+    slowTimerEl.style.display = "none";
+    clearInterval(slowTimerInterval);
+    clearTimeout(slowTimeout);
+    slowMode = false;
+    slowOverlay.classList.remove("active");
+    usesThisGame = {};
+    lives = MAX_LIVES;
+    missionCount = 0;
+    recentSpawnColors = [];
+    urgentColorId = null;
+    urgentUntil = 0;
+    missingColorStreak = 0;
+    lastSpawnTime = {};
+    sessionXpEarned = 0;
+    sessionGoldEarned = 0;
+    resetCombo();
+    renderProfile();
+    applySpeedFromMissions();
+    // İlk burst özü dolduracaq — loop bir müddət sakit qalıb ondan sonra dalğaya keçsin
+    waveState = "calm";
+    waveEndsAt = performance.now() + 7000;
+    hammerEndsAt = performance.now() + getHammerInterval();
+    renderLives();
+    renderPowerups();
+    gameActive = true;
+    spawning = true;
+    profile.gamesPlayed = (profile.gamesPlayed||0) + 1;
+    sessionStartTime = performance.now();
+    saveProfile();
+    newMission();
+    spawnStartBurst();
+    loop();
+    stopMenuMusic();
+    startGameMusic();
+  }
+
+  function returnToMenu(){
+    spawning = false;
+    gameActive = false;
+    paused = false;
+    pauseBtn.textContent = "⏸️";
+    pauseOverlay.classList.remove("show");
+    arcadeResultOverlay.classList.remove("show");
+    smashModeActive = false;
+    smashTimerEl.style.display = "none";
+    clearInterval(smashTimerInterval);
+    slowTimerEl.style.display = "none";
+    clearInterval(slowTimerInterval);
+    clearFallingCubes();
+    clearTimeout(spawnTimer);
+    clearBurstTimeouts();
+    clearTimeout(slowTimeout);
+    slowMode = false;
+    slowOverlay.classList.remove("active");
+    overlayEl.classList.remove("show");
+    menuScreen.style.display = "";
+    shopScreen.style.display = "none";
+    profileScreen.style.display = "none";
+    achievementsScreen.style.display = "none";
+    dailyScreen.style.display = "none";
+    arcadeScreen.style.display = "none";
+    gameMode = "endless";
+    arcadeLevelNum = null;
+    clearArcadeModifiers();
+    stopGameMusic();
+    accumulatePlayTime();
+    renderProfile();
+    startMenuBgAnim();
+    startMenuMusic();
+  }
+
+  function returnToArcadeLevels(){
+    spawning = false;
+    gameActive = false;
+    paused = false;
+    pauseBtn.textContent = "⏸️";
+    pauseOverlay.classList.remove("show");
+    arcadeResultOverlay.classList.remove("show");
+    smashModeActive = false;
+    smashTimerEl.style.display = "none";
+    clearInterval(smashTimerInterval);
+    slowTimerEl.style.display = "none";
+    clearInterval(slowTimerInterval);
+    clearFallingCubes();
+    clearTimeout(spawnTimer);
+    clearBurstTimeouts();
+    clearTimeout(slowTimeout);
+    slowMode = false;
+    slowOverlay.classList.remove("active");
+    overlayEl.classList.remove("show");
+    menuScreen.style.display = "none";
+    shopScreen.style.display = "none";
+    profileScreen.style.display = "none";
+    achievementsScreen.style.display = "none";
+    dailyScreen.style.display = "none";
+    clearArcadeModifiers();
+    levelBadge.style.display = "none";
+    stopGameMusic();
+    accumulatePlayTime();
+    renderProfile();
+    arcadeScreen.style.display = "flex";
+    renderArcadeLevelSelect();
+    startMenuBgAnim();
+    startMenuMusic();
+  }
+
+  function openShop(){
+    menuScreen.style.display = "none";
+    stopMenuBgAnim();
+    shopScreen.style.display = "flex";
+    renderShop();
+    renderProfile();
+  }
+
+  function openProfile(){
+    menuScreen.style.display = "none";
+    stopMenuBgAnim();
+    profileScreen.style.display = "flex";
+    renderProfileScreen();
+    renderCustomMusicList();
+  }
+
+  function closeProfile(){
+    stopPreviewIfAny();
+    profileScreen.style.display = "none";
+    achievementsScreen.style.display = "none";
+    dailyScreen.style.display = "none";
+    menuScreen.style.display = "";
+    startMenuBgAnim();
+  }
+
+  function openAchievements(){
+    menuScreen.style.display = "none";
+    stopMenuBgAnim();
+    achievementsScreen.style.display = "flex";
+    renderAchievementsScreen();
+  }
+
+  function closeAchievements(){
+    achievementsScreen.style.display = "none";
+    dailyScreen.style.display = "none";
+    menuScreen.style.display = "";
+    startMenuBgAnim();
+  }
+
+  function openDaily(){
+    menuScreen.style.display = "none";
+    stopMenuBgAnim();
+    dailyScreen.style.display = "flex";
+    renderDailyScreen();
+  }
+
+  function closeDaily(){
+    dailyScreen.style.display = "none";
+    menuScreen.style.display = "";
+    startMenuBgAnim();
+  }
+
+  document.getElementById("startBtn").addEventListener("click", function(){ gameMode = "endless"; arcadeLevelNum = null; startGame(); });
+  document.getElementById("shopBtn").addEventListener("click", openShop);
+  document.getElementById("shopBack").addEventListener("click", returnToMenu);
+  document.getElementById("profileBtn").addEventListener("click", openProfile);
+  document.getElementById("profileBack").addEventListener("click", closeProfile);
+  document.getElementById("achievementsBtn").addEventListener("click", openAchievements);
+  document.getElementById("achievementsBack").addEventListener("click", closeAchievements);
+  document.getElementById("dailyBtn").addEventListener("click", openDaily);
+  document.getElementById("dailyBack").addEventListener("click", closeDaily);
+  document.getElementById("dailyClaimBtn").addEventListener("click", claimDailyReward);
+  document.getElementById("arcadeBtn").addEventListener("click", function(){ gameMode = "endless"; arcadeLevelNum = null; openArcadeMenu(); });
+  document.getElementById("arcadeBack").addEventListener("click", closeArcadeMenu);
+  document.getElementById("arcadeNextBtn").addEventListener("click", function(){
+    arcadeLevelNum++;
+    startGame();
+  });
+  document.getElementById("arcadeRetryBtn").addEventListener("click", function(){
+    startGame();
+  });
+  document.getElementById("arcadeLevelsBtn").addEventListener("click", function(){
+    arcadeResultOverlay.classList.remove("show");
+    clearArcadeModifiers();
+    accumulatePlayTime();
+    openArcadeMenu();
+  });
+  document.getElementById("arcadeMenuBtn").addEventListener("click", returnToMenu);
+  document.getElementById("nameInput").addEventListener("input", function(){
+    var v = this.value.trim();
+    profile.name = v || "Oyunçu";
+    saveProfile();
+    renderProfile();
+  });
+  document.getElementById("photoInput").addEventListener("change", function(e){
+    if(e.target.files && e.target.files[0]) handlePhotoUpload(e.target.files[0]);
+    e.target.value = "";
+  });
+  document.getElementById("photoRemoveBtn").addEventListener("click", function(){
+    profile.photoDataUrl = null;
+    saveProfile();
+    renderProfile();
+    renderProfileScreen();
+    showToast("🗑️ Profil şəkli silindi");
+  });
+  document.getElementById("flagCurrentBtn").addEventListener("click", openFlagModal);
+  document.getElementById("flagModalClose").addEventListener("click", closeFlagModal);
+  document.getElementById("flagModalOverlay").addEventListener("click", function(e){
+    if(e.target === this) closeFlagModal();
+  });
+  document.getElementById("settingsBtn").addEventListener("click", openSettingsModal);
+  document.getElementById("settingsModalClose").addEventListener("click", closeSettingsModal);
+  document.getElementById("settingsModalOverlay").addEventListener("click", function(e){
+    if(e.target === this) closeSettingsModal();
+  });
+  document.getElementById("restartBtn").addEventListener("click", startGame);
+  document.getElementById("menuReturnBtn").addEventListener("click", returnToMenu);
+  document.getElementById("puShield").addEventListener("click", useShield);
+  document.getElementById("puSlow").addEventListener("click", useSlow);
+  document.getElementById("puFast").addEventListener("click", useFast);
+  document.getElementById("puBomb").addEventListener("click", useBomb);
+  document.getElementById("puHammer").addEventListener("click", useHammer);
+  document.getElementById("puShuffle").addEventListener("click", useShuffle);
+  document.getElementById("puRewind").addEventListener("click", useRewind);
+  pauseBtn.addEventListener("click", togglePause);
+  document.getElementById("resumeBtn").addEventListener("click", resumeGame);
+  document.getElementById("pauseRestartBtn").addEventListener("click", startGame);
+  document.getElementById("pauseMenuReturnBtn").addEventListener("click", function(){ askQuitConfirm("menu"); });
+  document.getElementById("pauseLevelsBtn").addEventListener("click", function(){ askQuitConfirm("levels"); });
+  document.getElementById("confirmQuitBtn").addEventListener("click", function(){
+    if(pauseQuitTarget === "levels") returnToArcadeLevels(); else returnToMenu();
+  });
+  document.getElementById("cancelQuitBtn").addEventListener("click", cancelQuit);
+  document.getElementById("musicToggleMenu").addEventListener("click", toggleMusic);
+  document.getElementById("sfxToggleMenu").addEventListener("click", toggleSfx);
+  document.getElementById("musicTogglePause").addEventListener("click", toggleMusic);
+  document.getElementById("sfxTogglePause").addEventListener("click", toggleSfx);
+
+  rebuildColorPool();
+  checkDailyLogin();
+  updateDailyBtnDot();
+
+  updateSoundUI();
+  renderProfile();
+  renderLives();
+  renderPowerups();
+  renderCombo();
+  newMission();
+  startMenuBgAnim();
+
+  // Brauzer avtomatik səs oxutmağa icazə vermir — ilk toxunuş/klikdə (əgər hələ oyunda deyiliksə) menyu musiqisi başlasın
+  document.addEventListener("click", function firstMenuMusicKick(){
+    ensureAudio();
+    if(!gameActive) startMenuMusic();
+  }, {once:true});
+
+  // Test üçün: ?debugGold=50000 ilə açsan qızıl həmin miqdara qoyulur
+  try{
+    var qp = new URLSearchParams(location.search);
+    if(qp.has("debugGold")){
+      var amt = parseInt(qp.get("debugGold"), 10);
+      if(!amt || amt <= 0) amt = 50000;
+      profile.gold = amt;
+      saveProfile();
+      renderProfile();
+    }
+  }catch(e){}
+})();
+</script>
+</body>
+</html>
