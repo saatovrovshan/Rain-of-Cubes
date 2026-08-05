@@ -405,8 +405,12 @@
      .smiley-hit qatı üzərindən idarə olunur (aşağıya bax) ki, üst-üstə düşəndə künc boşluğuna
      toxunma bu kubu deyil, altındakını tutsun */
   .cube.theme-pure-smiley{background:transparent !important;box-shadow:none !important;font-size:44px;pointer-events:none;overflow:visible}
-  .cube.theme-cube-img{background-color:transparent;background-size:contain;background-repeat:no-repeat;background-position:center;box-shadow:none;border-radius:0}
+  .cube.theme-cube-img{background-color:transparent;background-size:contain;background-repeat:no-repeat;background-position:center;box-shadow:none;border-radius:0;pointer-events:none;overflow:visible}
   .smiley-hit{position:absolute;inset:0;border-radius:50%;pointer-events:auto}
+  /* Şəkilli kubik temaları üçün smiley ilə eyni üsul: kubun özü toxunuşu tutmur, əvəzinə
+     görünən altıbucaq kub konturuna uyğunlaşdırılmış bu qat tutur — üst-üstə düşəndə şəffaf
+     küncdən deyil, yalnız görünən kubikdən seçim olunsun, çıxıntılar (kristal/yarpaq) itməsin */
+  .cube-img-hit{position:absolute;inset:0;pointer-events:auto;clip-path:polygon(50% 5%, 88% 28%, 88% 72%, 50% 95%, 12% 72%, 12% 28%)}
   .cube.hammer-cube{background:radial-gradient(circle at 35% 30%,#fff3c4,#ffcc33 45%,#ff9f43 80%) !important;box-shadow:0 0 14px 4px rgba(255,215,0,.75),inset 0 -5px 0 rgba(0,0,0,.12),0 3px 6px rgba(0,0,0,.25);animation:hammerPulse .8s ease-in-out infinite alternate;z-index:8}
   .cube.hammer-cube svg{width:30px;height:30px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35))}
   @keyframes hammerPulse{from{box-shadow:0 0 10px 2px rgba(255,215,0,.6),inset 0 -5px 0 rgba(0,0,0,.12),0 3px 6px rgba(0,0,0,.25)}to{box-shadow:0 0 22px 7px rgba(255,180,0,.9),inset 0 -5px 0 rgba(0,0,0,.12),0 3px 6px rgba(0,0,0,.25)}}
@@ -3878,6 +3882,7 @@
     var content = getCubeContent(color);
     var smileyHitEl = null;
     var smileyGlyphEl = null;
+    var imgHitEl = null;
     var cubeImgUrl = cubeThemeImageUrl(color);
     if(currentTheme() === "puresmiley"){
       el.classList.add("theme-pure-smiley");
@@ -3891,8 +3896,14 @@
       smileyHitEl.className = "smiley-hit";
       el.appendChild(smileyHitEl);
     } else if(cubeImgUrl){
+      // Smiley temasındakı eyni üsul: özü toxunuşu tutmur (pointer-events:none), əvəzinə
+      // kubun görünən altıbucaq konturuna uyğun ayrıca "hit" qatı toxunuşu tutur — üst-üstə
+      // düşən kubiklərdə şəffaf küncdən deyil, yalnız görünən kubikdən seçim edilə bilsin
       el.classList.add("theme-cube-img");
       el.style.backgroundImage = "url('" + cubeImgUrl + "')";
+      imgHitEl = document.createElement("div");
+      imgHitEl.className = "cube-img-hit";
+      el.appendChild(imgHitEl);
     } else {
       el.style.background = color.hex;
       if(content) el.textContent = content;
@@ -3998,7 +4009,7 @@
       ev.stopPropagation();
       onCubeTap(record);
     }
-    var tapTarget = smileyHitEl || el;
+    var tapTarget = smileyHitEl || imgHitEl || el;
     tapTarget.addEventListener("click", onTap);
     tapTarget.addEventListener("touchstart", onTap, {passive:false});
   }
