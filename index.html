@@ -389,6 +389,9 @@
   .mission{flex:1;min-width:0;background:var(--panel);border-radius:10px;padding:8px 10px}
   .mission-head{display:flex;align-items:center;gap:6px;margin-bottom:6px}
   .mission-swatch{width:20px;height:20px;border-radius:6px;flex-shrink:0;box-shadow:inset 0 -3px 0 rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;font-size:13px}
+  .themed-glow{position:relative;z-index:0}
+  .themed-glow::before{content:"";position:absolute;inset:-45%;z-index:-1;border-radius:50%;background:radial-gradient(circle, var(--glow-color) 0%, transparent 70%);opacity:.9;pointer-events:none;animation:themedGlowPulse 1.4s ease-in-out infinite alternate}
+  @keyframes themedGlowPulse{from{opacity:.45;transform:scale(.8)}to{opacity:1;transform:scale(1.2)}}
   .mission-text{font-size:11px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
   .mission-progress{color:var(--green);font-weight:800}
   .mission-text b{font-weight:800}
@@ -2976,14 +2979,18 @@
       el.style.background = "url('" + imgUrl + "') center/contain no-repeat";
       el.style.boxShadow = "none";
       el.textContent = "";
+      el.style.setProperty("--glow-color", color.hex);
+      el.classList.add("themed-glow");
     } else if(currentTheme() === "puresmiley"){
       el.style.background = "transparent";
       el.style.boxShadow = "none";
       el.textContent = pureSmileyFor(color);
+      el.classList.remove("themed-glow");
     } else {
       el.style.background = color.hex;
       el.style.boxShadow = "";
       el.textContent = "";
+      el.classList.remove("themed-glow");
     }
   }
   // Dalğa rejimi (sıx "dalğa" + boş "sakit" fazası) hələlik LƏĞV EDİLİB — aşağıdakı funksiyalar
