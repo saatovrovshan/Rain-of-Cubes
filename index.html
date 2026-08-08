@@ -352,6 +352,14 @@
   .mailbox-gift-row{cursor:pointer;position:relative}
   .mailbox-gift-row.unseen{border:2px solid var(--gold)}
 
+  .report-reason-list{display:flex;flex-wrap:wrap;gap:6px}
+  .report-reason-btn{background:var(--panel);color:var(--ink);border:2px solid transparent;border-radius:10px;padding:8px 12px;font-size:11px;font-weight:700;cursor:pointer}
+  .report-reason-btn.active{background:var(--red);color:#fff;border-color:#a02a3d}
+  .report-row{background:var(--panel);border-radius:10px;padding:10px 12px;margin-bottom:8px;text-align:left}
+  .report-row-top{font-size:12px;font-weight:800;color:var(--ink)}
+  .report-row-meta{font-size:10px;color:#a99;font-weight:600;margin-top:2px}
+  .report-row-details{font-size:11px;color:var(--ink);margin-top:6px;background:rgba(0,0,0,.05);padding:6px 8px;border-radius:6px}
+
   .top-notif{position:absolute;top:-100px;left:50%;transform:translateX(-50%);background:#fff;color:var(--ink);border-radius:14px;padding:10px 16px;box-shadow:0 6px 20px rgba(0,0,0,.35);display:flex;align-items:center;gap:10px;z-index:300;max-width:340px;width:calc(100% - 32px);cursor:pointer;transition:top .35s cubic-bezier(.34,1.56,.64,1)}
   .top-notif.show{top:14px}
   .top-notif-icon{font-size:24px;flex-shrink:0}
@@ -966,6 +974,7 @@
       <div id="playerCardExtraBtns" style="display:none;gap:8px;margin-top:8px">
         <button class="friend-action-btn" id="playerCardMessageBtn" style="flex:1;padding:12px;font-size:12px;background:#7d6adf">💬 Mesaj</button>
         <button class="friend-action-btn" id="playerCardGiftBtn" style="flex:1;padding:12px;font-size:12px;background:#e0a02c">🎁 Hədiyyə</button>
+        <button class="friend-action-btn" id="playerCardReportBtn" style="flex:1;padding:12px;font-size:12px;background:#c23840">🚩 Şikayət</button>
       </div>
       <div id="playerCardBattleBtns" style="display:none;gap:8px;margin-top:8px">
         <button class="friend-action-btn" id="playerCardBattleTimedBtn" style="flex:1;padding:12px;font-size:12px;background:#5b6fd6">⏱️ 60san Battle</button>
@@ -1016,6 +1025,19 @@
       <div style="font-size:11px;color:#a99;margin-bottom:10px">Sənin qızılın: <b id="giftModalMyGold">0</b> 🪙</div>
       <div class="gift-grid" id="giftGrid"></div>
       <textarea id="giftNoteInput" maxlength="120" placeholder="Qeyd yaz (məcburi deyil)..." style="width:100%;margin-top:10px;padding:8px;border-radius:8px;border:2px solid var(--board-cell);font-size:12px;font-family:inherit;resize:none;box-sizing:border-box" rows="2"></textarea>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="reportModalOverlay">
+    <div class="modal-panel">
+      <div class="modal-header">
+        <h3>🚩 Şikayət et</h3>
+        <button class="modal-close" id="reportModalClose">✕</button>
+      </div>
+      <div style="font-size:12px;color:var(--ink);margin-bottom:8px" id="reportModalTarget"></div>
+      <div class="report-reason-list" id="reportReasonList"></div>
+      <textarea id="reportDetailsInput" maxlength="300" placeholder="Əlavə izah yaz (məcburi deyil)..." style="width:100%;margin-top:10px;padding:8px;border-radius:8px;border:2px solid var(--board-cell);font-size:12px;font-family:inherit;resize:none;box-sizing:border-box" rows="3"></textarea>
+      <button class="friend-action-btn reject" id="reportSubmitBtn" style="width:100%;padding:12px;font-size:13px;margin-top:10px">Şikayəti göndər</button>
     </div>
   </div>
 
@@ -1792,6 +1814,18 @@
   ];
   var giftTargetId = null;
   var giftTargetName = null;
+
+  // ===== Oyunçu şikayətləri =====
+  // Yalnız bu ID-yə sahib hesab (admin) poçt qutusunda "Şikayətlər" tabını görür — bax reports RLS-i də
+  // eyni ID-ni istifadə edir, ona görə başqa oyunçu API-yə birbaşa müraciət etsə belə məzmunu oxuya bilməz.
+  var ADMIN_USER_ID = "7bc6039d-caab-4389-ad5e-e28373bb5759";
+  var REPORT_REASONS = ["Təhqir / söyüş", "Saxtakarlıq / hiylə", "Uyğunsuz ad və ya şəkil", "Spam", "Digər"];
+  var reportTargetId = null;
+  var reportTargetName = null;
+  var reportSelectedReason = null;
+  function isAdminUser(){
+    return !!cloudUserId && cloudUserId === ADMIN_USER_ID;
+  }
 
   // Mesajlaşma stikerləri: pack:null = pulsuz əsas dəst, pack:"stickerPackFun" = mağazadan alınan paket.
   // Gələcəkdə "emoji" sahəsi əvəzinə "imageUrl" əlavə edilib öz hazırladığımız stikerlər taxıla bilər —
@@ -2609,6 +2643,76 @@
     });
   }
 
+  function openReportModal(playerId, playerName){
+    if(!cloudUserId){ showToast("⚠️ Əvvəlcə Google ilə daxil olmalısan"); return; }
+    if(playerId === cloudUserId) return;
+    reportTargetId = playerId;
+    reportTargetName = playerName;
+    reportSelectedReason = null;
+    document.getElementById("reportModalTarget").textContent = (playerName || "Oyunçu") + " haqqında şikayət";
+    document.getElementById("reportDetailsInput").value = "";
+    renderReportReasons();
+    document.getElementById("reportModalOverlay").classList.add("show");
+  }
+
+  function renderReportReasons(){
+    var el = document.getElementById("reportReasonList");
+    el.innerHTML = REPORT_REASONS.map(function(r){
+      return '<button type="button" class="report-reason-btn' + (r === reportSelectedReason ? " active" : "") + '" data-reason="' + escapeHtml(r) + '">' + escapeHtml(r) + '</button>';
+    }).join("");
+    el.querySelectorAll(".report-reason-btn").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        reportSelectedReason = this.getAttribute("data-reason");
+        renderReportReasons();
+      });
+    });
+  }
+
+  function submitReport(){
+    if(!supabaseClient || !cloudUserId || !reportTargetId) return;
+    if(!reportSelectedReason){ showToast("⚠️ Səbəb seç"); return; }
+    var details = document.getElementById("reportDetailsInput").value.trim();
+    supabaseClient.from("reports").insert({reporter_id: cloudUserId, reported_id: reportTargetId, reason: reportSelectedReason, details: details || null})
+      .then(function(res){
+        if(res.error){ showToast("⚠️ Şikayət göndərilmədi: " + res.error.message); return; }
+        document.getElementById("reportModalOverlay").classList.remove("show");
+        showToast("🚩 Şikayətin göndərildi");
+      });
+  }
+
+  function loadMailboxReports(){
+    if(!supabaseClient || !cloudUserId) return;
+    var el = document.getElementById("mailboxReportsList");
+    if(el) el.innerHTML = '<div class="empty-hint">Yüklənir...</div>';
+    supabaseClient.from("reports").select("id,reporter_id,reported_id,reason,details,created_at")
+      .order("created_at", {ascending:false}).limit(200)
+      .then(function(res){
+        el = document.getElementById("mailboxReportsList");
+        if(!el) return;
+        if(res.error){ el.innerHTML = '<div class="empty-hint">Yüklənmədi: ' + escapeHtml(res.error.message) + '</div>'; return; }
+        var rows = res.data || [];
+        if(!rows.length){ el.innerHTML = '<div class="empty-hint">Hələ şikayət yoxdur</div>'; return; }
+        var ids = [];
+        rows.forEach(function(r){ ids.push(r.reporter_id); ids.push(r.reported_id); });
+        supabaseClient.from("profiles").select("id,name,player_number").in("id", ids).then(function(res2){
+          var profs = res2.data || [];
+          function nameFor(id){
+            var p = profs.find(function(pp){ return pp.id === id; });
+            return p ? (p.name + " #" + (p.player_number || 0)) : "Naməlum oyunçu";
+          }
+          el.innerHTML = rows.map(function(r){
+            var when = "";
+            try{ when = new Date(r.created_at).toLocaleString("az-AZ"); }catch(e){}
+            return '<div class="report-row">' +
+              '<div class="report-row-top">🚩 ' + escapeHtml(nameFor(r.reported_id)) + ' — ' + escapeHtml(r.reason) + '</div>' +
+              '<div class="report-row-meta">Şikayətçi: ' + escapeHtml(nameFor(r.reporter_id)) + ' · ' + when + '</div>' +
+              (r.details ? '<div class="report-row-details">' + escapeHtml(r.details) + '</div>' : '') +
+              '</div>';
+          }).join("");
+        });
+      });
+  }
+
   function giftRowHtml(g, senderName){
     var catalogItem = GIFT_CATALOG.find(function(x){ return x.id === g.gift_id; }) || {icon:"🎁", name:g.gift_id};
     var dateStr = "";
@@ -2732,6 +2836,7 @@
   function renderMailboxTabs(){
     var tabsEl = document.getElementById("mailboxTabs");
     var tabs = [{id:"messages", label:"💬 Mesajlar"}, {id:"gifts", label:"🎁 Hədiyyələr"}];
+    if(isAdminUser()) tabs.push({id:"reports", label:"🚩 Şikayətlər"});
     tabsEl.innerHTML = tabs.map(function(t){
       var showDot = (t.id === "messages" && unreadMessagesTotal > 0) || (t.id === "gifts" && unseenGiftsTotal > 0);
       return '<button class="shop-tab-btn' + (t.id === mailboxActiveTab ? " active" : "") + '" data-id="' + t.id + '" style="position:relative">' + t.label + (showDot ? '<span class="friend-tab-dot"></span>' : "") + '</button>';
@@ -2750,6 +2855,9 @@
     if(mailboxActiveTab === "messages"){
       el.innerHTML = '<div class="friend-list" id="mailboxConversationsList"></div>';
       loadConversationsList("mailboxConversationsList");
+    } else if(mailboxActiveTab === "reports" && isAdminUser()){
+      el.innerHTML = '<div class="gift-history-list full-width" id="mailboxReportsList"></div>';
+      loadMailboxReports();
     } else {
       el.innerHTML = '<div class="gift-history-list full-width" id="mailboxGiftsList"></div>';
       loadMailboxGifts();
@@ -5867,6 +5975,17 @@
     if(!viewedPlayerId) return;
     openGiftModal(viewedPlayerId, document.getElementById("playerCardName").textContent);
   });
+  document.getElementById("playerCardReportBtn").addEventListener("click", function(){
+    if(!viewedPlayerId) return;
+    openReportModal(viewedPlayerId, document.getElementById("playerCardName").textContent);
+  });
+  document.getElementById("reportModalClose").addEventListener("click", function(){
+    document.getElementById("reportModalOverlay").classList.remove("show");
+  });
+  document.getElementById("reportModalOverlay").addEventListener("click", function(e){
+    if(e.target === this) this.classList.remove("show");
+  });
+  document.getElementById("reportSubmitBtn").addEventListener("click", submitReport);
   document.getElementById("giftModalClose").addEventListener("click", function(){
     document.getElementById("giftModalOverlay").classList.remove("show");
   });
