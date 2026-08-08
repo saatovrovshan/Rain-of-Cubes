@@ -16,7 +16,7 @@
   html,body{margin:0;padding:0;height:100%;background:#3a332c;font-family:"Segoe UI",Arial,sans-serif;overscroll-behavior:none;user-select:none;-webkit-user-select:none}
   #app{max-width:480px;margin:0 auto;height:100vh;height:100dvh;background:var(--bg);display:flex;flex-direction:column;position:relative;overflow:hidden;box-shadow:0 0 40px rgba(0,0,0,.5)}
 
-  #menuScreen,#shopScreen,#profileScreen,#achievementsScreen,#dailyScreen,#arcadeScreen,#friendsScreen,#chatScreen,#leaderboardScreen,#mailboxScreen{position:absolute;inset:0;z-index:100;background:linear-gradient(180deg,#faf8ef,#f0e6d6);display:flex;flex-direction:column;padding:0;text-align:center;overflow-y:auto}
+  #menuScreen,#shopScreen,#profileScreen,#achievementsScreen,#dailyScreen,#arcadeScreen,#friendsScreen,#chatScreen,#leaderboardScreen,#mailboxScreen,#bagScreen,#wheelScreen{position:absolute;inset:0;z-index:100;background:linear-gradient(180deg,#faf8ef,#f0e6d6);display:flex;flex-direction:column;padding:0;text-align:center;overflow-y:auto}
   #menuScreen{justify-content:flex-start;align-items:center;padding:16px 16px 10px}
   #shopScreen{padding:16px;display:none}
   #profileScreen{padding:16px;display:none;align-items:stretch}
@@ -52,7 +52,6 @@
   .menu-level-chip{flex:1;min-width:0;display:flex;align-items:center;gap:8px;background:var(--panel);border-radius:14px;padding:6px 10px 6px 6px;cursor:pointer;border:2px solid transparent;transition:border-color .15s,transform .1s;position:relative}
   .menu-level-chip:active{transform:translateY(1px)}
   .menu-avatar-wrap{position:relative;flex-shrink:0}
-  .menu-level-hex{position:absolute;bottom:-5px;right:-5px;width:20px;height:20px;background:linear-gradient(160deg,#7fd858,var(--green));clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:10px;box-shadow:0 1px 2px rgba(0,0,0,.3)}
   .menu-topbar-info{flex:1;min-width:0;text-align:left}
   .menu-topbar-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
   .menu-currency-pill{display:flex;align-items:center;gap:5px;background:linear-gradient(160deg,#5a4636,#3d2f24);color:#ffd966;border-radius:20px;padding:8px 12px;font-size:13px;font-weight:800;box-shadow:inset 0 1px 0 rgba(255,255,255,.15),0 2px 4px rgba(0,0,0,.25);white-space:nowrap}
@@ -105,6 +104,10 @@
   .menu-btn.ranked-btn{background:#d6455b;box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 4px 0 #a02a3d,0 6px 10px rgba(0,0,0,.2)}
   .menu-btn.ranked-btn:active{box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 1px 0 #a02a3d,0 2px 4px rgba(0,0,0,.2)}
   .ranked-btn-price{position:absolute;bottom:6px;right:9px;font-size:9px;font-weight:800;opacity:.9;background:rgba(0,0,0,.2);padding:1px 6px;border-radius:8px}
+  .menu-btn.bag-btn{background:#a9764f;box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 4px 0 #7a5433,0 6px 10px rgba(0,0,0,.2)}
+  .menu-btn.bag-btn:active{box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 1px 0 #7a5433,0 2px 4px rgba(0,0,0,.2)}
+  .menu-btn.wheel-btn{background:#c247a0;box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 4px 0 #8f2f75,0 6px 10px rgba(0,0,0,.2)}
+  .menu-btn.wheel-btn:active{box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 1px 0 #8f2f75,0 2px 4px rgba(0,0,0,.2)}
 
   .menu-hint-card{width:100%;display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:14px;padding:10px 12px;margin-top:14px;text-align:left}
   .menu-hint-icon{flex-shrink:0;width:36px;height:36px;border-radius:10px;background:linear-gradient(160deg,#e0d2b8,#c9b795);display:flex;align-items:center;justify-content:center;font-size:18px}
@@ -282,6 +285,27 @@
   .music-btn.slot-btn.active{background:var(--green)}
   .music-btn.preview-btn.active{background:var(--red)}
   .records-list,.achievements-list{display:flex;flex-direction:column;gap:6px}
+
+  .bag-list{display:flex;flex-direction:column;gap:8px;padding:14px}
+  .bag-row{display:flex;align-items:center;gap:12px;background:var(--panel);border-radius:12px;padding:10px 14px}
+  .bag-row-icon{font-size:24px;flex-shrink:0}
+  .bag-row-info{flex:1;text-align:left;min-width:0}
+  .bag-row-name{font-size:13px;font-weight:800;color:var(--ink)}
+  .bag-row-desc{font-size:10px;color:#a99;font-weight:600}
+  .bag-row-count{font-size:14px;font-weight:800;color:var(--ink);background:rgba(0,0,0,.06);padding:5px 12px;border-radius:8px;flex-shrink:0}
+
+  .wheel-keys-row{font-size:15px;font-weight:800;color:var(--ink);margin:14px 0 4px}
+  .wheel-wrap{position:relative;width:250px;height:250px;margin:16px auto 20px}
+  .wheel-pointer{position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:30px;z-index:5;color:var(--red);text-shadow:0 2px 3px rgba(0,0,0,.4)}
+  .wheel-disc{width:100%;height:100%;border-radius:50%;position:relative;transition:transform 4s cubic-bezier(.13,.75,.24,1);border:7px solid #5c4a3a;box-shadow:0 8px 24px rgba(0,0,0,.35);box-sizing:border-box}
+  .wheel-segment-label{position:absolute;top:50%;left:50%;width:0;height:0;font-size:12px;font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6);white-space:nowrap;text-align:center}
+  .wheel-segment-label span{display:block;transform:translate(-50%,-8px)}
+  .wheel-free-hint{font-size:12px;color:#a99;font-weight:700;margin-bottom:10px}
+  .wheel-spin-btn{background:var(--green);color:#fff;border:none;border-radius:12px;padding:14px 36px;font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 4px 0 #4a9e3f,0 6px 12px rgba(0,0,0,.2);margin-bottom:20px}
+  .wheel-spin-btn:active{transform:translateY(3px);box-shadow:0 1px 0 #4a9e3f,0 2px 4px rgba(0,0,0,.2)}
+  .wheel-spin-btn:disabled{background:#b9ac9d;box-shadow:none;cursor:not-allowed}
+  .menu-keys-pill{display:flex;align-items:center;gap:5px;background:linear-gradient(160deg,#7a4fa0,#5a3578);color:#f3e6ff;border-radius:20px;padding:8px 12px;font-size:13px;font-weight:800;box-shadow:inset 0 1px 0 rgba(255,255,255,.15),0 2px 4px rgba(0,0,0,.25);white-space:nowrap}
+  .shop-keys-pill{display:flex;align-items:center;gap:4px;background:#5a3578;color:#f3e6ff;border-radius:14px;padding:4px 10px;font-size:11px;font-weight:800}
   .record-row{display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;color:var(--ink)}
   .record-row .rank{width:22px;height:22px;border-radius:50%;background:var(--board);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
   .record-row .rscore{flex:1;text-align:left}
@@ -635,7 +659,6 @@
       <div class="menu-level-chip" id="menuProfileCard" role="button" title="Profilə keç">
         <div class="menu-avatar-wrap">
           <div class="ppic ppic-sm" id="menuPhoto"></div>
-          <div class="menu-level-hex"><span id="menuLvl">1</span></div>
           <span class="menu-presence-dot" id="menuPresenceDot" style="display:none"></span>
         </div>
         <div class="menu-topbar-info">
@@ -645,6 +668,7 @@
         </div>
       </div>
       <div class="menu-topbar-right">
+        <div class="menu-keys-pill" id="wheelBtnCurrency" role="button" title="Mükafat çarxına keç">🔑 <span id="menuKeys">0</span></div>
         <div class="menu-currency-pill" id="shopBtnCurrency" role="button" title="Mağazaya keç">🪙 <span id="menuGold">0</span></div>
         <button class="icon-btn menu-settings-btn" id="settingsBtn" title="Parametrlər">⚙️</button>
       </div>
@@ -665,7 +689,7 @@
       <div class="menu-stat"><div class="num" id="menuStarsStat">0</div><div class="lbl">Ulduz</div></div>
     </div>
 
-    <div class="xp-boost-badge" id="xpBoostBadge" style="display:none">⚡ 2x Xal aktivdir — <span id="xpBoostTimeLeft"></span> qalıb</div>
+    <div class="xp-boost-badge" id="xpBoostBadge" style="display:none">⚡ 2x XP aktivdir — <span id="xpBoostTimeLeft"></span> qalıb</div>
 
     <div class="google-auth-row" id="googleAuthRow">
       <button class="google-signin-btn" id="googleSignInBtn">
@@ -688,6 +712,8 @@
       <button class="menu-btn friends-btn" id="friendsBtn"><span class="menu-btn-icon">👥</span><span class="menu-btn-text"><b>Dostlar</b><small>Oyna və söhbət et</small></span><span class="menu-badge" id="friendsBtnDot" style="display:none"></span></button>
       <button class="menu-btn leaderboard-btn" id="leaderboardBtn"><span class="menu-btn-icon">🏆</span><span class="menu-btn-text"><b>Liderbord</b><small>Ən yüksək xallar</small></span></button>
       <button class="menu-btn ranked-btn" id="rankedBtn"><span class="menu-btn-icon">👑</span><span class="menu-btn-text"><b>Reytinqli Oyun</b><small>Çevrimçi yarış</small></span><span class="ranked-btn-price">500 🪙</span></button>
+      <button class="menu-btn bag-btn" id="bagBtn"><span class="menu-btn-icon">🎒</span><span class="menu-btn-text"><b>Çanta</b><small>Əşyalarını gör</small></span></button>
+      <button class="menu-btn wheel-btn" id="wheelBtn"><span class="menu-btn-icon">🎡</span><span class="menu-btn-text"><b>Mükafat Çarxı</b><small>Açarla çevir</small></span></button>
       <button class="menu-btn mailbox-btn menu-btn-wide" id="mailboxBtn"><span class="menu-btn-icon">📬</span><span class="menu-btn-text"><b>Poçt qutusu</b><small>Mesajlar və hədiyyələr</small></span><span class="menu-badge" id="mailboxBtnDot" style="display:none"></span></button>
     </div>
 
@@ -709,6 +735,7 @@
       <div class="shop-header">
         <button class="shop-back" id="shopBack">← Geri</button>
         <h2>🛒 Mağaza</h2>
+        <div class="shop-keys-pill">🔑 <span id="shopKeysVal">0</span></div>
         <div class="shop-gold">🪙 <span id="shopGoldVal">0</span></div>
       </div>
       <div class="shop-tabs" id="shopTabs"></div>
@@ -765,6 +792,28 @@
       <h2>🎖️ Nailiyyətlər</h2>
     </div>
     <div class="achievements-list" id="achievementsList"></div>
+  </div>
+
+  <div id="bagScreen">
+    <div class="shop-header">
+      <button class="shop-back" id="bagBack">← Geri</button>
+      <h2>🎒 Çanta</h2>
+    </div>
+    <div class="bag-list" id="bagList"></div>
+  </div>
+
+  <div id="wheelScreen">
+    <div class="shop-header">
+      <button class="shop-back" id="wheelBack">← Geri</button>
+      <h2>🎡 Mükafat Çarxı</h2>
+    </div>
+    <div class="wheel-keys-row">🔑 <span id="wheelKeysVal">0</span> açar</div>
+    <div class="wheel-wrap">
+      <div class="wheel-pointer">▼</div>
+      <div class="wheel-disc" id="wheelDisc"></div>
+    </div>
+    <div class="wheel-free-hint" id="wheelFreeHint"></div>
+    <button class="wheel-spin-btn" id="wheelSpinBtn">Çevir</button>
   </div>
 
   <div id="friendsScreen">
@@ -1328,13 +1377,13 @@
 
   var SHOP_CATEGORIES = [
     {
-      title: "🚀 2x Xal Sürətləndirici",
-      tab: "🚀 2x Xal",
+      title: "🚀 2x XP Sürətləndirici",
+      tab: "🚀 2x XP",
       items: [
-        {id:"xpBoost1h", name:"1 Saatlıq 2x Xal", desc:"1 saat ərzində qazandığın bütün xal 2 qat olur", price:1, icon:"⚡", type:"xpboost", durationMs:3600000},
-        {id:"xpBoost3h", name:"3 Saatlıq 2x Xal", desc:"3 saat ərzində qazandığın bütün xal 2 qat olur", price:3, icon:"⚡", type:"xpboost", durationMs:10800000},
-        {id:"xpBoost6h", name:"6 Saatlıq 2x Xal", desc:"6 saat ərzində qazandığın bütün xal 2 qat olur", price:6, icon:"⚡", type:"xpboost", durationMs:21600000},
-        {id:"xpBoost24h", name:"24 Saatlıq 2x Xal", desc:"24 saat ərzində qazandığın bütün xal 2 qat olur", price:20, icon:"⚡", type:"xpboost", durationMs:86400000}
+        {id:"xpBoost1h", name:"1 Saatlıq 2x XP", desc:"1 saat ərzində səviyyə üçün qazandığın XP 2 qat olur (oyun xalına təsir etmir)", price:1000, icon:"⚡", type:"xpboost", durationMs:3600000},
+        {id:"xpBoost3h", name:"3 Saatlıq 2x XP", desc:"3 saat ərzində səviyyə üçün qazandığın XP 2 qat olur (oyun xalına təsir etmir)", price:2500, icon:"⚡", type:"xpboost", durationMs:10800000},
+        {id:"xpBoost6h", name:"6 Saatlıq 2x XP", desc:"6 saat ərzində səviyyə üçün qazandığın XP 2 qat olur (oyun xalına təsir etmir)", price:5000, icon:"⚡", type:"xpboost", durationMs:21600000},
+        {id:"xpBoost24h", name:"24 Saatlıq 2x XP", desc:"24 saat ərzində səviyyə üçün qazandığın XP 2 qat olur (oyun xalına təsir etmir)", price:12500, icon:"⚡", type:"xpboost", durationMs:86400000}
       ]
     },
     {
@@ -1729,6 +1778,8 @@
   var shopScreen = document.getElementById("shopScreen");
   var profileScreen = document.getElementById("profileScreen");
   var achievementsScreen = document.getElementById("achievementsScreen");
+  var bagScreen = document.getElementById("bagScreen");
+  var wheelScreen = document.getElementById("wheelScreen");
   var friendsScreen = document.getElementById("friendsScreen");
   var chatScreen = document.getElementById("chatScreen");
   var leaderboardScreen = document.getElementById("leaderboardScreen");
@@ -1946,6 +1997,8 @@
     if(!p.friendBattlesPlayed) p.friendBattlesPlayed = 0;
     if(!p.friendBattlesWon) p.friendBattlesWon = 0;
     if(typeof p.xpBoostUntil !== "number") p.xpBoostUntil = null;
+    if(!p.keys) p.keys = 0;
+    if(typeof p.wheelFreeSpinDate !== "string") p.wheelFreeSpinDate = null;
     p.level = levelFromXp(p.xp);
     return p;
   }
@@ -3821,9 +3874,11 @@
 
   // Bütün XP qazanma buradan keçir: level yenilənməsini və sürəti də idarə edir
   function addXp(amount){
-    if(isXpBoostActive()) amount *= 2;
-    profile.xp += amount;
+    // Oyun xalı (sessionXpEarned — döyüşlərdə, misyalarda, "Ən yüksək xal" nəticəsində görünən)
+    // sürətləndiricidən TƏSİRLƏNMİR — yalnız səviyyə üçün toplanan ümumi XP 2 qat olur
     sessionXpEarned += amount;
+    var levelAmount = isXpBoostActive() ? amount * 2 : amount;
+    profile.xp += levelAmount;
     var newLevel = levelFromXp(profile.xp);
     if(newLevel > (profile.level || 1)){
       profile.level = newLevel;
@@ -4081,9 +4136,11 @@
     xpValEl.textContent = sessionXpEarned || 0;
     playerNameEl.textContent = profile.name;
     levelBalloonEl.textContent = "Lv. " + (profile.level || 1);
-    document.getElementById("menuLvl").textContent = profile.level || 1;
     document.getElementById("menuPlayerName").textContent = profile.name;
     document.getElementById("menuGold").textContent = profile.gold;
+    document.getElementById("menuKeys").textContent = profile.keys || 0;
+    var shopKeysEl = document.getElementById("shopKeysVal");
+    if(shopKeysEl) shopKeysEl.textContent = profile.keys || 0;
     document.getElementById("menuXpStat").textContent = profile.xp || 0;
     document.getElementById("menuGamesStat").textContent = profile.gamesPlayed || 0;
     var menuTotalStars = 0;
@@ -4251,6 +4308,7 @@
     }
     profile.dailyClaimedToday = false;
     profile.totalLoginDays = (profile.totalLoginDays||0) + 1;
+    profile.keys = (profile.keys||0) + 1;
     profile.lastLoginDate = todayStr;
     saveProfile();
     return true;
@@ -6449,6 +6507,142 @@
     startMenuBgAnim();
   }
 
+  // ===== Çanta (sahib olunan ultilər) =====
+  function openBag(){
+    menuScreen.style.display = "none";
+    stopMenuBgAnim();
+    bagScreen.style.display = "flex";
+    renderBagScreen();
+  }
+  function closeBag(){
+    bagScreen.style.display = "none";
+    menuScreen.style.display = "";
+    startMenuBgAnim();
+  }
+  function renderBagScreen(){
+    var el = document.getElementById("bagList");
+    var consumables = [];
+    SHOP_CATEGORIES.forEach(function(cat){
+      cat.items.forEach(function(i){ if(i.type === "consumable" && !consumables.some(function(x){ return x.id === i.id; })) consumables.push(i); });
+    });
+    var owned = consumables.filter(function(i){ return (profile.inventory[i.id]||0) > 0; });
+    if(!owned.length){
+      el.innerHTML = '<div class="empty-hint">Hələ heç bir əşyan yoxdur — 🛒 Mağazadan ulti al</div>';
+      return;
+    }
+    el.innerHTML = owned.map(function(i){
+      return '<div class="bag-row"><div class="bag-row-icon">' + i.icon + '</div>' +
+        '<div class="bag-row-info"><div class="bag-row-name">' + escapeHtml(i.name) + '</div><div class="bag-row-desc">' + escapeHtml(i.desc) + '</div></div>' +
+        '<div class="bag-row-count">x' + (profile.inventory[i.id]||0) + '</div></div>';
+    }).join("");
+  }
+
+  // ===== Mükafat Çarxı (açarla çevrilir) =====
+  var WHEEL_SEGMENT_COLORS = ["#f2545b","#4a90d9","#6bbf59","#f4c542","#a463d6","#ff9f43","#00d2d3","#ff6b9d"];
+  var WHEEL_PRIZES = [
+    {id:"g20", label:"+20", icon:"🪙", type:"gold", amount:20},
+    {id:"ulti1", label:"Ulti", icon:"🎲", type:"ulti"},
+    {id:"g40", label:"+40", icon:"🪙", type:"gold", amount:40},
+    {id:"g15", label:"+15", icon:"🪙", type:"gold", amount:15},
+    {id:"ulti2", label:"Ulti", icon:"🎲", type:"ulti"},
+    {id:"g75", label:"+75", icon:"🪙", type:"gold", amount:75},
+    {id:"g25", label:"+25", icon:"🪙", type:"gold", amount:25},
+    {id:"g150", label:"+150", icon:"🪙", type:"gold", amount:150}
+  ];
+  var wheelSpinning = false;
+  var wheelSpinCount = 0;
+
+  function openWheel(){
+    menuScreen.style.display = "none";
+    stopMenuBgAnim();
+    wheelScreen.style.display = "flex";
+    renderWheelScreen();
+  }
+  function closeWheel(){
+    wheelScreen.style.display = "none";
+    menuScreen.style.display = "";
+    startMenuBgAnim();
+  }
+
+  function renderWheelDisc(){
+    var disc = document.getElementById("wheelDisc");
+    if(disc.getAttribute("data-built")) return;
+    disc.setAttribute("data-built", "1");
+    var n = WHEEL_PRIZES.length;
+    var seg = 360 / n;
+    var stops = WHEEL_PRIZES.map(function(p, i){
+      var c = WHEEL_SEGMENT_COLORS[i % WHEEL_SEGMENT_COLORS.length];
+      return c + " " + (i*seg) + "deg " + ((i+1)*seg) + "deg";
+    }).join(",");
+    disc.style.background = "conic-gradient(" + stops + ")";
+    disc.innerHTML = WHEEL_PRIZES.map(function(p, i){
+      var angle = seg * i + seg/2;
+      return '<div class="wheel-segment-label" style="transform:rotate(' + angle + 'deg) translateY(-90px) rotate(' + (-angle) + 'deg)"><span>' + p.icon + ' ' + p.label + '</span></div>';
+    }).join("");
+  }
+
+  function renderWheelScreen(){
+    renderWheelDisc();
+    document.getElementById("wheelKeysVal").textContent = profile.keys || 0;
+    var today = getTodayStr();
+    var freeAvailable = profile.wheelFreeSpinDate !== today;
+    var hint = document.getElementById("wheelFreeHint");
+    var btn = document.getElementById("wheelSpinBtn");
+    if(freeAvailable){
+      hint.textContent = "🎁 Bu gün pulsuz çevirişin var!";
+      btn.textContent = "Pulsuz Çevir";
+      btn.disabled = false;
+    } else {
+      hint.textContent = (profile.keys||0) > 0 ? "Növbəti çevirmə üçün 1 🔑 istifadə olunacaq" : "Açarın yoxdur — hər gün girişdə 1 açar qazanırsan";
+      btn.textContent = "1 🔑 ilə Çevir";
+      btn.disabled = (profile.keys||0) <= 0;
+    }
+    if(wheelSpinning) btn.disabled = true;
+  }
+
+  function doWheelSpin(){
+    if(wheelSpinning) return;
+    var today = getTodayStr();
+    var freeAvailable = profile.wheelFreeSpinDate !== today;
+    if(!freeAvailable && (profile.keys||0) <= 0){ showToast("⚠️ Açarın yoxdur"); return; }
+    wheelSpinning = true;
+    document.getElementById("wheelSpinBtn").disabled = true;
+    if(freeAvailable){
+      profile.wheelFreeSpinDate = today;
+    } else {
+      profile.keys = (profile.keys||0) - 1;
+    }
+    saveProfile();
+    renderProfile();
+    var prizeIndex = Math.floor(Math.random() * WHEEL_PRIZES.length);
+    var prize = WHEEL_PRIZES[prizeIndex];
+    var n = WHEEL_PRIZES.length;
+    var seg = 360 / n;
+    var targetCenter = seg * prizeIndex + seg/2;
+    wheelSpinCount++;
+    var totalRotation = wheelSpinCount * 5 * 360 + (360 - targetCenter);
+    document.getElementById("wheelDisc").style.transform = "rotate(" + totalRotation + "deg)";
+    setTimeout(function(){
+      grantWheelPrize(prize);
+      wheelSpinning = false;
+      renderWheelScreen();
+    }, 4200);
+  }
+
+  function grantWheelPrize(prize){
+    if(prize.type === "gold"){
+      addGold(prize.amount);
+      showToast("🎉 Çarx: +" + prize.amount + " qızıl!");
+    } else if(prize.type === "ulti"){
+      var pick = ULTI_IDS[Math.floor(Math.random()*ULTI_IDS.length)];
+      profile.inventory[pick] = (profile.inventory[pick]||0) + 1;
+      saveProfile();
+      renderPowerups();
+      showToast("🎉 Çarx: 1 " + ULTI_LABELS[pick] + "!");
+    }
+    if(typeof playRewardSound === "function") playRewardSound();
+  }
+
   function openDaily(){
     menuScreen.style.display = "none";
     stopMenuBgAnim();
@@ -6471,6 +6665,12 @@
   document.getElementById("profileBack").addEventListener("click", closeProfile);
   document.getElementById("achievementsBtn").addEventListener("click", openAchievements);
   document.getElementById("achievementsBack").addEventListener("click", closeAchievements);
+  document.getElementById("bagBtn").addEventListener("click", openBag);
+  document.getElementById("bagBack").addEventListener("click", closeBag);
+  document.getElementById("wheelBtn").addEventListener("click", openWheel);
+  document.getElementById("wheelBtnCurrency").addEventListener("click", openWheel);
+  document.getElementById("wheelBack").addEventListener("click", closeWheel);
+  document.getElementById("wheelSpinBtn").addEventListener("click", doWheelSpin);
   document.getElementById("friendsBtn").addEventListener("click", openFriends);
   document.getElementById("friendsBack").addEventListener("click", closeFriends);
   document.getElementById("leaderboardBtn").addEventListener("click", openLeaderboard);
