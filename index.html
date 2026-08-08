@@ -4043,6 +4043,7 @@
     profile.totalGoldEarned = (profile.totalGoldEarned||0) + ACHIEVEMENT_GOLD_REWARD;
     sessionGoldEarned += ACHIEVEMENT_GOLD_REWARD;
     showToast("🎖️ +" + ACHIEVEMENT_GOLD_REWARD + " qızıl!");
+    playRewardSound();
     saveProfile();
     renderProfile();
     renderAchievementsScreen();
@@ -4441,6 +4442,7 @@
       showToast("🎁 Gündəlik mükafat: 1 " + ULTI_LABELS[pick] + "!");
     }
     profile.dailyClaimedToday = true;
+    playRewardSound();
     saveProfile();
     renderProfile();
     renderDailyScreen();
@@ -6111,6 +6113,14 @@
     playTone(220, 0.5, "sawtooth", 440);
   }
 
+  // Naliyyət/günlük mükafat/çarx mükafatı götürüldükdə: parlaq, yüksələn 4 nota arpeciosu
+  function playRewardSound(){
+    if(!audioCtx) return;
+    [523.25, 659.25, 783.99, 1046.50].forEach(function(f, i){
+      setTimeout(function(){ playTone(f, 0.18, "triangle"); }, i*80);
+    });
+  }
+
   function playMusicKick(){
     if(!audioCtx || !musicGain) return;
     var t = audioCtx.currentTime;
@@ -6755,7 +6765,7 @@
       renderPowerups();
       showToast("🎉 Çarx: 1 " + ULTI_LABELS[pick] + "!");
     }
-    if(typeof playRewardSound === "function") playRewardSound();
+    playRewardSound();
   }
 
   // Gündəlik mükafat artıq ayrıca "ekran" deyil, menyunun ÜZƏRİNDƏ popup pəncərə kimi açılır —
