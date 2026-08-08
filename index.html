@@ -2810,7 +2810,7 @@
       var bestScore = (sd.records && sd.records.length) ? sd.records[0].score : 0;
       var online = isOnline(p.last_seen);
       document.getElementById("playerCardPresence").innerHTML =
-        '<span class="presence-label ' + (online ? "online" : "offline") + '">' + presenceDotHtml(p.last_seen) + formatLastSeenText(p.last_seen) + '</span>';
+        '<span class="presence-label ' + (online ? "online" : "offline") + '">' + formatLastSeenText(p.last_seen) + '</span>';
       document.getElementById("playerCardName").innerHTML = buildNameHtml(p.name || "Oyunçu", p.active_name_color, p.active_name_anim);
       // Profil fonu/palitrası: activeBackground/activePalette yalnız save_data-da saxlanılır
       // (bu yeganə yer olduğu üçün ayrıca sütuna ehtiyac yoxdur) — hər açılışda əvvəlki oyunçunun
