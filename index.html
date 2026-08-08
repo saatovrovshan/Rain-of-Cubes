@@ -833,6 +833,8 @@
       <div class="profile-stat"><div class="pnum" id="statPopularity">-</div><div class="plbl">Populyarlıq</div></div>
       <div class="profile-stat"><div class="pnum" id="statGiftsReceived">-</div><div class="plbl">Alınan hədiyyə</div></div>
       <div class="profile-stat"><div class="pnum" id="statGiftsSent">-</div><div class="plbl">Göndərilən hədiyyə</div></div>
+      <div class="profile-stat"><div class="pnum" id="statLikes">-</div><div class="plbl">Bəyənmə</div></div>
+      <div class="profile-stat"><div class="pnum" id="statViews">-</div><div class="plbl">Profil baxışı</div></div>
     </div>
 
     <div class="profile-section-title">🏆 Rekordlar (ən yaxşı 10)</div>
@@ -1103,9 +1105,12 @@
         <div class="profile-stat"><div class="pnum" id="playerCardBestScore">0</div><div class="plbl">Ən yüksək xal</div></div>
         <div class="profile-stat"><div class="pnum" id="playerCardGiftsReceived">0</div><div class="plbl">Alınan hədiyyə</div></div>
         <div class="profile-stat"><div class="pnum" id="playerCardGiftsSent">0</div><div class="plbl">Göndərilən hədiyyə</div></div>
+        <div class="profile-stat"><div class="pnum" id="playerCardLikes">0</div><div class="plbl">Bəyənmə</div></div>
+        <div class="profile-stat"><div class="pnum" id="playerCardViews">0</div><div class="plbl">Baxış</div></div>
       </div>
       <button class="friend-action-btn" id="playerCardActionBtn" style="width:100%;padding:12px;font-size:13px"></button>
       <div id="playerCardExtraBtns" style="display:none;gap:8px;margin-top:8px">
+        <button class="friend-action-btn" id="playerCardLikeBtn" style="flex:1;padding:12px;font-size:12px;background:#e05a8a">🤍 Bəyən</button>
         <button class="friend-action-btn" id="playerCardMessageBtn" style="flex:1;padding:12px;font-size:12px;background:#7d6adf">💬 Mesaj</button>
         <button class="friend-action-btn" id="playerCardGiftBtn" style="flex:1;padding:12px;font-size:12px;background:#e0a02c">🎁 Hədiyyə</button>
         <button class="friend-action-btn" id="playerCardReportBtn" style="flex:1;padding:12px;font-size:12px;background:#c23840">🚩 Şikayət</button>
@@ -1599,6 +1604,7 @@
   var FRIEND_BATTLE_WIN_MILESTONES = [1,5,10,25,50];
   var GIFT_SENT_MILESTONES = [1,5,10,25,50,100];
   var GIFT_RECEIVED_MILESTONES = [1,5,10,25,50,100];
+  var VIEW_COUNT_MILESTONES = [1,5,10,25,50,100,250,500,1000,2500,5000,10000,25000,50000,100000,200000,350000,500000,750000,1000000];
   var ACHIEVEMENT_GOLD_REWARD = 50;
 
   function formatMinutesLabel(min){
@@ -1767,6 +1773,17 @@
     });
   });
 
+  VIEW_COUNT_MILESTONES.forEach(function(n){
+    ACHIEVEMENTS.push({
+      id: "views_" + n,
+      name: n + " Baxış",
+      desc: "Profilin " + n + " dəfə baxılsın",
+      icon: n >= 100000 ? "🌌" : n >= 1000 ? "👁️‍🗨️" : "👁️",
+      category: "profile",
+      check: function(p){ return (p.viewCount||0) >= n; }
+    });
+  });
+
   MISSION_MILESTONES.forEach(function(n){
     ACHIEVEMENTS.push({
       id: "mission_" + n,
@@ -1822,6 +1839,7 @@
     {id:"gifts", title:"Hədiyyələr", icon:"🎁"},
     {id:"time", title:"Oyun vaxtı", icon:"⏳"},
     {id:"login", title:"Giriş günləri", icon:"🗓️"},
+    {id:"profile", title:"Profil baxışı", icon:"👤"},
     {id:"general", title:"Ümumi", icon:"🎮"}
   ];
 
@@ -2599,9 +2617,15 @@
     document.getElementById("playerCardGiftList").innerHTML = '<div class="empty-hint">Yüklənir...</div>';
     document.getElementById("playerCardGiftsAllBtn").style.display = "none";
     loadPlayerGifts(playerId, 6, function(list){ renderPlayerCardGifts(list, playerId); });
-    supabaseClient.from("profiles").select("id,name,avatar_url,country_flag,active_frame,level,gold,missions_done,popularity,total_gifts_received,total_gifts_sent,last_seen,player_number,save_data").eq("id", playerId).maybeSingle().then(function(res){
+    supabaseClient.from("profiles").select("id,name,avatar_url,country_flag,active_frame,level,gold,missions_done,popularity,total_gifts_received,total_gifts_sent,likes_count,view_count,last_seen,player_number,save_data").eq("id", playerId).maybeSingle().then(function(res){
       if(res.error || !res.data){ showToast("⚠️ Profil tapılmadı"); return; }
       var p = res.data;
+      document.getElementById("playerCardLikes").textContent = p.likes_count || 0;
+      document.getElementById("playerCardViews").textContent = p.view_count || 0;
+      renderPlayerCardLikeBtn(playerId);
+      if(cloudUserId && playerId !== cloudUserId){
+        supabaseClient.rpc("increment_profile_view", {p_target_id: playerId}).then(function(){});
+      }
       var sd = p.save_data || {};
       var bestScore = (sd.records && sd.records.length) ? sd.records[0].score : 0;
       var online = isOnline(p.last_seen);
@@ -2643,6 +2667,33 @@
   function closePlayerCard(){
     document.getElementById("playerCardModal").classList.remove("show");
     viewedPlayerId = null;
+  }
+
+  function renderPlayerCardLikeBtn(playerId){
+    var btn = document.getElementById("playerCardLikeBtn");
+    if(!cloudUserId || playerId === cloudUserId) return;
+    btn.disabled = true;
+    supabaseClient.from("profile_likes").select("liker_id").eq("liker_id", cloudUserId).eq("liked_id", playerId).maybeSingle().then(function(res){
+      btn.disabled = false;
+      var liked = !!res.data;
+      btn.textContent = liked ? "❤️ Bəyənildi" : "🤍 Bəyən";
+      btn.onclick = function(){ toggleProfileLike(playerId); };
+    });
+  }
+
+  function toggleProfileLike(playerId){
+    if(!cloudUserId || playerId === cloudUserId) return;
+    var btn = document.getElementById("playerCardLikeBtn");
+    var countEl = document.getElementById("playerCardLikes");
+    btn.disabled = true;
+    supabaseClient.rpc("toggle_like", {p_target_id: playerId}).then(function(res){
+      btn.disabled = false;
+      if(res.error){ showToast("⚠️ Bəyənmə alınmadı"); return; }
+      var liked = !!res.data;
+      btn.textContent = liked ? "❤️ Bəyənildi" : "🤍 Bəyən";
+      var current = parseInt(countEl.textContent, 10) || 0;
+      countEl.textContent = Math.max(0, current + (liked ? 1 : -1));
+    });
   }
 
   function updatePlayerCardActionBtn(playerId){
@@ -3482,7 +3533,8 @@
     {id:"gifts_sent", label:"🎁 Göndərilən hədiyyə", column:"total_gifts_sent", icon:"🎁", suffix:" ədəd"},
     {id:"gifts_received", label:"🎀 Alınan hədiyyə", column:"total_gifts_received", icon:"🎀", suffix:" ədəd"},
     {id:"popularity", label:"🔥 Populyarlıq", column:"popularity", icon:"🔥", suffix:""},
-    {id:"achievements", label:"🎖️ Nailiyyətlər", column:"achievements_unlocked", icon:"🎖️", suffix:" ədəd"}
+    {id:"achievements", label:"🎖️ Nailiyyətlər", column:"achievements_unlocked", icon:"🎖️", suffix:" ədəd"},
+    {id:"likes", label:"❤️ Bəyənmə", column:"likes_count", icon:"❤️", suffix:" bəyənmə"}
   ];
   var leaderboardActiveTab = "gold_earned";
 
@@ -4287,19 +4339,25 @@
     }
 
     if(supabaseClient && cloudUserId){
-      supabaseClient.from("profiles").select("popularity,total_gifts_received,total_gifts_sent,player_number").eq("id", cloudUserId).maybeSingle().then(function(res){
+      supabaseClient.from("profiles").select("popularity,total_gifts_received,total_gifts_sent,likes_count,view_count,player_number").eq("id", cloudUserId).maybeSingle().then(function(res){
         if(res.error || !res.data) return;
         document.getElementById("statPopularity").textContent = res.data.popularity || 0;
         document.getElementById("statGiftsReceived").textContent = res.data.total_gifts_received || 0;
         document.getElementById("statGiftsSent").textContent = res.data.total_gifts_sent || 0;
+        document.getElementById("statLikes").textContent = res.data.likes_count || 0;
+        document.getElementById("statViews").textContent = res.data.view_count || 0;
         document.getElementById("profileIdNum").textContent = "#" + (res.data.player_number || 0);
         // Hədiyyə sayları server tərəfdə (RPC ilə) artırılır — nailiyyət yoxlaması üçün lokal profildə keşlə
         profile.giftsReceived = res.data.total_gifts_received || 0;
         profile.giftsSent = res.data.total_gifts_sent || 0;
+        profile.viewCount = res.data.view_count || 0;
         saveProfile();
+        renderProfile();
       });
     } else {
       document.getElementById("statPopularity").textContent = "-";
+      document.getElementById("statLikes").textContent = "-";
+      document.getElementById("statViews").textContent = "-";
       document.getElementById("statGiftsReceived").textContent = "-";
       document.getElementById("statGiftsSent").textContent = "-";
       document.getElementById("profileIdNum").textContent = "#-";
