@@ -268,14 +268,28 @@
   .friend-tab-dot{position:absolute;top:-4px;right:6px;width:10px;height:10px;border-radius:50%;background:var(--red);border:2px solid #fff}
 
   .chat-messages{flex:1;overflow-y:auto;padding:14px 14px 8px;display:flex;flex-direction:column;gap:8px;text-align:left}
-  .chat-bubble{max-width:76%;padding:9px 13px;border-radius:15px;font-size:13px;line-height:1.4;word-wrap:break-word;white-space:pre-wrap}
+  .chat-date-divider{align-self:center;font-size:10px;font-weight:700;color:#a99;background:rgba(0,0,0,.06);padding:4px 12px;border-radius:10px;margin:6px 0 2px}
+  .chat-bubble{position:relative;max-width:76%;padding:9px 13px;border-radius:15px;font-size:13px;line-height:1.4;word-wrap:break-word;white-space:pre-wrap}
   .chat-bubble.mine{align-self:flex-end;background:var(--green);color:#fff;border-bottom-right-radius:4px}
   .chat-bubble.theirs{align-self:flex-start;background:var(--panel);color:var(--ink);border-bottom-left-radius:4px}
   .chat-bubble .chat-time{display:block;font-size:9px;opacity:.7;margin-top:3px;text-align:right}
+  .chat-bubble-del{position:absolute;top:-7px;left:-7px;width:18px;height:18px;border-radius:50%;background:var(--red);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,.3);opacity:.9;line-height:1}
+  .chat-bubble-del:active{transform:scale(.88)}
+  .chat-bubble.sticker-bubble{background:transparent;padding:2px;box-shadow:none}
+  .chat-sticker{font-size:46px;line-height:1;text-align:center}
   .chat-input-row{display:flex;gap:8px;padding:10px 12px;border-top:2px solid var(--board-cell);background:#faf8ef;flex-shrink:0}
   .chat-input-row input{flex:1;min-width:0;border:2px solid var(--board-cell);border-radius:20px;padding:10px 16px;font-size:13px;background:#fff;color:var(--ink)}
   .chat-send-btn{background:var(--green);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:16px;font-weight:700;cursor:pointer;flex-shrink:0;box-shadow:0 3px 0 #4a9e3f}
   .chat-send-btn:active{transform:translateY(2px);box-shadow:0 1px 0 #4a9e3f}
+  .chat-sticker-btn{background:#fff;border:2px solid var(--board-cell);border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;flex-shrink:0}
+  .chat-sticker-btn:active{transform:translateY(1px)}
+  .chat-sticker-btn.active{background:var(--pink);border-color:var(--pink)}
+  .sticker-picker{display:none;flex-wrap:wrap;gap:6px;padding:10px 12px;border-top:2px solid var(--board-cell);background:#fff;max-height:150px;overflow-y:auto;flex-shrink:0}
+  .sticker-picker.show{display:flex}
+  .sticker-picker-item{width:42px;height:42px;border-radius:10px;border:none;background:var(--panel);font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .sticker-picker-item:active{transform:scale(.9)}
+  .sticker-picker-locked{width:42px;height:42px;border-radius:10px;background:var(--panel);font-size:18px;opacity:.4;display:flex;align-items:center;justify-content:center}
+  .sticker-picker-hint{width:100%;font-size:10px;color:#a99;text-align:center;padding:2px 0}
   .convo-row{display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:12px;padding:10px 12px;cursor:pointer;border:2px solid transparent;box-shadow:0 2px 0 rgba(0,0,0,.06);transition:border-color .15s}
   .convo-row:hover{border-color:var(--blue)}
   .convo-row-info{flex:1;min-width:0;text-align:left}
@@ -683,7 +697,9 @@
       </div>
     </div>
     <div class="chat-messages" id="chatMessages"></div>
+    <div class="sticker-picker" id="stickerPicker"></div>
     <div class="chat-input-row">
+      <button class="chat-sticker-btn" id="chatStickerBtn">😊</button>
       <input type="text" id="chatInput" maxlength="500" placeholder="Mesaj yaz...">
       <button class="chat-send-btn" id="chatSendBtn">➤</button>
     </div>
@@ -969,6 +985,17 @@
     </div>
   </div>
 
+  <div class="modal-overlay" id="confirmModalOverlay">
+    <div class="modal-panel" style="text-align:center">
+      <div class="modal-header">
+        <h3 id="confirmModalTitle">Əminsən?</h3>
+      </div>
+      <p style="font-size:13px;color:var(--ink);margin-bottom:16px" id="confirmModalText"></p>
+      <button class="friend-action-btn reject" id="confirmModalYes" style="width:100%;padding:12px;font-size:13px;margin-bottom:8px">Bəli, sil</button>
+      <button class="menu-return" id="confirmModalNo">Ləğv et</button>
+    </div>
+  </div>
+
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -1217,6 +1244,13 @@
         {id:"frameFire", name:"Alov Çərçivəsi", desc:"Yanan alov haşiyə, kub tutanda alovlanır", price:350, icon:"🔥", type:"frame", frameValue:"fire"},
         {id:"frameNeonLight", name:"Neon İşıq", desc:"Əsl neon lampa kimi çaxnaşan parlaq haşiyə, kub tutanda güclənir", price:320, icon:"💡", type:"frame", frameValue:"neonlight"},
         {id:"frameStar", name:"Ulduz Yağışı", desc:"Fırlanan ulduz zərrəcikləri, kub tutanda parlayır", price:380, icon:"✨", type:"frame", frameValue:"star"}
+      ]
+    },
+    {
+      title: "😄 Stikerlər",
+      tab: "😄 Stiker",
+      items: [
+        {id:"stickerPackFun", name:"Əyləncə Stiker Paketi", desc:"6 əlavə stiker mesajlaşma üçün", price:150, icon:"😎", type:"sticker"}
       ]
     }
   ];
@@ -1602,6 +1636,11 @@
       if(res.data && res.data.save_data && Object.keys(res.data.save_data).length){
         profile = migrateProfile(res.data.save_data);
         try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(profile)); }catch(e){}
+        // Bulud profili lokal (əvvəlcədən checkDailyLogin() ilə hesablanmış) gündəlik mükafat
+        // vəziyyətini SƏSSİZCƏ əvəz edə bilər — buna görə bulud gələn kimi yenidən yoxlanılır,
+        // əks halda "qırmızı nöqtə həmişə aktiv/mükafat götürülmür" kimi köhnəlmiş vəziyyət qala bilər
+        reconcileDailyLogin();
+        maybeAutoOpenDaily();
         renderProfile();
         if(profileScreen && profileScreen.style.display !== "none") renderProfileScreen();
         if(typeof showToast === "function") showToast("☁️ Bulud profili yükləndi");
@@ -1681,6 +1720,7 @@
   var chatPeerName = null;
   var chatReturnScreen = "friends";
   var chatRenderedIds = {};
+  var chatLastDateKey = null;
   var messagesInboxChannel = null;
   var conversationsCache = [];
 
@@ -1695,6 +1735,31 @@
   ];
   var giftTargetId = null;
   var giftTargetName = null;
+
+  // Mesajlaşma stikerləri: pack:null = pulsuz əsas dəst, pack:"stickerPackFun" = mağazadan alınan paket.
+  // Gələcəkdə "emoji" sahəsi əvəzinə "imageUrl" əlavə edilib öz hazırladığımız stikerlər taxıla bilər —
+  // render/göndərmə borusu (STICKER_BY_ID, sendSticker, renderChatBubbleContent) dəyişməz qalar.
+  var STICKER_CATALOG = [
+    {id:"party", emoji:"🎉", pack:null},
+    {id:"heart", emoji:"❤️", pack:null},
+    {id:"laugh", emoji:"😂", pack:null},
+    {id:"fire", emoji:"🔥", pack:null},
+    {id:"clap", emoji:"👏", pack:null},
+    {id:"gg", emoji:"🏆", pack:null},
+    {id:"thumbsup", emoji:"👍", pack:null},
+    {id:"cool", emoji:"😎", pack:null},
+    {id:"cry", emoji:"😭", pack:"stickerPackFun"},
+    {id:"love", emoji:"😍", pack:"stickerPackFun"},
+    {id:"angry", emoji:"😡", pack:"stickerPackFun"},
+    {id:"think", emoji:"🤔", pack:"stickerPackFun"},
+    {id:"skull", emoji:"💀", pack:"stickerPackFun"},
+    {id:"ghost", emoji:"👻", pack:"stickerPackFun"}
+  ];
+  var STICKER_BY_ID = {};
+  STICKER_CATALOG.forEach(function(s){ STICKER_BY_ID[s.id] = s; });
+  function ownedStickers(){
+    return STICKER_CATALOG.filter(function(s){ return !s.pack || profile.unlocks[s.pack]; });
+  }
 
   function escapeHtml(s){
     return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
@@ -1942,12 +2007,31 @@
           renderFriendsListUI([]);
           return;
         }
+        var friendshipByPeer = {};
+        rows.forEach(function(r){
+          var peerId = r.requester_id === cloudUserId ? r.addressee_id : r.requester_id;
+          friendshipByPeer[peerId] = r.id;
+        });
         var ids = rows.map(function(r){ return r.requester_id === cloudUserId ? r.addressee_id : r.requester_id; });
         supabaseClient.from("profiles").select("id,name,avatar_url,country_flag,active_frame,level,last_seen").in("id", ids).then(function(res2){
-          friendsCache = res2.data || [];
+          friendsCache = (res2.data || []).map(function(p){
+            return Object.assign({}, p, {friendshipId: friendshipByPeer[p.id]});
+          });
           renderFriendsListUI(friendsCache);
         });
       });
+  }
+
+  function removeFriend(friendshipId, playerName){
+    if(!supabaseClient || !friendshipId) return;
+    showConfirmModal("Dostluqdan çıxart?", (playerName || "Bu oyunçu") + " artıq dost siyahından silinəcək.", function(){
+      supabaseClient.from("friendships").delete().eq("id", friendshipId).then(function(res){
+        if(res.error){ showToast("⚠️ Xəta: " + res.error.message); return; }
+        showToast("👋 Dostluqdan çıxarıldı");
+        loadFriendsList();
+        closePlayerCard();
+      });
+    });
   }
 
   function renderFriendsListUI(list){
@@ -1961,10 +2045,17 @@
       return '<div class="friend-row" data-id="' + p.id + '">' +
         buildAvatarHtml({avatarUrl:p.avatar_url, countryFlag:p.country_flag, level:p.level, activeFrame:p.active_frame, presence:{lastSeen:p.last_seen, corner:true}}) +
         '<div class="friend-row-info"><div class="friend-row-name">' + escapeHtml(p.name) + '</div><div class="friend-row-meta">Lv.' + (p.level||1) + '</div></div>' +
+        '<button class="friend-action-btn reject" data-action="remove-friend" data-fid="' + p.friendshipId + '" data-name="' + escapeHtml(p.name) + '">✕</button>' +
         '</div>';
     }).join("");
     container.querySelectorAll(".friend-row").forEach(function(row){
       row.addEventListener("click", function(){ openPlayerCard(this.getAttribute("data-id")); });
+    });
+    container.querySelectorAll('button[data-action="remove-friend"]').forEach(function(btn){
+      btn.addEventListener("click", function(e){
+        e.stopPropagation();
+        removeFriend(this.getAttribute("data-fid"), this.getAttribute("data-name"));
+      });
     });
   }
 
@@ -2045,9 +2136,9 @@
           btn.textContent = "➕ Dost əlavə et";
           btn.onclick = function(){ sendFriendRequest(playerId); };
         } else if(row.status === "accepted"){
-          btn.textContent = "✅ Artıq dostsunuz";
-          btn.className += " pending";
-          btn.onclick = null;
+          btn.textContent = "🗑 Dostluqdan çıxart";
+          btn.className += " reject";
+          btn.onclick = function(){ removeFriend(row.id, document.getElementById("playerCardName").textContent); };
         } else if(row.requester_id === cloudUserId){
           btn.textContent = "⏳ Sorğu göndərilib";
           btn.className += " pending";
@@ -2120,6 +2211,16 @@
             onClick: function(){ openMailboxToMessages(); }
           });
         }
+      })
+      // DELETE hadisələri üçün server-tərəfli filter etibarlı deyil (silinən sətrin sütunları
+      // REPLICA IDENTITY FULL olmadan ötürülmür) — ona görə cədvəl-geniş dinləyib, yalnız açıq
+      // söhbətdə həqiqətən göstərilən mesaj id-si uyğun gələndə klient tərəfdə silirik
+      .on("postgres_changes", {event:"DELETE", schema:"public", table:"messages"}, function(payload){
+        var deletedId = payload.old && payload.old.id;
+        if(!deletedId || !chatRenderedIds[deletedId]) return;
+        removeChatBubbleFromDom(deletedId);
+        if(friendsScreen.style.display !== "none" && friendsActiveTab === "messages") loadConversationsList();
+        if(mailboxScreen.style.display !== "none" && mailboxActiveTab === "messages") loadConversationsList("mailboxConversationsList");
       })
       .subscribe();
   }
@@ -2200,6 +2301,7 @@
     chatPeerId = peerId;
     chatPeerName = peerName;
     chatRenderedIds = {};
+    chatLastDateKey = null;
     chatReturnScreen = (leaderboardScreen.style.display !== "none") ? "leaderboard"
       : (mailboxScreen.style.display !== "none") ? "mailbox" : "friends";
     document.getElementById("chatPeerName").textContent = peerName || "Söhbət";
@@ -2211,7 +2313,8 @@
     document.getElementById("playerCardModal").classList.remove("show");
     stopMenuBgAnim();
     chatScreen.style.display = "flex";
-    supabaseClient.from("messages").select("id,from_user,to_user,body,created_at")
+    closeStickerPicker();
+    supabaseClient.from("messages").select("id,from_user,to_user,body,created_at,msg_type,sticker_id")
       .or("and(from_user.eq." + cloudUserId + ",to_user.eq." + peerId + "),and(from_user.eq." + peerId + ",to_user.eq." + cloudUserId + ")")
       .order("created_at", {ascending:true}).limit(200)
       .then(function(res){
@@ -2240,21 +2343,81 @@
     }
   }
 
+  var AZ_MONTHS_CHAT = ["Yanvar","Fevral","Mart","Aprel","May","İyun","İyul","Avqust","Sentyabr","Oktyabr","Noyabr","Dekabr"];
+  function chatDateKey(d){ return d.getFullYear() + "-" + (d.getMonth()+1) + "-" + d.getDate(); }
+  function chatDateLabel(d){
+    var today = new Date();
+    if(chatDateKey(d) === chatDateKey(today)) return "Bugün";
+    var yest = new Date(today.getFullYear(), today.getMonth(), today.getDate()-1);
+    if(chatDateKey(d) === chatDateKey(yest)) return "Dünən";
+    return d.getDate() + " " + AZ_MONTHS_CHAT[d.getMonth()] + " " + d.getFullYear();
+  }
+
   function appendChatBubble(m){
     if(chatRenderedIds[m.id]) return;
     chatRenderedIds[m.id] = true;
-    var mine = m.from_user === cloudUserId;
     var container = document.getElementById("chatMessages");
+    var created = new Date(m.created_at);
+    var dKey = chatDateKey(created);
+    if(dKey !== chatLastDateKey){
+      chatLastDateKey = dKey;
+      var divider = document.createElement("div");
+      divider.className = "chat-date-divider";
+      divider.textContent = chatDateLabel(created);
+      container.appendChild(divider);
+    }
+    var mine = m.from_user === cloudUserId;
     var div = document.createElement("div");
     div.className = "chat-bubble " + (mine ? "mine" : "theirs");
+    div.dataset.msgId = m.id;
     var timeStr = "";
-    try{ timeStr = new Date(m.created_at).toLocaleTimeString("az-AZ", {hour:"2-digit", minute:"2-digit"}); }catch(e){}
-    div.textContent = m.body;
+    try{ timeStr = created.toLocaleTimeString("az-AZ", {hour:"2-digit", minute:"2-digit"}); }catch(e){}
+    renderChatBubbleContent(div, m);
     var timeEl = document.createElement("span");
     timeEl.className = "chat-time";
     timeEl.textContent = timeStr;
     div.appendChild(timeEl);
+    if(mine){
+      var delBtn = document.createElement("span");
+      delBtn.className = "chat-bubble-del";
+      delBtn.textContent = "✕";
+      delBtn.title = "Mesajı sil";
+      delBtn.addEventListener("click", function(e){
+        e.stopPropagation();
+        showConfirmModal("Mesajı sil?", "Bu mesaj hər iki tərəf üçün silinəcək.", function(){ deleteChatMessage(m.id); });
+      });
+      div.appendChild(delBtn);
+    }
     container.appendChild(div);
+  }
+
+  function renderChatBubbleContent(div, m){
+    var sticker = m.msg_type === "sticker" ? STICKER_BY_ID[m.sticker_id] : null;
+    if(sticker){
+      div.classList.add("sticker-bubble");
+      var stickerEl = document.createElement("div");
+      stickerEl.className = "chat-sticker";
+      stickerEl.textContent = sticker.emoji;
+      div.appendChild(stickerEl);
+    } else {
+      div.appendChild(document.createTextNode(m.body));
+    }
+  }
+
+  function deleteChatMessage(id){
+    if(!supabaseClient) return;
+    supabaseClient.from("messages").delete().eq("id", id).then(function(res){
+      if(res.error){ showToast("⚠️ Silinmədi: " + res.error.message); return; }
+      removeChatBubbleFromDom(id);
+      if(friendsScreen.style.display !== "none" && friendsActiveTab === "messages") loadConversationsList();
+      if(mailboxScreen.style.display !== "none" && mailboxActiveTab === "messages") loadConversationsList("mailboxConversationsList");
+    });
+  }
+
+  function removeChatBubbleFromDom(id){
+    var bubble = document.querySelector('.chat-bubble[data-msg-id="' + id + '"]');
+    if(bubble && bubble.parentNode) bubble.parentNode.removeChild(bubble);
+    delete chatRenderedIds[id];
   }
 
   function scrollChatToBottom(){
@@ -2272,6 +2435,19 @@
       });
   }
 
+  // ===== Ümumi təsdiq modalı (mesaj silmə, dostluqdan çıxarma və s. üçün təkrar istifadə olunur) =====
+  var confirmModalCallback = null;
+  function showConfirmModal(title, text, onConfirm){
+    document.getElementById("confirmModalTitle").textContent = title;
+    document.getElementById("confirmModalText").textContent = text;
+    confirmModalCallback = onConfirm;
+    document.getElementById("confirmModalOverlay").classList.add("show");
+  }
+  function hideConfirmModal(){
+    document.getElementById("confirmModalOverlay").classList.remove("show");
+    confirmModalCallback = null;
+  }
+
   function sendChatMessage(){
     var input = document.getElementById("chatInput");
     var body = input.value.trim();
@@ -2280,6 +2456,49 @@
     supabaseClient.from("messages").insert({from_user: cloudUserId, to_user: chatPeerId, body: body})
       .select().single().then(function(res){
         if(res.error){ showToast("⚠️ Mesaj göndərilmədi: " + res.error.message); return; }
+        appendChatBubble(res.data);
+        scrollChatToBottom();
+      });
+  }
+
+  // ===== Mesajlaşma stikerləri =====
+  function toggleStickerPicker(){
+    var panel = document.getElementById("stickerPicker");
+    var btn = document.getElementById("chatStickerBtn");
+    var showing = panel.classList.toggle("show");
+    btn.classList.toggle("active", showing);
+    if(showing) renderStickerPicker();
+  }
+
+  function closeStickerPicker(){
+    document.getElementById("stickerPicker").classList.remove("show");
+    document.getElementById("chatStickerBtn").classList.remove("active");
+  }
+
+  function renderStickerPicker(){
+    var panel = document.getElementById("stickerPicker");
+    var owned = ownedStickers();
+    var locked = STICKER_CATALOG.length - owned.length;
+    var html = owned.map(function(s){
+      return '<button type="button" class="sticker-picker-item" data-sticker="' + s.id + '">' + s.emoji + '</button>';
+    }).join("");
+    if(locked > 0){
+      html += '<div class="sticker-picker-hint">+' + locked + ' stiker mağazada 😄 Stikerlər bölməsində</div>';
+    }
+    panel.innerHTML = html;
+    panel.querySelectorAll(".sticker-picker-item").forEach(function(btn){
+      btn.addEventListener("click", function(){ sendSticker(this.getAttribute("data-sticker")); });
+    });
+  }
+
+  function sendSticker(stickerId){
+    var sticker = STICKER_BY_ID[stickerId];
+    if(!sticker || !supabaseClient || !cloudUserId || !chatPeerId) return;
+    if(sticker.pack && !profile.unlocks[sticker.pack]) return;
+    closeStickerPicker();
+    supabaseClient.from("messages").insert({from_user: cloudUserId, to_user: chatPeerId, body: sticker.emoji, msg_type: "sticker", sticker_id: stickerId})
+      .select().single().then(function(res){
+        if(res.error){ showToast("⚠️ Stiker göndərilmədi: " + res.error.message); return; }
         appendChatBubble(res.data);
         scrollChatToBottom();
       });
@@ -3350,9 +3569,10 @@
   var ULTI_IDS = ["shield","slow","fast","bomb","hammer","shuffle","rewind"];
   var ULTI_LABELS = {shield:"🛡️ Qalxan", slow:"⏱️ Yavaşlatma", fast:"⏩ Sürətləndirmə", bomb:"💣 Bomba", hammer:"🔨 Çəkic", shuffle:"🎲 Rəng Qarışdırma", rewind:"⏪ Geri Sarma"};
 
+  // Gündəlik mükafat London (Europe/London) saatına görə sıfırlanır — cihazın öz saat qurşağından
+  // asılı olmadan bütün oyunçular üçün eyni, sabit gün sərhədi (BST/GMT keçidini avtomatik idarə edir)
   function getTodayStr(){
-    var d = new Date();
-    return d.getFullYear() + "-" + (d.getMonth()+1) + "-" + d.getDate();
+    return new Intl.DateTimeFormat("en-CA", {timeZone:"Europe/London"}).format(new Date());
   }
 
   function daysBetweenStr(a, b){
@@ -3363,10 +3583,11 @@
     return Math.round((db - da) / 86400000);
   }
 
-  // Oyun açılanda bir dəfə çağırılır: gündəlik sayğacı və 7 günlük dövrü yeniləyir
+  // Oyun açılanda (və bulud profili yükləndikdən sonra YENİDƏN) çağırılır: gündəlik sayğacı
+  // və 7 günlük dövrü yeniləyir. Yeni gün aşkarlanıbsa true qaytarır (avtomatik açılış üçün).
   function checkDailyLogin(){
     var todayStr = getTodayStr();
-    if(profile.lastLoginDate === todayStr) return;
+    if(profile.lastLoginDate === todayStr) return false;
     if(profile.lastLoginDate){
       var diff = daysBetweenStr(profile.lastLoginDate, todayStr);
       profile.rewardDayIndex = (diff === 1) ? ((profile.rewardDayIndex + 1) % 7) : 0;
@@ -3377,6 +3598,25 @@
     profile.totalLoginDays = (profile.totalLoginDays||0) + 1;
     profile.lastLoginDate = todayStr;
     saveProfile();
+    return true;
+  }
+
+  // checkDailyLogin() həm başlanğıcda (lokal profillə), həm də bulud profili gəldikdən sonra
+  // (əvvəlki lokal nəticəni bulud verilənləri ilə əvəz edə bilər) çağırılır — hər ikisindən
+  // hər hansı biri "yeni gün" aşkarlasa, sessiya ərzində gündəlik ekranı bir dəfə avtomatik açılır
+  var dailySessionIsNewDay = false;
+  var dailyAutoOpenDone = false;
+  function reconcileDailyLogin(){
+    var isNewDay = checkDailyLogin();
+    dailySessionIsNewDay = dailySessionIsNewDay || isNewDay;
+    updateDailyBtnDot();
+    if(dailyScreen && dailyScreen.style.display !== "none") renderDailyScreen();
+  }
+  function maybeAutoOpenDaily(){
+    if(!dailySessionIsNewDay || dailyAutoOpenDone || profile.dailyClaimedToday) return;
+    if(!menuScreen || menuScreen.style.display === "none") return;
+    dailyAutoOpenDone = true;
+    openDaily();
   }
 
   function renderDailyScreen(){
@@ -3417,6 +3657,8 @@
     renderDailyScreen();
     renderPowerups();
     updateDailyBtnDot();
+    // Mükafat götürüldükdən qısa müddət sonra ekran özü bağlanıb menyuya qayıdır
+    setTimeout(function(){ if(dailyScreen.style.display !== "none") closeDaily(); }, 1100);
   }
 
   function updateDailyBtnDot(){
@@ -4707,7 +4949,7 @@
     });
     if(!item) return;
 
-    if(item.type === "unlock" || item.type === "effect" || item.type === "theme" || item.type === "breakfx" || item.type === "frame"){
+    if(item.type === "unlock" || item.type === "effect" || item.type === "theme" || item.type === "breakfx" || item.type === "frame" || item.type === "sticker"){
       var alreadyOwned = profile.unlocks[id] || item.price === 0;
       if(alreadyOwned){
         profile.unlocks[id] = true;
@@ -4715,6 +4957,7 @@
         if(item.type === "theme"){ profile.activeTheme = item.themeValue; saveProfile(); renderProfile(); showToast("😀 Tema seçildi!"); }
         if(item.type === "breakfx"){ profile.activeBreakEffect = item.breakValue; saveProfile(); renderProfile(); showToast("💥 Sınma effekti seçildi!"); }
         if(item.type === "frame"){ profile.activeFrame = item.frameValue; saveProfile(); renderProfile(); showToast("🖼️ Çərçivə seçildi!"); }
+        if(item.type === "sticker"){ showToast("😄 Bu stiker paketi artıq sənindir!"); }
         if(item.type === "unlock"){
           var nowEnabled = profile.enabledUnlocks[id] === false;
           profile.enabledUnlocks[id] = nowEnabled;
@@ -5549,6 +5792,7 @@
   document.getElementById("chatInput").addEventListener("keydown", function(e){
     if(e.key === "Enter") sendChatMessage();
   });
+  document.getElementById("chatStickerBtn").addEventListener("click", toggleStickerPicker);
   document.getElementById("playerCardMessageBtn").addEventListener("click", function(){
     if(!viewedPlayerId) return;
     var peerId = viewedPlayerId;
@@ -5570,6 +5814,15 @@
   });
   document.getElementById("giftHistoryModal").addEventListener("click", function(e){
     if(e.target === this) this.classList.remove("show");
+  });
+  document.getElementById("confirmModalYes").addEventListener("click", function(){
+    var cb = confirmModalCallback;
+    hideConfirmModal();
+    if(cb) cb();
+  });
+  document.getElementById("confirmModalNo").addEventListener("click", hideConfirmModal);
+  document.getElementById("confirmModalOverlay").addEventListener("click", function(e){
+    if(e.target === this) hideConfirmModal();
   });
   document.getElementById("battleInviteAccept").addEventListener("click", function(){
     if(!pendingIncomingInvite) return;
@@ -5668,8 +5921,10 @@
   document.getElementById("sfxTogglePause").addEventListener("click", toggleSfx);
 
   rebuildColorPool();
-  checkDailyLogin();
-  updateDailyBtnDot();
+  reconcileDailyLogin();
+  // Google girişi asinxron təsdiqlənir və bulud profili (varsa) bunu ƏVƏZ edə bilər —
+  // avtomatik açılış qərarını bir qədər gecikdiririk ki, bulud vəziyyəti nəzərə alınsın
+  setTimeout(maybeAutoOpenDaily, 900);
 
   updateSoundUI();
   renderProfile();
