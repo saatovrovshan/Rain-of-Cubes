@@ -429,9 +429,11 @@
   .title{font-size:20px;font-weight:800;color:var(--ink);letter-spacing:.5px}
   .title small{display:block;font-size:9px;font-weight:600;color:#a99}
   .badges{display:flex;gap:5px;align-items:center}
-  .badge{background:var(--board);color:var(--ink-light);border-radius:6px;padding:4px 8px;text-align:center;min-width:42px}
+  .badge{position:relative;background:var(--board);color:var(--ink-light);border-radius:6px;padding:4px 8px;text-align:center;min-width:42px}
   .badge .lbl{font-size:8px;font-weight:700;opacity:.7}
   .badge .val{font-size:14px;font-weight:800}
+  .xp-boost-inline{position:absolute;top:-7px;right:-6px;background:var(--gold);color:#7a5a00;font-size:8px;font-weight:800;padding:1px 4px;border-radius:6px;box-shadow:0 1px 2px rgba(0,0,0,.3);white-space:nowrap}
+  .xp-boost-badge{width:100%;text-align:center;background:linear-gradient(160deg,#ffe27a,var(--gold));color:#5c4a1f;font-size:11px;font-weight:800;padding:7px 10px;border-radius:10px;margin:-2px 0 8px;box-sizing:border-box}
   .hearts{display:flex;gap:2px;font-size:14px}
   .heart.lost{opacity:.25}
   .icon-btn{background:var(--board);color:var(--ink-light);border:none;border-radius:6px;padding:4px 9px;font-size:15px;cursor:pointer;line-height:1}
@@ -659,6 +661,8 @@
       <div class="menu-stat"><div class="num" id="menuStarsStat">0</div><div class="lbl">Ulduz</div></div>
     </div>
 
+    <div class="xp-boost-badge" id="xpBoostBadge" style="display:none">⚡ 2x Xal aktivdir — <span id="xpBoostTimeLeft"></span> qalıb</div>
+
     <div class="google-auth-row" id="googleAuthRow">
       <button class="google-signin-btn" id="googleSignInBtn">
         <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.9-2.26 5.36-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
@@ -833,7 +837,7 @@
     <div class="badges">
       <div class="badge" id="levelBadge" style="display:none"><div class="lbl">LEVEL</div><div class="val" id="levelBadgeVal">1</div></div>
       <div class="badge"><div class="lbl">MİSYA</div><div class="val" id="missionVal">0</div></div>
-      <div class="badge"><div class="lbl">XAL</div><div class="val" id="xpVal">0</div></div>
+      <div class="badge"><div class="lbl">XAL</div><div class="val" id="xpVal">0</div><span class="xp-boost-inline" id="xpBoostGameBadge" style="display:none">⚡2x</span></div>
       <div class="badge"><div class="lbl">CAN</div><div class="val hearts" id="livesVal"></div></div>
       <div class="badge" id="battleTimerBadge" style="display:none"><div class="lbl">VAXT</div><div class="val" id="battleTimerVal">60</div></div>
       <div class="badge" id="battleOpponentBadge" style="display:none"><div class="lbl" id="battleOpponentLbl">RƏQİB</div><div class="val" id="battleOpponentScoreVal">0</div></div>
@@ -1319,6 +1323,16 @@
     '</g></svg>';
 
   var SHOP_CATEGORIES = [
+    {
+      title: "🚀 2x Xal Sürətləndirici",
+      tab: "🚀 2x Xal",
+      items: [
+        {id:"xpBoost1h", name:"1 Saatlıq 2x Xal", desc:"1 saat ərzində qazandığın bütün xal 2 qat olur", price:1, icon:"⚡", type:"xpboost", durationMs:3600000},
+        {id:"xpBoost3h", name:"3 Saatlıq 2x Xal", desc:"3 saat ərzində qazandığın bütün xal 2 qat olur", price:3, icon:"⚡", type:"xpboost", durationMs:10800000},
+        {id:"xpBoost6h", name:"6 Saatlıq 2x Xal", desc:"6 saat ərzində qazandığın bütün xal 2 qat olur", price:6, icon:"⚡", type:"xpboost", durationMs:21600000},
+        {id:"xpBoost24h", name:"24 Saatlıq 2x Xal", desc:"24 saat ərzində qazandığın bütün xal 2 qat olur", price:20, icon:"⚡", type:"xpboost", durationMs:86400000}
+      ]
+    },
     {
       title: "⚡ Ultilər",
       tab: "⚡ Ultilər",
@@ -1927,6 +1941,7 @@
     if(!p.giftsReceived) p.giftsReceived = 0;
     if(!p.friendBattlesPlayed) p.friendBattlesPlayed = 0;
     if(!p.friendBattlesWon) p.friendBattlesWon = 0;
+    if(typeof p.xpBoostUntil !== "number") p.xpBoostUntil = null;
     p.level = levelFromXp(p.xp);
     return p;
   }
@@ -3792,6 +3807,7 @@
 
   // Bütün XP qazanma buradan keçir: level yenilənməsini və sürəti də idarə edir
   function addXp(amount){
+    if(isXpBoostActive()) amount *= 2;
     profile.xp += amount;
     sessionXpEarned += amount;
     var newLevel = levelFromXp(profile.xp);
@@ -3809,6 +3825,31 @@
     sessionGoldEarned += amount;
     saveProfile();
     renderProfile();
+  }
+
+  // ===== 2x Xal sürətləndirici (mağazadan alınan, real vaxta görə fəaliyyət göstərən) =====
+  function isXpBoostActive(){
+    return !!profile.xpBoostUntil && Date.now() < profile.xpBoostUntil;
+  }
+
+  function formatBoostRemaining(ms){
+    var totalMin = Math.max(0, Math.ceil(ms / 60000));
+    var h = Math.floor(totalMin / 60);
+    var m = totalMin % 60;
+    if(h > 0) return h + "s " + m + "dəq";
+    return m + "dəq";
+  }
+
+  function updateXpBoostBadges(){
+    var active = isXpBoostActive();
+    var remaining = active ? (profile.xpBoostUntil - Date.now()) : 0;
+    var menuBadge = document.getElementById("xpBoostBadge");
+    if(menuBadge){
+      menuBadge.style.display = active ? "" : "none";
+      if(active) document.getElementById("xpBoostTimeLeft").textContent = formatBoostRemaining(remaining);
+    }
+    var gameBadge = document.getElementById("xpBoostGameBadge");
+    if(gameBadge) gameBadge.style.display = active ? "" : "none";
   }
 
   function renderXpProgress(){
@@ -4037,6 +4078,7 @@
     }
     document.getElementById("menuStarsStat").textContent = menuTotalStars;
     shopGoldVal.textContent = profile.gold;
+    updateXpBoostBadges();
     renderXpProgress();
     renderPhotoInto("menuPhoto", "sm");
     renderPhotoInto("gamePhoto", "sm");
@@ -5510,6 +5552,8 @@
     if(item.type === "consumable"){
       var ownedCount = profile.inventory[item.id] || 0;
       if(ownedCount > 0) ownedCountHtml = '<div class="shop-item-owned">Sahibsiniz: ' + ownedCount + '</div>';
+    } else if(item.type === "xpboost" && isXpBoostActive()){
+      ownedCountHtml = '<div class="shop-item-owned">⚡ Aktiv: ' + formatBoostRemaining(profile.xpBoostUntil - Date.now()) + ' qalıb</div>';
     }
     div.innerHTML = '<div class="shop-item-icon">' + item.icon + '</div>' +
       '<div class="shop-item-name">' + item.name + '</div>' +
@@ -5552,6 +5596,22 @@
       c.items.forEach(function(i){ if(i.id === id) item = i; });
     });
     if(!item) return;
+
+    if(item.type === "xpboost"){
+      if(profile.gold < item.price) return;
+      profile.gold -= item.price;
+      profile.totalGoldSpent = (profile.totalGoldSpent||0) + item.price;
+      // Artıq aktiv sürətləndirici varsa qalan vaxtın üstünə əlavə edir (itmir), yoxdursa indidən başlayır
+      var now = Date.now();
+      var base = (profile.xpBoostUntil && profile.xpBoostUntil > now) ? profile.xpBoostUntil : now;
+      profile.xpBoostUntil = base + item.durationMs;
+      saveProfile();
+      renderProfile();
+      renderShop();
+      updateXpBoostBadges();
+      showToast("⚡ " + item.name + " aktivləşdi!");
+      return;
+    }
 
     if(item.type === "unlock" || item.type === "effect" || item.type === "theme" || item.type === "breakfx" || item.type === "frame" || item.type === "sticker"){
       var alreadyOwned = profile.unlocks[id] || item.price === 0;
@@ -6577,6 +6637,7 @@
   renderPowerups();
   renderCombo();
   newMission();
+  setInterval(updateXpBoostBadges, 1000);
   startMenuBgAnim();
 
   // Brauzer avtomatik səs oxutmağa icazə vermir — ilk toxunuş/klikdə (əgər hələ oyunda deyiliksə) menyu musiqisi başlasın
