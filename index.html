@@ -16,12 +16,11 @@
   html,body{margin:0;padding:0;height:100%;background:#3a332c;font-family:"Segoe UI",Arial,sans-serif;overscroll-behavior:none;user-select:none;-webkit-user-select:none}
   #app{max-width:480px;margin:0 auto;height:100vh;height:100dvh;background:var(--bg);display:flex;flex-direction:column;position:relative;overflow:hidden;box-shadow:0 0 40px rgba(0,0,0,.5)}
 
-  #menuScreen,#shopScreen,#profileScreen,#achievementsScreen,#dailyScreen,#arcadeScreen,#friendsScreen,#chatScreen,#leaderboardScreen,#mailboxScreen,#bagScreen,#wheelScreen{position:absolute;inset:0;z-index:100;background:linear-gradient(180deg,#faf8ef,#f0e6d6);display:flex;flex-direction:column;padding:0;text-align:center;overflow-y:auto}
+  #menuScreen,#shopScreen,#profileScreen,#achievementsScreen,#arcadeScreen,#friendsScreen,#chatScreen,#leaderboardScreen,#mailboxScreen,#bagScreen,#wheelScreen{position:absolute;inset:0;z-index:100;background:linear-gradient(180deg,#faf8ef,#f0e6d6);display:flex;flex-direction:column;padding:0;text-align:center;overflow-y:auto}
   #menuScreen{justify-content:flex-start;align-items:center;padding:16px 16px 10px}
   #shopScreen{padding:16px;display:none}
   #profileScreen{padding:16px;display:none;align-items:stretch}
   #achievementsScreen{padding:16px;display:none;align-items:stretch}
-  #dailyScreen{padding:16px;display:none;align-items:stretch}
   #arcadeScreen{padding:16px;display:none;align-items:stretch}
   #chatScreen{padding:0;display:none;align-items:stretch;overflow-y:hidden}
   #leaderboardScreen{padding:16px;display:none;align-items:stretch}
@@ -910,13 +909,15 @@
     <div id="mailboxContent"></div>
   </div>
 
-  <div id="dailyScreen">
-    <div class="shop-header">
-      <button class="shop-back" id="dailyBack">← Geri</button>
-      <h2>🎁 Gündəlik Mükafat</h2>
+  <div class="modal-overlay" id="dailyScreen">
+    <div class="modal-panel" id="dailyModalPanel">
+      <div class="modal-header">
+        <h3>🎁 Gündəlik Mükafat</h3>
+        <button class="modal-close" id="dailyBack">✕</button>
+      </div>
+      <div class="daily-days" id="dailyDays"></div>
+      <button class="daily-claim-btn" id="dailyClaimBtn">Mükafatı al</button>
     </div>
-    <div class="daily-days" id="dailyDays"></div>
-    <button class="daily-claim-btn" id="dailyClaimBtn">Mükafatı al</button>
   </div>
 
   <div id="arcadeScreen">
@@ -3714,7 +3715,7 @@
     friendsScreen.style.display = "none";
     leaderboardScreen.style.display = "none";
     mailboxScreen.style.display = "none";
-    dailyScreen.style.display = "none";
+    dailyScreen.classList.remove("show");
     arcadeScreen.style.display = "none";
     battleOpponentBadge.style.display = "";
     battleTimerBadge.style.display = "none";
@@ -4398,7 +4399,7 @@
     var isNewDay = checkDailyLogin();
     dailySessionIsNewDay = dailySessionIsNewDay || isNewDay;
     updateDailyBtnDot();
-    if(dailyScreen && dailyScreen.style.display !== "none") renderDailyScreen();
+    if(dailyScreen && dailyScreen.classList.contains("show")) renderDailyScreen();
   }
   function maybeAutoOpenDaily(){
     if(!dailySessionIsNewDay || dailyAutoOpenDone || profile.dailyClaimedToday) return;
@@ -4446,7 +4447,7 @@
     renderPowerups();
     updateDailyBtnDot();
     // Mükafat götürüldükdən qısa müddət sonra ekran özü bağlanıb menyuya qayıdır
-    setTimeout(function(){ if(dailyScreen.style.display !== "none") closeDaily(); }, 1100);
+    setTimeout(function(){ if(dailyScreen.classList.contains("show")) closeDaily(); }, 1100);
   }
 
   function updateDailyBtnDot(){
@@ -6408,7 +6409,7 @@
     profileScreen.style.display = "none";
     achievementsScreen.style.display = "none";
     friendsScreen.style.display = "none";
-    dailyScreen.style.display = "none";
+    dailyScreen.classList.remove("show");
     arcadeScreen.style.display = "none";
     overlayEl.classList.remove("show");
     pauseOverlay.classList.remove("show");
@@ -6507,7 +6508,7 @@
     chatScreen.style.display = "none";
     leaderboardScreen.style.display = "none";
     mailboxScreen.style.display = "none";
-    dailyScreen.style.display = "none";
+    dailyScreen.classList.remove("show");
     arcadeScreen.style.display = "none";
     gameMode = "endless";
     arcadeLevelNum = null;
@@ -6564,7 +6565,7 @@
     profileScreen.style.display = "none";
     achievementsScreen.style.display = "none";
     friendsScreen.style.display = "none";
-    dailyScreen.style.display = "none";
+    dailyScreen.classList.remove("show");
     clearArcadeModifiers();
     levelBadge.style.display = "none";
     stopGameMusic();
@@ -6597,7 +6598,7 @@
     profileScreen.style.display = "none";
     achievementsScreen.style.display = "none";
     friendsScreen.style.display = "none";
-    dailyScreen.style.display = "none";
+    dailyScreen.classList.remove("show");
     menuScreen.style.display = "";
     startMenuBgAnim();
   }
@@ -6616,7 +6617,7 @@
   function closeAchievements(){
     achievementsScreen.style.display = "none";
     friendsScreen.style.display = "none";
-    dailyScreen.style.display = "none";
+    dailyScreen.classList.remove("show");
     menuScreen.style.display = "";
     startMenuBgAnim();
   }
@@ -6757,17 +6758,15 @@
     if(typeof playRewardSound === "function") playRewardSound();
   }
 
+  // Gündəlik mükafat artıq ayrıca "ekran" deyil, menyunun ÜZƏRİNDƏ popup pəncərə kimi açılır —
+  // arxadakı menyu görünən qalır (animasiyası da davam edir), settings/flag modalları kimi
   function openDaily(){
-    menuScreen.style.display = "none";
-    stopMenuBgAnim();
-    dailyScreen.style.display = "flex";
+    dailyScreen.classList.add("show");
     renderDailyScreen();
   }
 
   function closeDaily(){
-    dailyScreen.style.display = "none";
-    menuScreen.style.display = "";
-    startMenuBgAnim();
+    dailyScreen.classList.remove("show");
   }
 
   document.getElementById("startBtn").addEventListener("click", function(){ gameMode = "endless"; arcadeLevelNum = null; startGame(); });
@@ -6883,6 +6882,9 @@
   });
   document.getElementById("dailyBtn").addEventListener("click", openDaily);
   document.getElementById("dailyBack").addEventListener("click", closeDaily);
+  document.getElementById("dailyScreen").addEventListener("click", function(e){
+    if(e.target === this) closeDaily();
+  });
   document.getElementById("dailyClaimBtn").addEventListener("click", claimDailyReward);
   document.getElementById("arcadeBtn").addEventListener("click", function(){ gameMode = "endless"; arcadeLevelNum = null; openArcadeMenu(); });
   document.getElementById("arcadeBack").addEventListener("click", closeArcadeMenu);
