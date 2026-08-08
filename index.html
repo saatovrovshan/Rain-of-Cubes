@@ -946,7 +946,7 @@
       </button>
       <div class="music-track-list" id="settingsMusicList" style="display:none"></div>
       <div class="settings-signout-row" id="settingsSignOutRow" style="display:none">
-        <button class="friend-action-btn reject" id="googleSignOutBtn" style="padding:10px 24px;font-size:12px">🚪 Çıxış</button>
+        <button class="friend-action-btn reject" id="googleSignOutBtn" style="padding:10px 24px;font-size:12px">🚪 Google Hesabdan çıxış et</button>
       </div>
     </div>
   </div>
@@ -1131,18 +1131,23 @@
   var cloudSyncTimer = null;
 
   function renderGoogleAuthUI(session){
+    var row = document.getElementById("googleAuthRow");
     var btn = document.getElementById("googleSignInBtn");
     var status = document.getElementById("googleAuthStatus");
     var nameEl = document.getElementById("googleAuthName");
-    if(!btn || !status || !nameEl) return;
+    if(!row || !btn || !status || !nameEl) return;
     var signOutRow = document.getElementById("settingsSignOutRow");
     if(session && session.user){
+      // Daxil olandan sonra menyuda buna aid heç nə qalmasın — ad artıq yuxarıdakı profil çipində görünür,
+      // "Çıxış" isə Parametrlər modalına köçürülüb
+      row.style.display = "none";
       btn.style.display = "none";
-      status.style.display = "flex";
+      status.style.display = "none";
       var meta = session.user.user_metadata || {};
       nameEl.textContent = "✅ " + (meta.full_name || meta.name || session.user.email || "Oyunçu");
       if(signOutRow) signOutRow.style.display = "";
     } else {
+      row.style.display = "";
       btn.style.display = "flex";
       status.style.display = "none";
       if(signOutRow) signOutRow.style.display = "none";
