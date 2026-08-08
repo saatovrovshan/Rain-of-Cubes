@@ -1507,7 +1507,9 @@
       title: "😄 Stikerlər",
       tab: "😄 Stiker",
       items: [
-        {id:"stickerPackFun", name:"Əyləncə Stiker Paketi", desc:"6 əlavə stiker mesajlaşma üçün", price:150, icon:"😎", type:"sticker"}
+        {id:"stickerPackFun", name:"Əyləncə Stiker Paketi", desc:"6 əlavə stiker mesajlaşma üçün", price:150, icon:"😎", type:"sticker"},
+        {id:"stickerPackLove", name:"Sevgi Stiker Paketi", desc:"6 sevgi mövzulu stiker mesajlaşma üçün", price:180, icon:"💌", type:"sticker"},
+        {id:"stickerPackGaming", name:"Oyun Stiker Paketi", desc:"6 oyun mövzulu stiker mesajlaşma üçün", price:180, icon:"🕹️", type:"sticker"}
       ]
     }
   ];
@@ -2229,7 +2231,19 @@
     {id:"angry", emoji:"😡", pack:"stickerPackFun"},
     {id:"think", emoji:"🤔", pack:"stickerPackFun"},
     {id:"skull", emoji:"💀", pack:"stickerPackFun"},
-    {id:"ghost", emoji:"👻", pack:"stickerPackFun"}
+    {id:"ghost", emoji:"👻", pack:"stickerPackFun"},
+    {id:"twohearts", emoji:"💕", pack:"stickerPackLove"},
+    {id:"kiss", emoji:"😘", pack:"stickerPackLove"},
+    {id:"bouquet", emoji:"💐", pack:"stickerPackLove"},
+    {id:"rose", emoji:"🌹", pack:"stickerPackLove"},
+    {id:"brokenheart", emoji:"💔", pack:"stickerPackLove"},
+    {id:"catheart", emoji:"😻", pack:"stickerPackLove"},
+    {id:"controller", emoji:"🎮", pack:"stickerPackGaming"},
+    {id:"joystick", emoji:"🕹️", pack:"stickerPackGaming"},
+    {id:"hundred", emoji:"💯", pack:"stickerPackGaming"},
+    {id:"dart", emoji:"🎯", pack:"stickerPackGaming"},
+    {id:"medal", emoji:"🥇", pack:"stickerPackGaming"},
+    {id:"crown", emoji:"👑", pack:"stickerPackGaming"}
   ];
   var STICKER_BY_ID = {};
   STICKER_CATALOG.forEach(function(s){ STICKER_BY_ID[s.id] = s; });
@@ -5652,7 +5666,7 @@
     div.className = "shop-item";
     var owned = false;
     var isActive = false;
-    if(item.type === "unlock" || item.type === "effect" || item.type === "theme" || item.type === "breakfx" || item.type === "frame"){
+    if(item.type === "unlock" || item.type === "effect" || item.type === "theme" || item.type === "breakfx" || item.type === "frame" || item.type === "sticker"){
       owned = profile.unlocks[item.id] || item.price === 0;
       if(owned && item.type === "effect"){
         isActive = profile.activeEffect === item.id.replace("fx","").toLowerCase();
@@ -5664,6 +5678,8 @@
         isActive = profile.activeBreakEffect === item.breakValue;
       } else if(owned && item.type === "frame"){
         isActive = profile.activeFrame === item.frameValue;
+      } else if(owned && item.type === "sticker"){
+        isActive = true; // stiker paketi alındıqdan sonra daimi sahiblik statusu, aktiv/deaktiv anlayışı yoxdur
       }
     }
     // Yaşıl çərçivə yalnız HAZIRKI aktiv olan effekt/tema/paket üçün
@@ -5674,13 +5690,14 @@
     if(locked){ btnText = "🔒 Sv. " + item.requiredLevel; }
     else if(!owned){ btnText = item.price + " 🪙"; }
     else if(item.type === "unlock"){ btnText = isActive ? "Aktiv" : "Deaktiv"; }
+    else if(item.type === "sticker"){ btnText = "✅ Sahibsiniz"; }
     else if(isActive){ btnText = "Aktiv"; }
     else { btnText = "Seç"; }
     var btnClass = "shop-item-btn";
     if(owned && item.type === "unlock"){ btnClass += isActive ? " owned-btn" : " disabled-btn"; }
     else if(isActive){ btnClass += " owned-btn"; }
     if(locked){ div.classList.add("locked"); }
-    var disabled = locked || (!owned && profile.gold < item.price) ? "disabled" : "";
+    var disabled = locked || (owned && item.type === "sticker") || (!owned && profile.gold < item.price) ? "disabled" : "";
     var lockBadgeHtml = locked ? '<div class="shop-item-lock-badge">🔒 Sv.' + item.requiredLevel + '</div>' : "";
     var ownedCountHtml = "";
     if(item.type === "consumable"){
