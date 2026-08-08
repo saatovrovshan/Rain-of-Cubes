@@ -489,6 +489,9 @@
   .player-gift-list,.gift-history-list{display:flex;flex-direction:column;gap:8px;margin-top:8px;max-height:260px;overflow-y:auto}
   .gift-history-list.full-width{max-height:none;overflow-y:visible;width:100%}
   .gift-history-row{display:flex;gap:10px;align-items:flex-start;background:var(--panel);border-radius:10px;padding:8px 10px;text-align:left}
+  .own-gift-row{cursor:pointer}
+  .own-gift-row:active{opacity:.7}
+  .gift-total-badge{position:absolute;right:0;top:0;background:var(--profile-accent,var(--orange));color:#fff;font-size:10px;font-weight:800;border-radius:10px;padding:2px 8px}
   .ghr-icon{font-size:22px;flex-shrink:0}
   .ghr-icon img{width:26px;height:26px;object-fit:contain;vertical-align:middle}
   .ghr-info{flex:1;min-width:0}
@@ -907,6 +910,21 @@
 
     <div class="profile-section-title">🏆 Rekordlar (ən yaxşı 10)</div>
     <div class="records-list" id="recordsList"></div>
+
+    <div class="profile-section-title" style="position:relative">🎁 Aldığı hədiyyələr<span class="gift-total-badge" id="profileGiftTotalBadge">0</span></div>
+    <div class="player-gift-list" id="profileGiftList"></div>
+    <button class="menu-return" id="profileGiftsAllBtn" style="display:none;margin-top:6px;padding:8px;font-size:11px;width:100%">Hamısına bax</button>
+  </div>
+
+  <div class="modal-overlay" id="giftActionModal">
+    <div class="modal-panel" style="text-align:center">
+      <div class="modal-header">
+        <h3>🎁 Hədiyyə</h3>
+        <button class="modal-close" id="giftActionModalClose">✕</button>
+      </div>
+      <button class="friend-action-btn" id="giftActionHideBtn" style="width:100%;padding:12px;margin-bottom:8px">🙈 Gizlət</button>
+      <button class="friend-action-btn reject" id="giftActionDeleteBtn" style="width:100%;padding:12px">🗑️ Sil və Şikayət et</button>
+    </div>
   </div>
 
   <div id="achievementsScreen">
@@ -2756,7 +2774,7 @@
     viewedPlayerId = playerId;
     document.getElementById("playerCardGiftList").innerHTML = '<div class="empty-hint">Yüklənir...</div>';
     document.getElementById("playerCardGiftsAllBtn").style.display = "none";
-    loadPlayerGifts(playerId, 6, function(list){ renderPlayerCardGifts(list, playerId); });
+    loadPlayerGifts(playerId, 9, function(list){ renderPlayerCardGifts(list, playerId); });
     supabaseClient.from("profiles").select("id,name,avatar_url,country_flag,active_frame,level,gold,missions_done,popularity,total_gifts_received,total_gifts_sent,likes_count,view_count,last_seen,player_number,save_data").eq("id", playerId).maybeSingle().then(function(res){
       if(res.error || !res.data){ showToast("⚠️ Profil tapılmadı"); return; }
       var p = res.data;
@@ -3412,10 +3430,89 @@
       '</div>';
   }
 
+  // Öz profilində göstərilən hədiyyə sətri — üzərinə toxunanda gizlətmək/silmək seçimi açılır
+  function ownGiftRowHtml(g, senderName){
+    var catalogItem = GIFT_CATALOG.find(function(x){ return x.id === g.gift_id; }) || {icon:"🎁", name:g.gift_id};
+    var dateStr = "";
+    try{ dateStr = new Date(g.created_at).toLocaleDateString("az-AZ"); }catch(e){}
+    return '<div class="gift-history-row own-gift-row" data-gift-id="' + g.id + '" data-sender-id="' + g.from_user + '" data-sender-name="' + escapeHtml(senderName || "Oyunçu") + '" data-gold-cost="' + g.gold_cost + '">' +
+      '<div class="ghr-icon">' + giftIconHtml(catalogItem) + '</div>' +
+      '<div class="ghr-info">' +
+        '<div class="ghr-name">' + escapeHtml(catalogItem.name) + ' <span class="ghr-cost">🪙' + g.gold_cost + '</span></div>' +
+        '<div class="ghr-sender">' + escapeHtml(senderName || "Oyunçu") + ' · ' + dateStr + '</div>' +
+        (g.note ? '<div class="ghr-note">"' + escapeHtml(g.note) + '"</div>' : "") +
+      '</div>' +
+      '</div>';
+  }
+
+  function renderProfileGiftList(){
+    var container = document.getElementById("profileGiftList");
+    var allBtn = document.getElementById("profileGiftsAllBtn");
+    var badge = document.getElementById("profileGiftTotalBadge");
+    if(!supabaseClient || !cloudUserId){
+      container.innerHTML = '<div class="empty-hint">Daxil olmalısan</div>';
+      allBtn.style.display = "none";
+      badge.textContent = "0";
+      return;
+    }
+    loadPlayerGifts(cloudUserId, 9, function(list){
+      if(!list.length){
+        container.innerHTML = '<div class="empty-hint">Hələ hədiyyə yoxdur</div>';
+        allBtn.style.display = "none";
+      } else {
+        container.innerHTML = list.map(function(x){ return ownGiftRowHtml(x.gift, x.senderName); }).join("");
+        allBtn.style.display = "";
+        allBtn.onclick = function(){ openGiftHistoryModal(cloudUserId); };
+      }
+    });
+    supabaseClient.from("gifts").select("id", {count:"exact", head:true}).eq("to_user", cloudUserId).eq("hidden", false).eq("deleted", false)
+      .then(function(res){ badge.textContent = res.count || 0; });
+  }
+
+  var giftActionTarget = null;
+  function openGiftActionModal(giftId, senderId, senderName, goldCost){
+    giftActionTarget = {giftId: giftId, senderId: senderId, senderName: senderName, goldCost: goldCost};
+    document.getElementById("giftActionModal").classList.add("show");
+  }
+  function closeGiftActionModal(){
+    document.getElementById("giftActionModal").classList.remove("show");
+    giftActionTarget = null;
+  }
+  function hideOwnGift(){
+    if(!giftActionTarget || !supabaseClient) return;
+    var t = giftActionTarget;
+    supabaseClient.from("gifts").update({hidden: true}).eq("id", t.giftId).then(function(res){
+      if(res.error){ showToast("⚠️ Alınmadı"); return; }
+      closeGiftActionModal();
+      showToast("🙈 Hədiyyə gizlədildi");
+      renderProfileGiftList();
+    });
+  }
+  // Silinən hədiyyə populyarlığı geri götürür (aldığı qədər) və göndərənə qarşı şikayət formasını açır —
+  // "gizlət" isə sırf görünüş seçimidir, heç bir populyarlıq/başqa nəticəsi yoxdur
+  function deleteOwnGift(){
+    if(!giftActionTarget || !supabaseClient || !cloudUserId) return;
+    var t = giftActionTarget;
+    supabaseClient.from("gifts").update({deleted: true}).eq("id", t.giftId).then(function(res){
+      if(res.error){ showToast("⚠️ Alınmadı"); return; }
+      supabaseClient.from("profiles").select("popularity").eq("id", cloudUserId).maybeSingle().then(function(res2){
+        var current = (res2.data && res2.data.popularity) || 0;
+        var next = Math.max(0, current - (t.goldCost || 0));
+        supabaseClient.from("profiles").update({popularity: next}).eq("id", cloudUserId).then(function(){
+          if(profileScreen.style.display !== "none") renderProfileScreen();
+        });
+      });
+      closeGiftActionModal();
+      showToast("🗑️ Hədiyyə silindi");
+      renderProfileGiftList();
+      openReportModal(t.senderId, t.senderName);
+    });
+  }
+
   function loadPlayerGifts(playerId, limit, callback){
     if(!supabaseClient){ callback([]); return; }
     supabaseClient.from("gifts").select("id,gift_id,gold_cost,note,created_at,from_user,seen")
-      .eq("to_user", playerId).order("created_at", {ascending:false}).limit(limit)
+      .eq("to_user", playerId).eq("hidden", false).eq("deleted", false).order("created_at", {ascending:false}).limit(limit)
       .then(function(res){
         if(res.error){ console.error("Hədiyyə tarixçəsi xətası:", res.error); callback([]); return; }
         var rows = res.data || [];
@@ -4457,6 +4554,7 @@
     document.getElementById("nameInput").value = profile.name;
     document.getElementById("bioInput").value = profile.bio || "";
     renderNameTicketHint();
+    renderProfileGiftList();
     document.getElementById("statLevel").textContent = profile.level || 1;
     document.getElementById("statXpTotal").textContent = profile.xp || 0;
     document.getElementById("statGames").textContent = profile.gamesPlayed || 0;
@@ -7128,6 +7226,17 @@
     if(!viewedPlayerId) return;
     openGiftModal(viewedPlayerId, document.getElementById("playerCardName").textContent);
   });
+  document.getElementById("profileGiftList").addEventListener("click", function(e){
+    var row = e.target.closest(".own-gift-row");
+    if(!row) return;
+    openGiftActionModal(row.getAttribute("data-gift-id"), row.getAttribute("data-sender-id"), row.getAttribute("data-sender-name"), parseInt(row.getAttribute("data-gold-cost"), 10) || 0);
+  });
+  document.getElementById("giftActionModalClose").addEventListener("click", closeGiftActionModal);
+  document.getElementById("giftActionModal").addEventListener("click", function(e){
+    if(e.target === this) closeGiftActionModal();
+  });
+  document.getElementById("giftActionHideBtn").addEventListener("click", hideOwnGift);
+  document.getElementById("giftActionDeleteBtn").addEventListener("click", deleteOwnGift);
   document.getElementById("playerCardReportBtn").addEventListener("click", function(){
     if(!viewedPlayerId) return;
     openReportModal(viewedPlayerId, document.getElementById("playerCardName").textContent);
