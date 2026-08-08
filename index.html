@@ -20,15 +20,17 @@
   #menuScreen{justify-content:flex-start;align-items:center;padding:16px 16px 10px}
   #shopScreen{padding:16px;display:none}
   #profileScreen{padding:16px;display:none;align-items:stretch;--profile-accent:#6bbf59;--profile-accent2:#4a90d9}
+  #playerCardModal .modal-panel{--profile-accent:#6bbf59;--profile-accent2:#4a90d9}
 
-  /* Profil arxa fonları: 4 sadə qradiyent + 6 dinamik animasiyalı */
-  #profileScreen.profile-bg-sunrise{background:linear-gradient(180deg,#ffd89b,#ff9a76,#ff6f91)}
-  #profileScreen.profile-bg-ocean{background:linear-gradient(180deg,#a1e8ff,#3eaee0,#1c6fa8)}
-  #profileScreen.profile-bg-forest{background:linear-gradient(180deg,#d7f0c2,#7fc97f,#2f7d4f)}
-  #profileScreen.profile-bg-night{background:linear-gradient(180deg,#2b2450,#191333,#0c081f)}
-  #profileScreen.profile-bg-aurora{background:linear-gradient(120deg,#00c9a7,#5b6bff,#a86bff,#00c9a7);background-size:300% 300%;animation:profileBgAurora 8s ease infinite}
+  /* Profil arxa fonları/palitraları: öz profil ekranında VƏ başqasının profilinə baxarkən
+     (player card) eyni klaslar tanınır ki, seçimlər hər iki yerdə görünsün */
+  #profileScreen.profile-bg-sunrise,#playerCardModal .modal-panel.profile-bg-sunrise{background:linear-gradient(180deg,#ffd89b,#ff9a76,#ff6f91)}
+  #profileScreen.profile-bg-ocean,#playerCardModal .modal-panel.profile-bg-ocean{background:linear-gradient(180deg,#a1e8ff,#3eaee0,#1c6fa8)}
+  #profileScreen.profile-bg-forest,#playerCardModal .modal-panel.profile-bg-forest{background:linear-gradient(180deg,#d7f0c2,#7fc97f,#2f7d4f)}
+  #profileScreen.profile-bg-night,#playerCardModal .modal-panel.profile-bg-night{background:linear-gradient(180deg,#2b2450,#191333,#0c081f)}
+  #profileScreen.profile-bg-aurora,#playerCardModal .modal-panel.profile-bg-aurora{background:linear-gradient(120deg,#00c9a7,#5b6bff,#a86bff,#00c9a7);background-size:300% 300%;animation:profileBgAurora 8s ease infinite}
   @keyframes profileBgAurora{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
-  #profileScreen.profile-bg-stars{
+  #profileScreen.profile-bg-stars,#playerCardModal .modal-panel.profile-bg-stars{
     background-image: radial-gradient(2px 2px at 20% 30%,#fff,transparent),
       radial-gradient(2px 2px at 70% 20%,#fff,transparent),
       radial-gradient(1.5px 1.5px at 50% 60%,#fff,transparent),
@@ -40,26 +42,26 @@
     animation:profileBgStarsTwinkle 3s ease-in-out infinite alternate;
   }
   @keyframes profileBgStarsTwinkle{0%,100%{filter:brightness(.85)}50%{filter:brightness(1.15)}}
-  #profileScreen.profile-bg-neongrid{
+  #profileScreen.profile-bg-neongrid,#playerCardModal .modal-panel.profile-bg-neongrid{
     background-color:#0d0221;
     background-image: repeating-linear-gradient(0deg,rgba(0,255,255,.15) 0 2px,transparent 2px 40px),
       repeating-linear-gradient(90deg,rgba(255,0,229,.15) 0 2px,transparent 2px 40px);
     animation:profileBgGridMove 6s linear infinite;
   }
   @keyframes profileBgGridMove{0%{background-position:0 0,0 0}100%{background-position:0 80px,80px 0}}
-  #profileScreen.profile-bg-firestorm{background:linear-gradient(180deg,#3a0a02,#7a1d02 40%,#ff6a00 90%);animation:profileBgFireFlicker 1.4s ease-in-out infinite alternate}
+  #profileScreen.profile-bg-firestorm,#playerCardModal .modal-panel.profile-bg-firestorm{background:linear-gradient(180deg,#3a0a02,#7a1d02 40%,#ff6a00 90%);animation:profileBgFireFlicker 1.4s ease-in-out infinite alternate}
   @keyframes profileBgFireFlicker{0%{filter:brightness(.92) saturate(1)}50%{filter:brightness(1.08) saturate(1.15)}100%{filter:brightness(.96) saturate(1.05)}}
-  #profileScreen.profile-bg-cosmic{background:conic-gradient(from 0deg at 50% 50%,#1b0c3f,#5b2a86,#8e44ad,#2c3e91,#0d1b4c,#5b2a86,#1b0c3f);animation:profileBgCosmicSpin 20s linear infinite}
+  #profileScreen.profile-bg-cosmic,#playerCardModal .modal-panel.profile-bg-cosmic{background:conic-gradient(from 0deg at 50% 50%,#1b0c3f,#5b2a86,#8e44ad,#2c3e91,#0d1b4c,#5b2a86,#1b0c3f);animation:profileBgCosmicSpin 20s linear infinite}
   @keyframes profileBgCosmicSpin{to{filter:hue-rotate(360deg)}}
-  #profileScreen.profile-bg-electric{background:linear-gradient(180deg,#001433,#003366 50%,#00d2ff 120%);animation:profileBgElectricFlicker 1.8s linear infinite}
+  #profileScreen.profile-bg-electric,#playerCardModal .modal-panel.profile-bg-electric{background:linear-gradient(180deg,#001433,#003366 50%,#00d2ff 120%);animation:profileBgElectricFlicker 1.8s linear infinite}
   @keyframes profileBgElectricFlicker{0%,19%,21%,54%,56%,100%{filter:brightness(1)}20%{filter:brightness(1.4)}55%{filter:brightness(1.25)}}
 
   /* Profil rəng palitraları: qızıl/nailiyyət kimi accent elementlərin rəngini dəyişir */
-  #profileScreen.profile-palette-sakura{--profile-accent:#ff5b9a;--profile-accent2:#ff9ec9}
-  #profileScreen.profile-palette-ocean{--profile-accent:#2f9ee0;--profile-accent2:#5be0d3}
-  #profileScreen.profile-palette-gold{--profile-accent:#e0a02c;--profile-accent2:#ffd76b}
-  #profileScreen.profile-palette-amethyst{--profile-accent:#9b5de5;--profile-accent2:#c77dff}
-  #profileScreen.profile-palette-emerald{--profile-accent:#1f9d55;--profile-accent2:#5be07e}
+  #profileScreen.profile-palette-sakura,#playerCardModal .modal-panel.profile-palette-sakura{--profile-accent:#ff5b9a;--profile-accent2:#ff9ec9}
+  #profileScreen.profile-palette-ocean,#playerCardModal .modal-panel.profile-palette-ocean{--profile-accent:#2f9ee0;--profile-accent2:#5be0d3}
+  #profileScreen.profile-palette-gold,#playerCardModal .modal-panel.profile-palette-gold{--profile-accent:#e0a02c;--profile-accent2:#ffd76b}
+  #profileScreen.profile-palette-amethyst,#playerCardModal .modal-panel.profile-palette-amethyst{--profile-accent:#9b5de5;--profile-accent2:#c77dff}
+  #profileScreen.profile-palette-emerald,#playerCardModal .modal-panel.profile-palette-emerald{--profile-accent:#1f9d55;--profile-accent2:#5be07e}
   #achievementsScreen{padding:16px;display:none;align-items:stretch}
   #arcadeScreen{padding:16px;display:none;align-items:stretch}
   #chatScreen{padding:0;display:none;align-items:stretch;overflow-y:hidden}
@@ -1173,7 +1175,7 @@
   </div>
 
   <div class="modal-overlay" id="playerCardModal">
-    <div class="modal-panel" style="text-align:center">
+    <div class="modal-panel" id="playerCardPanel" style="text-align:center">
       <div class="modal-header">
         <h3>👤 Profil</h3>
         <button class="modal-close" id="playerCardClose">✕</button>
@@ -2319,6 +2321,8 @@
       country_flag: profile.countryFlag,
       avatar_url: profile.photoDataUrl,
       active_frame: profile.activeFrame || "none",
+      active_name_color: profile.activeNameColor || null,
+      active_name_anim: profile.activeNameAnim || null,
       level: profile.level,
       xp: profile.xp,
       gold: profile.gold,
@@ -2446,10 +2450,14 @@
   function buildNameHtml(name, colorValue, animValue){
     var colorClass = colorValue ? "name-color-" + colorValue : "";
     if(animValue === "wave"){
+      // Qradiyent rənglər (qızılı/göy qurşağı) background-clip:text + color:transparent ilə işləyir —
+      // bu YALNIZ mətni birbaşa saxlayan elementdə render olunur. Dalğa effekti hər hərfi ayrı
+      // inline-block span-a böldüyü üçün rəng klası WRAPPER-ə deyil, hər hərfin öz span-ına qoyulmalıdır,
+      // əks halda gradient heç render olunmur və hərflər tamamilə görünməz (transparent) qalır.
       var chars = String(name).split("").map(function(ch, i){
-        return '<span class="name-wave-letter" style="animation-delay:' + (i * 0.08) + 's">' + escapeHtml(ch) + '</span>';
+        return '<span class="name-wave-letter ' + colorClass + '" style="animation-delay:' + (i * 0.08) + 's">' + escapeHtml(ch) + '</span>';
       }).join("");
-      return '<span class="' + colorClass + ' name-anim-wave">' + chars + '</span>';
+      return '<span class="name-anim-wave">' + chars + '</span>';
     }
     var animClass = animValue ? "name-anim-" + animValue : "";
     return '<span class="' + colorClass + ' ' + animClass + '">' + escapeHtml(name) + '</span>';
@@ -2612,7 +2620,7 @@
     container.innerHTML = friendSearchResults.map(function(p){
       return '<div class="friend-row" data-id="' + p.id + '">' +
         buildAvatarHtml({avatarUrl:p.avatar_url, countryFlag:p.country_flag, level:p.level, activeFrame:p.active_frame, presence:{lastSeen:p.last_seen, corner:true}}) +
-        '<div class="friend-row-info"><div class="friend-row-name">' + escapeHtml(p.name) + ' <span class="friend-row-id">#' + (p.player_number||0) + '</span></div><div class="friend-row-meta">Lv.' + (p.level||1) + '</div></div>' +
+        '<div class="friend-row-info"><div class="friend-row-name">' + buildNameHtml(p.name, p.active_name_color, p.active_name_anim) + ' <span class="friend-row-id">#' + (p.player_number||0) + '</span></div><div class="friend-row-meta">Lv.' + (p.level||1) + '</div></div>' +
         '</div>';
     }).join("");
     container.querySelectorAll(".friend-row").forEach(function(row){
@@ -2626,7 +2634,7 @@
     if(!q || !supabaseClient || !cloudUserId) return;
     // "#12" və ya sadəcə "12" yazılsa ID-yə görə də axtarır (ada görə axtarışla yanaşı)
     var idQuery = q.replace(/^#/, "").trim();
-    var query = supabaseClient.from("profiles").select("id,name,avatar_url,country_flag,active_frame,level,last_seen,player_number").neq("id", cloudUserId).limit(20);
+    var query = supabaseClient.from("profiles").select("id,name,avatar_url,country_flag,active_frame,active_name_color,active_name_anim,level,last_seen,player_number").neq("id", cloudUserId).limit(20);
     if(/^\d+$/.test(idQuery)){
       query = query.or("name.ilike.%" + q + "%,player_number.eq." + idQuery);
     } else {
@@ -2654,11 +2662,11 @@
           return;
         }
         var ids = rows.map(function(r){ return r.requester_id; });
-        supabaseClient.from("profiles").select("id,name,avatar_url,country_flag,active_frame,level,last_seen").in("id", ids).then(function(res2){
+        supabaseClient.from("profiles").select("id,name,avatar_url,country_flag,active_frame,active_name_color,active_name_anim,level,last_seen").in("id", ids).then(function(res2){
           var profs = res2.data || [];
           var merged = rows.map(function(r){
             var p = profs.find(function(pp){ return pp.id === r.requester_id; }) || {};
-            return {friendshipId:r.id, id:r.requester_id, name:p.name||"Oyunçu", avatar_url:p.avatar_url, country_flag:p.country_flag, active_frame:p.active_frame, level:p.level||1, last_seen:p.last_seen};
+            return {friendshipId:r.id, id:r.requester_id, name:p.name||"Oyunçu", avatar_url:p.avatar_url, country_flag:p.country_flag, active_frame:p.active_frame, active_name_color:p.active_name_color, active_name_anim:p.active_name_anim, level:p.level||1, last_seen:p.last_seen};
           });
           friendRequestsCache = merged;
           renderFriendRequestsList(merged);
@@ -2677,7 +2685,7 @@
     container.innerHTML = list.map(function(r){
       return '<div class="friend-row">' +
         buildAvatarHtml({avatarUrl:r.avatar_url, countryFlag:r.country_flag, level:r.level, activeFrame:r.active_frame, presence:{lastSeen:r.last_seen, corner:true}}) +
-        '<div class="friend-row-info"><div class="friend-row-name">' + escapeHtml(r.name) + '</div><div class="friend-row-meta">Lv.' + r.level + '</div></div>' +
+        '<div class="friend-row-info"><div class="friend-row-name">' + buildNameHtml(r.name, r.active_name_color, r.active_name_anim) + '</div><div class="friend-row-meta">Lv.' + r.level + '</div></div>' +
         '<button class="friend-action-btn" data-action="accept" data-fid="' + r.friendshipId + '">Qəbul et</button>' +
         '<button class="friend-action-btn reject" data-action="reject" data-fid="' + r.friendshipId + '">Rədd et</button>' +
         '</div>';
@@ -2789,7 +2797,7 @@
     document.getElementById("playerCardGiftList").innerHTML = '<div class="empty-hint">Yüklənir...</div>';
     document.getElementById("playerCardGiftsAllBtn").style.display = "none";
     loadPlayerGifts(playerId, 9, function(list){ renderPlayerCardGifts(list, playerId); });
-    supabaseClient.from("profiles").select("id,name,avatar_url,country_flag,active_frame,level,gold,missions_done,popularity,total_gifts_received,total_gifts_sent,likes_count,view_count,last_seen,player_number,save_data").eq("id", playerId).maybeSingle().then(function(res){
+    supabaseClient.from("profiles").select("id,name,avatar_url,country_flag,active_frame,active_name_color,active_name_anim,level,gold,missions_done,popularity,total_gifts_received,total_gifts_sent,likes_count,view_count,last_seen,player_number,save_data").eq("id", playerId).maybeSingle().then(function(res){
       if(res.error || !res.data){ showToast("⚠️ Profil tapılmadı"); return; }
       var p = res.data;
       document.getElementById("playerCardLikes").textContent = p.likes_count || 0;
@@ -2803,7 +2811,13 @@
       var online = isOnline(p.last_seen);
       document.getElementById("playerCardPresence").innerHTML =
         '<span class="presence-label ' + (online ? "online" : "offline") + '">' + presenceDotHtml(p.last_seen) + formatLastSeenText(p.last_seen) + '</span>';
-      document.getElementById("playerCardName").textContent = p.name || "Oyunçu";
+      document.getElementById("playerCardName").innerHTML = buildNameHtml(p.name || "Oyunçu", p.active_name_color, p.active_name_anim);
+      // Profil fonu/palitrası: activeBackground/activePalette yalnız save_data-da saxlanılır
+      // (bu yeganə yer olduğu üçün ayrıca sütuna ehtiyac yoxdur) — hər açılışda əvvəlki oyunçunun
+      // fonu qalmasın deyə className tam sıfırlanıb yenidən qurulur
+      document.getElementById("playerCardPanel").className = "modal-panel" +
+        (sd.activeBackground ? " profile-bg-" + sd.activeBackground : "") +
+        (sd.activePalette ? " profile-palette-" + sd.activePalette : "");
       document.getElementById("playerCardIdNum").textContent = "#" + (p.player_number || 0);
       document.getElementById("playerCardLevel").textContent = p.level || 1;
       document.getElementById("playerCardMissions").textContent = p.missions_done || 0;
@@ -3017,12 +3031,12 @@
           refreshMailboxBtnDot();
           return;
         }
-        supabaseClient.from("profiles").select("id,name,avatar_url,country_flag,active_frame,last_seen").in("id", peerIds).then(function(res2){
+        supabaseClient.from("profiles").select("id,name,avatar_url,country_flag,active_frame,active_name_color,active_name_anim,last_seen").in("id", peerIds).then(function(res2){
           var profs = res2.data || [];
           conversationsCache = peerIds.map(function(pid){
             var p = profs.find(function(pp){ return pp.id === pid; }) || {};
             var c = byPeer[pid];
-            return {peerId:pid, name:p.name || "Oyunçu", avatar_url:p.avatar_url, country_flag:p.country_flag, active_frame:p.active_frame, last_seen:p.last_seen, lastBody:c.lastBody, unread:c.unread};
+            return {peerId:pid, name:p.name || "Oyunçu", avatar_url:p.avatar_url, country_flag:p.country_flag, active_frame:p.active_frame, active_name_color:p.active_name_color, active_name_anim:p.active_name_anim, last_seen:p.last_seen, lastBody:c.lastBody, unread:c.unread};
           });
           renderConversationsList(targetId);
           renderFriendsTabs();
@@ -3041,7 +3055,7 @@
     container.innerHTML = conversationsCache.map(function(c){
       return '<div class="convo-row" data-id="' + c.peerId + '" data-name="' + escapeHtml(c.name) + '">' +
         buildAvatarHtml({avatarUrl:c.avatar_url, countryFlag:c.country_flag, activeFrame:c.active_frame, presence:{lastSeen:c.last_seen, corner:true}}) +
-        '<div class="convo-row-info"><div class="convo-row-name">' + escapeHtml(c.name) + '</div>' +
+        '<div class="convo-row-info"><div class="convo-row-name">' + buildNameHtml(c.name, c.active_name_color, c.active_name_anim) + '</div>' +
         '<div class="convo-row-preview' + (c.unread ? " unread" : "") + '">' + escapeHtml((c.lastBody || "").slice(0,40)) + '</div></div>' +
         (c.unread ? '<div class="convo-unread-dot"></div>' : '') +
         '</div>';
@@ -3849,7 +3863,7 @@
     if(!cat) return;
     var listEl = document.getElementById("leaderboardList");
     listEl.innerHTML = '<div class="empty-hint">Yüklənir...</div>';
-    var colSet = ["id","name","avatar_url","country_flag","active_frame","level","last_seen",cat.column];
+    var colSet = ["id","name","avatar_url","country_flag","active_frame","active_name_color","active_name_anim","level","last_seen",cat.column];
     if(cat.extraColumn) colSet.push(cat.extraColumn);
     var cols = colSet.filter(function(c,i){ return colSet.indexOf(c) === i; }).join(",");
     supabaseClient.from("profiles").select(cols)
@@ -3869,7 +3883,7 @@
           return '<div class="lb-row' + rankClass + '" data-id="' + escapeHtml(p.id) + '">' +
             '<div class="lb-rank">' + rank + '</div>' +
             buildAvatarHtml({avatarUrl:p.avatar_url, countryFlag:p.country_flag, level:p.level, activeFrame:p.active_frame, presence:{lastSeen:p.last_seen, corner:true}}) +
-            '<div class="lb-info"><div class="lb-name">' + escapeHtml(p.name || "Oyunçu") + '</div></div>' +
+            '<div class="lb-info"><div class="lb-name">' + buildNameHtml(p.name || "Oyunçu", p.active_name_color, p.active_name_anim) + '</div></div>' +
             '<div class="lb-value">' + valueHtml + subHtml + '</div>' +
             '</div>';
         }).join("");
@@ -3901,10 +3915,10 @@
   function handleIncomingBattleInvite(invite){
     if(gameActive) return; // artıq oynayarkən yeni dəvət göstərmə
     pendingIncomingInvite = invite;
-    supabaseClient.from("profiles").select("name,avatar_url,country_flag,active_frame,level").eq("id", invite.from_user).maybeSingle().then(function(res){
+    supabaseClient.from("profiles").select("name,avatar_url,country_flag,active_frame,active_name_color,active_name_anim,level").eq("id", invite.from_user).maybeSingle().then(function(res){
       var p = res.data || {};
       var typeLabel = invite.battle_type === "endless" ? "Sonsuz Rəqabətə" : "60 saniyəlik Battle-ə";
-      document.getElementById("battleInviteName").textContent = (p.name || "Oyunçu") + " səni " + typeLabel + " dəvət edir";
+      document.getElementById("battleInviteName").innerHTML = buildNameHtml(p.name || "Oyunçu", p.active_name_color, p.active_name_anim) + " səni " + typeLabel + " dəvət edir";
       var photoContainer = document.getElementById("battleInvitePhoto");
       photoContainer.className = "ppic ppic-lg frame-" + (p.active_frame || "none");
       photoContainer.innerHTML = buildAvatarInnerHtml({avatarUrl:p.avatar_url, countryFlag:p.country_flag, level:p.level, activeFrame:p.active_frame, showStarParticles:true});
