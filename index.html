@@ -1445,6 +1445,11 @@
   var GOLD_MILESTONES = [50,100,250,500,1000,2000,3000,5000,10000,20000,40000,60000,1000000];
   var TIME_MILESTONES_MIN = [5,15,30,60,120,300,600,1440,4320,10080];
   var LOGIN_MILESTONES = [3,7,15,30,60,150,240,300,365];
+  var GAMES_MILESTONES = [5,10,25,50,100,250,500,1000];
+  var POWERUP_MILESTONES = [10,25,50,100,250,500];
+  var COMBO_MILESTONES = [5,10,25,50,100,250];
+  var SCORE_MILESTONES = [100,250,500,1000,2500,5000,10000,25000];
+  var ARCADE_STAR_MILESTONES = [10,25,50,100,200,400];
   var ACHIEVEMENT_GOLD_REWARD = 50;
 
   function formatMinutesLabel(min){
@@ -1458,10 +1463,68 @@
   var ACHIEVEMENTS = [
     {id:"level_5", name:"İnkişaf Edən", desc:"5-ci levelə çat", icon:"⭐", category:"level", check:function(p){ return (p.level||1) >= 5; }},
     {id:"level_10", name:"Təcrübəli", desc:"10-cu levelə çat", icon:"🌟", category:"level", check:function(p){ return (p.level||1) >= 10; }},
-    {id:"games_10", name:"Davamlı Oyunçu", desc:"10 oyun oyna", icon:"🎮", category:"general", check:function(p){ return (p.gamesPlayed||0) >= 10; }},
-    {id:"powerup_10", name:"Ulti Ustası", desc:"10 ulti istifadə et", icon:"⚡", category:"general", check:function(p){ return (p.powerupsUsed||0) >= 10; }},
-    {id:"combo_5", name:"Combo Ustası", desc:"Combo rejimini 5 dəfə aktivləşdir", icon:"🔥", category:"general", check:function(p){ return (p.comboActivations||0) >= 5; }}
+    {id:"level_25", name:"Usta", desc:"25-ci levelə çat", icon:"🌠", category:"level", check:function(p){ return (p.level||1) >= 25; }},
+    {id:"level_50", name:"Əfsanə", desc:"50-ci levelə çat", icon:"👑", category:"level", check:function(p){ return (p.level||1) >= 50; }}
   ];
+
+  GAMES_MILESTONES.forEach(function(n){
+    ACHIEVEMENTS.push({
+      id: "games_" + n,
+      name: n + " Oyun",
+      desc: n + " oyun oyna",
+      icon: n >= 500 ? "🏅" : "🎮",
+      category: "general",
+      check: function(p){ return (p.gamesPlayed||0) >= n; }
+    });
+  });
+
+  POWERUP_MILESTONES.forEach(function(n){
+    ACHIEVEMENTS.push({
+      id: "powerup_" + n,
+      name: n + " Ulti",
+      desc: n + " ulti istifadə et",
+      icon: n >= 250 ? "🌟" : "⚡",
+      category: "general",
+      check: function(p){ return (p.powerupsUsed||0) >= n; }
+    });
+  });
+
+  COMBO_MILESTONES.forEach(function(n){
+    ACHIEVEMENTS.push({
+      id: "combo_" + n,
+      name: n + " Combo",
+      desc: "Combo rejimini " + n + " dəfə aktivləşdir",
+      icon: n >= 100 ? "☄️" : "🔥",
+      category: "general",
+      check: function(p){ return (p.comboActivations||0) >= n; }
+    });
+  });
+
+  SCORE_MILESTONES.forEach(function(n){
+    ACHIEVEMENTS.push({
+      id: "score_" + n,
+      name: n + " Xal",
+      desc: "Bir oyunda " + n + " xal topla",
+      icon: n >= 10000 ? "🏆" : "🎯",
+      category: "score",
+      check: function(p){ return (p.records && p.records[0] ? p.records[0].score : 0) >= n; }
+    });
+  });
+
+  ARCADE_STAR_MILESTONES.forEach(function(n){
+    ACHIEVEMENTS.push({
+      id: "arcstars_" + n,
+      name: n + " Ulduz",
+      desc: "Arkada rejimində ümumi " + n + " ulduz topla",
+      icon: n >= 200 ? "🌌" : "✨",
+      category: "arcade",
+      check: function(p){
+        var total = 0;
+        if(p.arcade && p.arcade.stars){ Object.keys(p.arcade.stars).forEach(function(k){ total += p.arcade.stars[k] || 0; }); }
+        return total >= n;
+      }
+    });
+  });
 
   MISSION_MILESTONES.forEach(function(n){
     ACHIEVEMENTS.push({
@@ -1512,9 +1575,11 @@
     {id:"level", title:"Səviyyə", icon:"⭐"},
     {id:"missions", title:"Misyalar", icon:"📦"},
     {id:"gold", title:"Qızıl", icon:"🪙"},
+    {id:"score", title:"Ən yüksək xal", icon:"🎯"},
+    {id:"arcade", title:"Arkada", icon:"🕹️"},
     {id:"time", title:"Oyun vaxtı", icon:"⏳"},
     {id:"login", title:"Giriş günləri", icon:"🗓️"},
-    {id:"general", title:"Ümumi", icon:"🎯"}
+    {id:"general", title:"Ümumi", icon:"🎮"}
   ];
 
   function getVar(name){
@@ -1682,7 +1747,7 @@
   var CUBE_GOLD = 1;
   var MISSION_XP = 20;
   var MISSION_GOLD = 2;
-  var HAMMER_BREAK_XP = 9;
+  var HAMMER_BREAK_XP = 1;
 
   // Çəkic / sındırma rejimi
   var hammerEndsAt = 0;
