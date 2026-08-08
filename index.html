@@ -269,6 +269,11 @@
   .profile-stat .pnum{font-size:19px;font-weight:800;color:var(--ink)}
   .profile-stat .plbl{font-size:9px;color:#a99;font-weight:700;text-transform:uppercase;margin-top:3px}
   .profile-section-title{font-size:13px;font-weight:800;color:var(--ink);text-align:left;margin:18px 0 8px;padding-left:6px;border-left:4px solid var(--orange)}
+  .settings-accordion-toggle{display:flex;align-items:center;justify-content:space-between;width:100%;background:none;border:none;font-size:13px;font-weight:800;color:var(--ink);text-align:left;margin:18px 0 8px;padding:8px 10px 8px 6px;border-left:4px solid var(--orange);cursor:pointer;font-family:inherit;box-sizing:border-box}
+  .settings-accordion-toggle:active{background:var(--panel)}
+  .settings-accordion-arrow{transition:transform .2s ease;font-size:12px}
+  .settings-accordion-arrow.open{transform:rotate(180deg)}
+  .settings-signout-row{margin-top:18px;padding-top:14px;border-top:2px solid var(--board-cell);text-align:center}
   .music-track-list{display:flex;flex-direction:column;gap:6px}
   .music-track-row{display:flex;align-items:center;gap:8px;background:var(--panel);border-radius:8px;padding:8px 10px}
   .music-track-name{flex:1;text-align:left;font-size:12px;font-weight:700;color:var(--ink);min-width:0}
@@ -654,7 +659,6 @@
       </button>
       <div class="google-auth-status" id="googleAuthStatus" style="display:none">
         <span id="googleAuthName"></span>
-        <button class="google-signout-btn" id="googleSignOutBtn">Çıxış</button>
       </div>
     </div>
 
@@ -936,8 +940,14 @@
         <h3>⚙️ Parametrlər</h3>
         <button class="modal-close" id="settingsModalClose">✕</button>
       </div>
-      <div class="profile-section-title">🎵 Jenerik Musiqilər</div>
-      <div class="music-track-list" id="settingsMusicList"></div>
+      <button type="button" class="settings-accordion-toggle" id="musicAccordionToggle">
+        <span>🎵 Jenerik Musiqilər</span>
+        <span class="settings-accordion-arrow" id="musicAccordionArrow">▾</span>
+      </button>
+      <div class="music-track-list" id="settingsMusicList" style="display:none"></div>
+      <div class="settings-signout-row" id="settingsSignOutRow" style="display:none">
+        <button class="friend-action-btn reject" id="googleSignOutBtn" style="padding:10px 24px;font-size:12px">🚪 Çıxış</button>
+      </div>
     </div>
   </div>
 
@@ -1125,14 +1135,17 @@
     var status = document.getElementById("googleAuthStatus");
     var nameEl = document.getElementById("googleAuthName");
     if(!btn || !status || !nameEl) return;
+    var signOutRow = document.getElementById("settingsSignOutRow");
     if(session && session.user){
       btn.style.display = "none";
       status.style.display = "flex";
       var meta = session.user.user_metadata || {};
       nameEl.textContent = "✅ " + (meta.full_name || meta.name || session.user.email || "Oyunçu");
+      if(signOutRow) signOutRow.style.display = "";
     } else {
       btn.style.display = "flex";
       status.style.display = "none";
+      if(signOutRow) signOutRow.style.display = "none";
     }
   }
 
@@ -3746,6 +3759,9 @@
   var settingsAutoPaused = false;
   function openSettingsModal(){
     renderCustomMusicList();
+    document.getElementById("settingsMusicList").style.display = "none";
+    document.getElementById("musicAccordionArrow").classList.remove("open");
+    document.getElementById("settingsSignOutRow").style.display = cloudUserId ? "" : "none";
     if(gameActive && !paused){
       pauseGame();
       pauseOverlay.classList.remove("show");
@@ -3760,6 +3776,13 @@
       settingsAutoPaused = false;
       resumeGame();
     }
+  }
+  function toggleMusicAccordion(){
+    var list = document.getElementById("settingsMusicList");
+    var arrow = document.getElementById("musicAccordionArrow");
+    var showing = list.style.display === "none";
+    list.style.display = showing ? "flex" : "none";
+    arrow.classList.toggle("open", showing);
   }
 
   function renderProfile(){
@@ -5355,29 +5378,47 @@
     if(srcRef){ try{ srcRef.stop(); }catch(e){} try{ srcRef.disconnect(); }catch(e){} }
   }
 
+  // Jenerik musiqi yüklənməsi (fetch+decode) asinxrondur — istifadəçi bir səhifəyə tez girib-çıxsa,
+  // KÖHNƏ bir start() sorğusu hələ yüklənərkən YENİ bir start/stop çağırıla bilər. Nəticə: köhnə
+  // sorğu sonda "geç" yüklənib özünü dayandırmaq əvəzinə həmişəki kimi başlayır və yeni musiqinin
+  // ÜSTÜNDƏN səslənir (2 dəfə çalma bug-u). Hər slot üçün bir "nəsil" nişanı (token) saxlayıb, yükləmə
+  // bitəndə həmin nişan hələ də cari olub-olmadığını yoxlayırıq — deyilsə, səssizcə dayandırırıq.
+  var menuMusicToken = 0;
+  var gameMusicToken = 0;
+
   function startMenuMusic(){
+    var myToken = ++menuMusicToken;
     if(profile.customMusic.menu){
-      playCustomLoop(profile.customMusic.menu, function(src){ menuMusicSource = src; });
+      playCustomLoop(profile.customMusic.menu, function(src){
+        if(myToken !== menuMusicToken){ stopSource(src); return; }
+        menuMusicSource = src;
+      });
     } else {
       startMusic();
     }
   }
 
   function stopMenuMusic(){
+    menuMusicToken++;
     stopMusic();
     stopSource(menuMusicSource);
     menuMusicSource = null;
   }
 
   function startGameMusic(){
+    var myToken = ++gameMusicToken;
     if(profile.customMusic.game){
-      playCustomLoop(profile.customMusic.game, function(src){ gameMusicSource = src; });
+      playCustomLoop(profile.customMusic.game, function(src){
+        if(myToken !== gameMusicToken){ stopSource(src); return; }
+        gameMusicSource = src;
+      });
     } else {
       startMusic();
     }
   }
 
   function stopGameMusic(){
+    gameMusicToken++;
     stopMusic();
     stopSource(gameMusicSource);
     gameMusicSource = null;
@@ -6209,6 +6250,7 @@
   document.getElementById("googleSignInBtn").addEventListener("click", signInWithGoogle);
   document.getElementById("googleSignOutBtn").addEventListener("click", signOutGoogle);
   document.getElementById("settingsModalClose").addEventListener("click", closeSettingsModal);
+  document.getElementById("musicAccordionToggle").addEventListener("click", toggleMusicAccordion);
   document.getElementById("settingsModalOverlay").addEventListener("click", function(e){
     if(e.target === this) closeSettingsModal();
   });
