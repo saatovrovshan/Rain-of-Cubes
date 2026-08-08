@@ -4188,6 +4188,10 @@
   }
   function closeSettingsModal(){
     document.getElementById("settingsModalOverlay").classList.remove("show");
+    // Ekran bağlanan zaman önizləmə (▶️) hələ söndürülməyibsə (məs. ✕ düyməsi ya da arxa fona
+    // toxunaraq bağlansa, önizləmə düyməsi yenidən basılmadan), onu burda söndürüb doğru musiqini
+    // (menyu ya oyun) davam etdiririk — əks halda önizləmə sükutla arxada çalmağa davam edir.
+    stopPreviewIfAny();
     if(settingsAutoPaused){
       settingsAutoPaused = false;
       resumeGame();
@@ -5893,7 +5897,14 @@
   var menuMusicToken = 0;
   var gameMusicToken = 0;
 
+  // Menyu musiqisi HEÇ VAXT aktiv oyun zamanı çalmamalıdır — əks halda hər hansı bir kod yolu
+  // (məs. tənzimləmələrdə "🏠 Menyu" slotuna yeni trek təyin etmək) yanlışlıqla menyu musiqisini
+  // davam edən oyun musiqisinin ÜSTÜNDƏN başladıb 2 musiqinin eyni anda çalmasına səbəb ola bilər.
+  // Həmçinin, açıq qalmış bir "önizləmə" (preview) varsa, əvvəlcə onu söndürürük ki, önizləmə +
+  // yeni başlayan menyu musiqisi bir yerdə çalmasın.
   function startMenuMusic(){
+    if(gameActive) return;
+    if(previewingId){ stopSource(previewSource); previewSource = null; previewingId = null; renderCustomMusicList(); }
     var myToken = ++menuMusicToken;
     if(profile.customMusic.menu){
       playCustomLoop(profile.customMusic.menu, function(src){
@@ -5912,7 +5923,14 @@
     menuMusicSource = null;
   }
 
+  // Simmetrik qorunma: oyun musiqisi yalnız HƏQİQƏTƏN aktiv oyun zamanı başlaya bilər —
+  // əks halda menyuda olarkən səhvən çağırılsa, menyu musiqisinin üstündən çalıb 2 musiqi bug-u yaradar.
+  // Unudulmuş (dayandırılmamış) bir önizləmə varsa, oyun musiqisi başlamazdan əvvəl onu söndürürük —
+  // əks halda: Tənzimləmələrdə trek önizlə → ✕ ilə bağla (unudaraq) → Oyna düyməsinə bas ssenarisində
+  // köhnə önizləmə hələ çalarkən üstünə YENİ oyun musiqisi başlayıb 2 musiqi eyni anda çalırdı.
   function startGameMusic(){
+    if(!gameActive) return;
+    if(previewingId){ stopSource(previewSource); previewSource = null; previewingId = null; renderCustomMusicList(); }
     var myToken = ++gameMusicToken;
     if(profile.customMusic.game){
       playCustomLoop(profile.customMusic.game, function(src){
@@ -5931,16 +5949,21 @@
     gameMusicSource = null;
   }
 
+  // Tənzimləmələr həm menyudan, həm də aktiv oyun içindən (pauza zamanı) açıla bilər — ona görə
+  // önizləmə başladanda/bitəndə HANSI kontekstin musiqisini saxlayıb-davam etdirəcəyimizi (menyu
+  // ya oyun) cari "gameActive" vəziyyətinə görə seçirik. Sabit olaraq həmişə menyu musiqisini
+  // fərz etmək səhv idi: oyun zamanı önizləmə açsan, oyun musiqisi dayanmadığı üçün önizləmə +
+  // oyun musiqisi eyni anda çalırdı (2 musiqi bug-u).
   function togglePreviewTrack(id){
     if(previewingId === id){
       stopSource(previewSource);
       previewSource = null;
       previewingId = null;
-      startMenuMusic();
+      if(gameActive) startGameMusic(); else startMenuMusic();
       renderCustomMusicList();
       return;
     }
-    stopMenuMusic();
+    if(gameActive) stopGameMusic(); else stopMenuMusic();
     stopSource(previewSource);
     previewingId = id;
     renderCustomMusicList();
@@ -5955,7 +5978,7 @@
       stopSource(previewSource);
       previewSource = null;
       previewingId = null;
-      startMenuMusic();
+      if(gameActive) startGameMusic(); else startMenuMusic();
     }
   }
 
