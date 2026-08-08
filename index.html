@@ -489,6 +489,7 @@
   .player-gift-list,.gift-history-list{display:flex;flex-direction:column;gap:8px;margin-top:8px;max-height:260px;overflow-y:auto}
   .gift-history-list.full-width{max-height:none;overflow-y:visible;width:100%}
   .gift-history-row{display:flex;gap:10px;align-items:flex-start;background:var(--panel);border-radius:10px;padding:8px 10px;text-align:left}
+  .gift-sender-link{cursor:pointer;text-decoration:underline;text-decoration-style:dotted}
   .own-gift-row{cursor:pointer}
   .own-gift-row:active{opacity:.7}
   .gift-total-badge{position:absolute;right:0;top:0;background:var(--profile-accent,var(--orange));color:#fff;font-size:10px;font-weight:800;border-radius:10px;padding:2px 8px}
@@ -3416,6 +3417,11 @@
     }
   }
 
+  // Göndərənin adına toxunanda profilinə keçmək üçün ortaq parça — hər hədiyyə sətrində istifadə olunur
+  function giftSenderLinkHtml(senderId, senderName){
+    return '<span class="gift-sender-link" data-sender-id="' + senderId + '">' + escapeHtml(senderName || "Oyunçu") + '</span>';
+  }
+
   function giftRowHtml(g, senderName){
     var catalogItem = GIFT_CATALOG.find(function(x){ return x.id === g.gift_id; }) || {icon:"🎁", name:g.gift_id};
     var dateStr = "";
@@ -3424,7 +3430,7 @@
       '<div class="ghr-icon">' + giftIconHtml(catalogItem) + '</div>' +
       '<div class="ghr-info">' +
         '<div class="ghr-name">' + escapeHtml(catalogItem.name) + ' <span class="ghr-cost">🪙' + g.gold_cost + '</span></div>' +
-        '<div class="ghr-sender">' + escapeHtml(senderName || "Oyunçu") + ' · ' + dateStr + '</div>' +
+        '<div class="ghr-sender">' + giftSenderLinkHtml(g.from_user, senderName) + ' · ' + dateStr + '</div>' +
         (g.note ? '<div class="ghr-note">"' + escapeHtml(g.note) + '"</div>' : "") +
       '</div>' +
       '</div>';
@@ -3439,7 +3445,7 @@
       '<div class="ghr-icon">' + giftIconHtml(catalogItem) + '</div>' +
       '<div class="ghr-info">' +
         '<div class="ghr-name">' + escapeHtml(catalogItem.name) + ' <span class="ghr-cost">🪙' + g.gold_cost + '</span></div>' +
-        '<div class="ghr-sender">' + escapeHtml(senderName || "Oyunçu") + ' · ' + dateStr + '</div>' +
+        '<div class="ghr-sender">' + giftSenderLinkHtml(g.from_user, senderName) + ' · ' + dateStr + '</div>' +
         (g.note ? '<div class="ghr-note">"' + escapeHtml(g.note) + '"</div>' : "") +
       '</div>' +
       '</div>';
@@ -3557,7 +3563,7 @@
     document.getElementById("giftRevealIcon").innerHTML = giftIconHtml(catalogItem);
     document.getElementById("giftRevealName").textContent = catalogItem.name;
     document.getElementById("giftRevealPopularity").textContent = "+" + g.gold_cost + " populyarlıq";
-    document.getElementById("giftRevealSender").textContent = (x.senderName || "Oyunçu") + " tərəfindən";
+    document.getElementById("giftRevealSender").innerHTML = giftSenderLinkHtml(g.from_user, x.senderName) + " tərəfindən";
     var noteEl = document.getElementById("giftRevealNote");
     noteEl.textContent = g.note ? ('"' + g.note + '"') : "";
     noteEl.style.display = g.note ? "" : "none";
@@ -3665,7 +3671,7 @@
         return '<div class="gift-history-row mailbox-gift-row' + (unseen ? " unseen" : "") + '" data-idx="' + i + '">' +
           '<div class="ghr-icon">' + giftIconHtml(catalogItem) + '</div>' +
           '<div class="ghr-info"><div class="ghr-name">' + escapeHtml(catalogItem.name) + ' <span class="ghr-cost">🪙' + x.gift.gold_cost + '</span></div>' +
-          '<div class="ghr-sender">' + escapeHtml(x.senderName) + '</div></div>' +
+          '<div class="ghr-sender">' + giftSenderLinkHtml(x.gift.from_user, x.senderName) + '</div></div>' +
           (unseen ? '<div class="convo-unread-dot"></div>' : '') +
           '</div>';
       }).join("");
@@ -7237,6 +7243,20 @@
   });
   document.getElementById("giftActionHideBtn").addEventListener("click", hideOwnGift);
   document.getElementById("giftActionDeleteBtn").addEventListener("click", deleteOwnGift);
+  // Hədiyyə göndərənin adı hər yerdə (mağaza kartları, tarixçə, öz profil siyahısı, poçt qutusu,
+  // hədiyyə açılış pəncərəsi) klikləndikdə həmin şəxsin profilinə keçir — hər sətrin öz kliki ilə
+  // qarışmasın deyə (məs. öz hədiyyəni gizlət/sil menyusu) stopPropagation vacibdir
+  document.addEventListener("click", function(e){
+    var link = e.target.closest(".gift-sender-link");
+    if(!link) return;
+    e.stopPropagation();
+    var sid = link.getAttribute("data-sender-id");
+    if(!sid) return;
+    document.getElementById("giftRevealModal").classList.remove("show");
+    document.getElementById("giftHistoryModal").classList.remove("show");
+    document.getElementById("giftActionModal").classList.remove("show");
+    openPlayerCard(sid);
+  });
   document.getElementById("playerCardReportBtn").addEventListener("click", function(){
     if(!viewedPlayerId) return;
     openReportModal(viewedPlayerId, document.getElementById("playerCardName").textContent);
