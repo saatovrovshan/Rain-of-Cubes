@@ -235,6 +235,49 @@
   .ppic-star-twinkle{position:absolute;top:50%;left:50%;font-size:11px;transform:translate(-50%,-50%) rotate(var(--ang,0deg)) translateY(calc(-1 * var(--orbit-r)));animation:starTwinkle 1.3s ease-in-out infinite}
   @keyframes starTwinkle{0%,100%{opacity:.2;filter:brightness(1) scale(.8)}50%{opacity:1;filter:brightness(1.7) scale(1.15)}}
 
+  /* Statik yeni çərçivələr: Gümüş / Sapfir / Yaqut / Bürünc */
+  .ppic.frame-silver .ppic-inner{border:3px solid #c9d3da;box-shadow:0 0 8px 1px rgba(180,195,205,.7),inset 0 -3px 0 rgba(0,0,0,.15)}
+  .ppic.frame-sapphire .ppic-inner{border:3px solid #2260e0;box-shadow:0 0 8px 1px rgba(34,96,224,.7),inset 0 -3px 0 rgba(0,0,0,.15)}
+  .ppic.frame-ruby .ppic-inner{border:3px solid #d81159;box-shadow:0 0 8px 1px rgba(216,17,89,.7),inset 0 -3px 0 rgba(0,0,0,.15)}
+  .ppic.frame-bronze .ppic-inner{border:3px solid #a5682f;box-shadow:0 0 8px 1px rgba(165,104,47,.7),inset 0 -3px 0 rgba(0,0,0,.15)}
+
+  /* Buz Çərçivəsi: döyünən soyuq parıltı */
+  .ppic.frame-ice .ppic-inner{border:3px solid #8fe3ff;animation:frameIcePulse 1.8s ease-in-out infinite alternate}
+  @keyframes frameIcePulse{0%{box-shadow:0 0 8px 2px rgba(120,220,255,.55),inset 0 -3px 0 rgba(0,0,0,.15)}100%{box-shadow:0 0 18px 6px rgba(160,235,255,.9),inset 0 -3px 0 rgba(0,0,0,.15)}}
+
+  /* Zəhər Çərçivəsi: köpüklənən yaşıl döyünmə */
+  .ppic.frame-toxic .ppic-inner{border:3px solid #8aff3c;animation:frameToxicPulse 1.1s ease-in-out infinite}
+  @keyframes frameToxicPulse{0%,100%{box-shadow:0 0 7px 2px rgba(138,255,60,.55),inset 0 -3px 0 rgba(0,0,0,.15)}50%{box-shadow:0 0 16px 5px rgba(180,255,90,.9),inset 0 -3px 0 rgba(0,0,0,.15)}}
+
+  /* Kainat Çərçivəsi: fırlanan kosmik halə + ulduz zərrəcikləri */
+  .ppic.frame-galaxy::before{content:"";position:absolute;inset:-4px;border-radius:32%;background:conic-gradient(from 0deg,#1b0c3f,#5b2a86,#8e44ad,#2c3e91,#0d1b4c,#5b2a86,#1b0c3f);animation:frameGalaxySpin 5s linear infinite;z-index:1}
+  .ppic.frame-galaxy .ppic-inner{border:3px solid rgba(200,180,255,.85)}
+  @keyframes frameGalaxySpin{to{transform:rotate(360deg)}}
+
+  /* İldırım Çərçivəsi: çaxan elektrik işartıları */
+  .ppic.frame-lightning .ppic-inner{border:3px solid #7ad9ff;animation:frameLightningFlicker 1.6s linear infinite}
+  @keyframes frameLightningFlicker{
+    0%,19%,21%,54%,56%,100%{box-shadow:0 0 8px 2px #7ad9ff,0 0 18px 5px rgba(122,217,255,.6),inset 0 -3px 0 rgba(0,0,0,.15)}
+    20%{box-shadow:0 0 22px 8px #fff,0 0 34px 12px rgba(255,255,255,.9),inset 0 -3px 0 rgba(0,0,0,.15)}
+    55%{box-shadow:0 0 16px 6px #fff,0 0 26px 9px rgba(255,255,255,.8),inset 0 -3px 0 rgba(0,0,0,.15)}
+  }
+
+  /* Göy Qurşağı Çərçivəsi: davamlı rəng dəyişən haşiyə */
+  .ppic.frame-rainbow .ppic-inner{border:3px solid #ff5b5b;animation:frameRainbowCycle 3s linear infinite}
+  @keyframes frameRainbowCycle{
+    0%{border-color:#ff5b5b;box-shadow:0 0 10px 3px rgba(255,91,91,.7),inset 0 -3px 0 rgba(0,0,0,.15)}
+    16%{border-color:#ffb347;box-shadow:0 0 10px 3px rgba(255,179,71,.7),inset 0 -3px 0 rgba(0,0,0,.15)}
+    33%{border-color:#ffe066;box-shadow:0 0 10px 3px rgba(255,224,102,.7),inset 0 -3px 0 rgba(0,0,0,.15)}
+    50%{border-color:#6bdc6b;box-shadow:0 0 10px 3px rgba(107,220,107,.7),inset 0 -3px 0 rgba(0,0,0,.15)}
+    66%{border-color:#57c7ff;box-shadow:0 0 10px 3px rgba(87,199,255,.7),inset 0 -3px 0 rgba(0,0,0,.15)}
+    83%{border-color:#b98bff;box-shadow:0 0 10px 3px rgba(185,139,255,.7),inset 0 -3px 0 rgba(0,0,0,.15)}
+    100%{border-color:#ff5b5b;box-shadow:0 0 10px 3px rgba(255,91,91,.7),inset 0 -3px 0 rgba(0,0,0,.15)}
+  }
+
+  /* Kölgə Çərçivəsi: qaranlıq döyünən sirli haşiyə */
+  .ppic.frame-shadow .ppic-inner{border:3px solid #2a1f3d;animation:frameShadowPulse 2.2s ease-in-out infinite alternate}
+  @keyframes frameShadowPulse{0%{box-shadow:0 0 10px 3px rgba(40,20,60,.7),inset 0 -3px 0 rgba(0,0,0,.3)}100%{box-shadow:0 0 22px 8px rgba(90,40,120,.9),inset 0 -3px 0 rgba(0,0,0,.3)}}
+
   .profile-photo-section{display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:6px}
   .photo-actions{display:flex;gap:8px}
   .photo-upload-btn,.photo-remove-btn{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:11px;font-weight:700;cursor:pointer;display:inline-block}
@@ -1445,7 +1488,17 @@
         {id:"frameNeon", name:"Neon İmpuls", desc:"Fırlanan rəngli neon çərçivə, kub tutanda parlayır", price:300, icon:"🌀", type:"frame", frameValue:"neon"},
         {id:"frameFire", name:"Alov Çərçivəsi", desc:"Yanan alov haşiyə, kub tutanda alovlanır", price:350, icon:"🔥", type:"frame", frameValue:"fire"},
         {id:"frameNeonLight", name:"Neon İşıq", desc:"Əsl neon lampa kimi çaxnaşan parlaq haşiyə, kub tutanda güclənir", price:320, icon:"💡", type:"frame", frameValue:"neonlight"},
-        {id:"frameStar", name:"Ulduz Yağışı", desc:"Fırlanan ulduz zərrəcikləri, kub tutanda parlayır", price:380, icon:"✨", type:"frame", frameValue:"star"}
+        {id:"frameStar", name:"Ulduz Yağışı", desc:"Fırlanan ulduz zərrəcikləri, kub tutanda parlayır", price:380, icon:"✨", type:"frame", frameValue:"star"},
+        {id:"frameSilver", name:"Gümüş Çərçivə", desc:"Parlaq gümüş haşiyə", price:400, icon:"🥈", type:"frame", frameValue:"silver"},
+        {id:"frameSapphire", name:"Sapfir Çərçivə", desc:"Dərin göy sapfir haşiyə", price:420, icon:"🔷", type:"frame", frameValue:"sapphire"},
+        {id:"frameRuby", name:"Yaqut Çərçivə", desc:"Qırmızı yaqut haşiyə", price:420, icon:"♦️", type:"frame", frameValue:"ruby"},
+        {id:"frameBronze", name:"Bürünc Çərçivə", desc:"İsti bürünc haşiyə", price:380, icon:"🥉", type:"frame", frameValue:"bronze"},
+        {id:"frameIce", name:"Buz Çərçivəsi", desc:"Soyuq parıltı ilə döyünən buzlu haşiyə, kub tutanda parlayır", price:450, icon:"🧊", type:"frame", frameValue:"ice"},
+        {id:"frameToxic", name:"Zəhər Çərçivəsi", desc:"Zəhərli yaşıl köpüklənən haşiyə, kub tutanda parlayır", price:450, icon:"🧪", type:"frame", frameValue:"toxic"},
+        {id:"frameGalaxy", name:"Kainat Çərçivəsi", desc:"Fırlanan kosmik duman və ulduzlar, kub tutanda parlayır", price:500, icon:"🌌", type:"frame", frameValue:"galaxy"},
+        {id:"frameLightning", name:"İldırım Çərçivəsi", desc:"Çaxan ildırım qığılcımları ilə döyünən haşiyə, kub tutanda parlayır", price:480, icon:"🌩️", type:"frame", frameValue:"lightning"},
+        {id:"frameRainbow", name:"Göy Qurşağı Çərçivəsi", desc:"Davamlı rəng dəyişən haşiyə, kub tutanda parlayır", price:500, icon:"🎆", type:"frame", frameValue:"rainbow"},
+        {id:"frameShadow", name:"Kölgə Çərçivəsi", desc:"Qaranlıq döyünən sirli haşiyə, kub tutanda parlayır", price:480, icon:"🌑", type:"frame", frameValue:"shadow"}
       ]
     },
     {
@@ -2243,9 +2296,10 @@
     }
     var flagBadge = (opts.avatarUrl && opts.countryFlag) ? '<div class="ppic-flag-badge"><img src="' + escapeHtml(flagImgUrl(opts.countryFlag)) + '"></div>' : "";
     var starHtml = "";
-    if(opts.showStarParticles && frame === "star"){
+    if(opts.showStarParticles && (frame === "star" || frame === "galaxy")){
+      var twinkleGlyph = frame === "galaxy" ? "💫" : "✨";
       starHtml = '<div class="ppic-star-orbit">' + [0,90,180,270].map(function(deg,i){
-        return '<span class="ppic-star-twinkle" style="--ang:' + deg + 'deg;animation-delay:' + (i*0.3) + 's">✨</span>';
+        return '<span class="ppic-star-twinkle" style="--ang:' + deg + 'deg;animation-delay:' + (i*0.3) + 's">' + twinkleGlyph + '</span>';
       }).join("") + '</div>';
     }
     var presenceHtml = opts.presence ? presenceDotHtml(opts.presence.lastSeen, opts.presence.corner ? "top-corner" : "") : "";
@@ -4021,13 +4075,14 @@
       container.appendChild(badge);
     }
 
-    if(profile.activeFrame === "star"){
+    if(profile.activeFrame === "star" || profile.activeFrame === "galaxy"){
       var starWrap = document.createElement("div");
       starWrap.className = "ppic-star-orbit";
+      var twinkleGlyph = profile.activeFrame === "galaxy" ? "💫" : "✨";
       [0, 90, 180, 270].forEach(function(deg, i){
         var s = document.createElement("span");
         s.className = "ppic-star-twinkle";
-        s.textContent = "✨";
+        s.textContent = twinkleGlyph;
         s.style.setProperty("--ang", deg + "deg");
         s.style.animationDelay = (i * 0.3) + "s";
         starWrap.appendChild(s);
@@ -4037,7 +4092,7 @@
   }
 
   // Neon/Alov/Ulduz kimi "reaktiv" çərçivələr üçün: kub tutulanda qısa parıltı effekti
-  var REACTIVE_FRAMES = {neon:true, fire:true, star:true, neonlight:true};
+  var REACTIVE_FRAMES = {neon:true, fire:true, star:true, neonlight:true, ice:true, toxic:true, galaxy:true, lightning:true, rainbow:true, shadow:true};
   function flashGamePhotoIfReactive(){
     if(!REACTIVE_FRAMES[profile.activeFrame]) return;
     var overlay = document.getElementById("gamePhotoFlashOverlay");
