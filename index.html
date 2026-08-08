@@ -16,7 +16,7 @@
   html,body{margin:0;padding:0;height:100%;background:#3a332c;font-family:"Segoe UI",Arial,sans-serif;overscroll-behavior:none;user-select:none;-webkit-user-select:none}
   #app{max-width:480px;margin:0 auto;height:100vh;height:100dvh;background:var(--bg);display:flex;flex-direction:column;position:relative;overflow:hidden;box-shadow:0 0 40px rgba(0,0,0,.5)}
 
-  #menuScreen,#shopScreen,#profileScreen,#achievementsScreen,#arcadeScreen,#friendsScreen,#chatScreen,#leaderboardScreen,#mailboxScreen,#bagScreen,#wheelScreen{position:absolute;inset:0;z-index:100;background:linear-gradient(180deg,#faf8ef,#f0e6d6);display:flex;flex-direction:column;padding:0;text-align:center;overflow-y:auto}
+  #menuScreen,#shopScreen,#profileScreen,#achievementsScreen,#arcadeScreen,#friendsScreen,#chatScreen,#leaderboardScreen,#mailboxScreen,#bagScreen{position:absolute;inset:0;z-index:100;background:linear-gradient(180deg,#faf8ef,#f0e6d6);display:flex;flex-direction:column;padding:0;text-align:center;overflow-y:auto}
   #menuScreen{justify-content:flex-start;align-items:center;padding:16px 16px 10px}
   #shopScreen{padding:16px;display:none}
   #profileScreen{padding:16px;display:none;align-items:stretch;--profile-accent:#6bbf59;--profile-accent2:#4a90d9}
@@ -949,18 +949,20 @@
     <div class="bag-list" id="bagList"></div>
   </div>
 
-  <div id="wheelScreen">
-    <div class="shop-header">
-      <button class="shop-back" id="wheelBack">← Geri</button>
-      <h2>🎡 Mükafat Çarxı</h2>
+  <div class="modal-overlay" id="wheelScreen">
+    <div class="modal-panel" style="text-align:center">
+      <div class="modal-header">
+        <h3>🎡 Mükafat Çarxı</h3>
+        <button class="modal-close" id="wheelBack">✕</button>
+      </div>
+      <div class="wheel-keys-row">🔑 <span id="wheelKeysVal">0</span> açar</div>
+      <div class="wheel-wrap">
+        <div class="wheel-pointer">▼</div>
+        <div class="wheel-disc" id="wheelDisc"></div>
+      </div>
+      <div class="wheel-free-hint" id="wheelFreeHint"></div>
+      <button class="wheel-spin-btn" id="wheelSpinBtn">Çevir</button>
     </div>
-    <div class="wheel-keys-row">🔑 <span id="wheelKeysVal">0</span> açar</div>
-    <div class="wheel-wrap">
-      <div class="wheel-pointer">▼</div>
-      <div class="wheel-disc" id="wheelDisc"></div>
-    </div>
-    <div class="wheel-free-hint" id="wheelFreeHint"></div>
-    <button class="wheel-spin-btn" id="wheelSpinBtn">Çevir</button>
   </div>
 
   <div id="friendsScreen">
@@ -4075,6 +4077,7 @@
     leaderboardScreen.style.display = "none";
     mailboxScreen.style.display = "none";
     dailyScreen.classList.remove("show");
+    wheelScreen.classList.remove("show");
     arcadeScreen.style.display = "none";
     battleOpponentBadge.style.display = "";
     battleTimerBadge.style.display = "none";
@@ -4822,6 +4825,21 @@
     if(!menuScreen || menuScreen.style.display === "none") return;
     dailyAutoOpenDone = true;
     openDaily();
+  }
+
+  // Mükafat çarxı gündə 1 dəfə, əsas menyuya girişdə özü popup kimi açılır (bax maybeAutoOpenDaily
+  // ilə eyni məntiq) — profile.wheelPopupSeenDate ilə (LONDON gün sərhədi, bax getTodayStr) həmin
+  // gün artıq göstərilib-göstərilmədiyi yadda saxlanılır ki, eyni gün başqa girişlərdə təkrar açılmasın,
+  // oyuncu çevirmədən ✕ ilə bağlasa belə. Gündəlik mükafat pəncərəsi hələ açıqdırsa ona mane olmur —
+  // həmin sessiyada göstərilməsə, sonrakı bir girişdə (hələ eyni gün) yenə cəhd edəcək.
+  function maybeAutoOpenWheel(){
+    var today = getTodayStr();
+    if(profile.wheelPopupSeenDate === today) return;
+    if(!menuScreen || menuScreen.style.display === "none") return;
+    if(dailyScreen.classList.contains("show")) return;
+    profile.wheelPopupSeenDate = today;
+    saveProfile();
+    openWheel();
   }
 
   function renderDailyScreen(){
@@ -6900,6 +6918,7 @@
     achievementsScreen.style.display = "none";
     friendsScreen.style.display = "none";
     dailyScreen.classList.remove("show");
+    wheelScreen.classList.remove("show");
     arcadeScreen.style.display = "none";
     overlayEl.classList.remove("show");
     pauseOverlay.classList.remove("show");
@@ -6999,6 +7018,7 @@
     leaderboardScreen.style.display = "none";
     mailboxScreen.style.display = "none";
     dailyScreen.classList.remove("show");
+    wheelScreen.classList.remove("show");
     arcadeScreen.style.display = "none";
     gameMode = "endless";
     arcadeLevelNum = null;
@@ -7056,6 +7076,7 @@
     achievementsScreen.style.display = "none";
     friendsScreen.style.display = "none";
     dailyScreen.classList.remove("show");
+    wheelScreen.classList.remove("show");
     clearArcadeModifiers();
     levelBadge.style.display = "none";
     stopGameMusic();
@@ -7089,6 +7110,7 @@
     achievementsScreen.style.display = "none";
     friendsScreen.style.display = "none";
     dailyScreen.classList.remove("show");
+    wheelScreen.classList.remove("show");
     menuScreen.style.display = "";
     startMenuBgAnim();
   }
@@ -7108,6 +7130,7 @@
     achievementsScreen.style.display = "none";
     friendsScreen.style.display = "none";
     dailyScreen.classList.remove("show");
+    wheelScreen.classList.remove("show");
     menuScreen.style.display = "";
     startMenuBgAnim();
   }
@@ -7157,16 +7180,15 @@
   var wheelSpinning = false;
   var wheelSpinCount = 0;
 
+  // Mükafat çarxı artıq "ekran" deyil, menyunun ÜZƏRİNDƏ popup pəncərə kimi açılır (gündəlik
+  // mükafat kimi) — arxadakı menyu görünən qalır, "Geri" düyməsi bağlananda başqa bir ekranı
+  // (məs. çanta) səhvən açığa çıxarmır, çünki menuScreen-in özü heç vaxt gizlədilmir
   function openWheel(){
-    menuScreen.style.display = "none";
-    stopMenuBgAnim();
-    wheelScreen.style.display = "flex";
+    wheelScreen.classList.add("show");
     renderWheelScreen();
   }
   function closeWheel(){
-    wheelScreen.style.display = "none";
-    menuScreen.style.display = "";
-    startMenuBgAnim();
+    wheelScreen.classList.remove("show");
   }
 
   function renderWheelDisc(){
@@ -7257,6 +7279,7 @@
 
   function closeDaily(){
     dailyScreen.classList.remove("show");
+    wheelScreen.classList.remove("show");
   }
 
   document.getElementById("startBtn").addEventListener("click", function(){ gameMode = "endless"; arcadeLevelNum = null; startGame(); });
@@ -7274,6 +7297,9 @@
   document.getElementById("wheelBtn").addEventListener("click", openWheel);
   document.getElementById("wheelBtnCurrency").addEventListener("click", openWheel);
   document.getElementById("wheelBack").addEventListener("click", closeWheel);
+  document.getElementById("wheelScreen").addEventListener("click", function(e){
+    if(e.target === this) closeWheel();
+  });
   document.getElementById("wheelSpinBtn").addEventListener("click", doWheelSpin);
   document.getElementById("friendsBtn").addEventListener("click", openFriends);
   document.getElementById("friendsBack").addEventListener("click", closeFriends);
@@ -7481,6 +7507,7 @@
   // Google girişi asinxron təsdiqlənir və bulud profili (varsa) bunu ƏVƏZ edə bilər —
   // avtomatik açılış qərarını bir qədər gecikdiririk ki, bulud vəziyyəti nəzərə alınsın
   setTimeout(maybeAutoOpenDaily, 900);
+  setTimeout(maybeAutoOpenWheel, 1600);
 
   updateSoundUI();
   renderProfile();
