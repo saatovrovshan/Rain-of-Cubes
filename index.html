@@ -355,10 +355,15 @@
   .report-reason-list{display:flex;flex-wrap:wrap;gap:6px}
   .report-reason-btn{background:var(--panel);color:var(--ink);border:2px solid transparent;border-radius:10px;padding:8px 12px;font-size:11px;font-weight:700;cursor:pointer}
   .report-reason-btn.active{background:var(--red);color:#fff;border-color:#a02a3d}
-  .report-row{background:var(--panel);border-radius:10px;padding:10px 12px;margin-bottom:8px;text-align:left}
+  .report-row{background:var(--panel);border-radius:10px;padding:10px 12px;margin-bottom:8px;text-align:left;cursor:pointer;border:2px solid transparent}
+  .report-row.unseen{border-color:var(--red)}
   .report-row-top{font-size:12px;font-weight:800;color:var(--ink)}
   .report-row-meta{font-size:10px;color:#a99;font-weight:600;margin-top:2px}
   .report-row-details{font-size:11px;color:var(--ink);margin-top:6px;background:rgba(0,0,0,.05);padding:6px 8px;border-radius:6px}
+  .report-new-tag{background:var(--red);color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:6px;margin-left:4px;vertical-align:middle}
+  .report-detail-section{margin-bottom:12px;text-align:left}
+  .report-detail-label{font-size:10px;color:#a99;font-weight:700;text-transform:uppercase;margin-bottom:5px}
+  .report-detail-date{font-size:10px;color:#a99;text-align:right}
 
   .top-notif{position:absolute;top:-100px;left:50%;transform:translateX(-50%);background:#fff;color:var(--ink);border-radius:14px;padding:10px 16px;box-shadow:0 6px 20px rgba(0,0,0,.35);display:flex;align-items:center;gap:10px;z-index:300;max-width:340px;width:calc(100% - 32px);cursor:pointer;transition:top .35s cubic-bezier(.34,1.56,.64,1)}
   .top-notif.show{top:14px}
@@ -1038,6 +1043,32 @@
       <div class="report-reason-list" id="reportReasonList"></div>
       <textarea id="reportDetailsInput" maxlength="300" placeholder="Əlavə izah yaz (məcburi deyil)..." style="width:100%;margin-top:10px;padding:8px;border-radius:8px;border:2px solid var(--board-cell);font-size:12px;font-family:inherit;resize:none;box-sizing:border-box" rows="3"></textarea>
       <button class="friend-action-btn reject" id="reportSubmitBtn" style="width:100%;padding:12px;font-size:13px;margin-top:10px">Şikayəti göndər</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="reportDetailModal">
+    <div class="modal-panel">
+      <div class="modal-header">
+        <h3>🚩 Şikayət detalları</h3>
+        <button class="modal-close" id="reportDetailClose">✕</button>
+      </div>
+      <div class="report-detail-section">
+        <div class="report-detail-label">Şikayət olunan oyunçu</div>
+        <div id="reportDetailReported"></div>
+      </div>
+      <div class="report-detail-section">
+        <div class="report-detail-label">Şikayətçi</div>
+        <div id="reportDetailReporter"></div>
+      </div>
+      <div class="report-detail-section">
+        <div class="report-detail-label">Səbəb</div>
+        <div id="reportDetailReason" style="font-size:13px;font-weight:800;color:var(--ink)"></div>
+      </div>
+      <div class="report-detail-section" id="reportDetailDetailsWrap">
+        <div class="report-detail-label">Əlavə izah</div>
+        <div id="reportDetailDetails" class="report-row-details"></div>
+      </div>
+      <div class="report-detail-date" id="reportDetailDate"></div>
     </div>
   </div>
 
@@ -1735,18 +1766,22 @@
         checkFriendRequestsBadge();
         checkUnreadMessagesBadge();
         checkUnseenGiftsBadge();
+        checkUnseenReportsBadge();
         subscribeBattleInvites();
         subscribeIncomingMessages();
         subscribeIncomingGifts();
+        subscribeIncomingReports();
         return;
       }
       cloudSyncEnabled = true;
       checkFriendRequestsBadge();
       checkUnreadMessagesBadge();
       checkUnseenGiftsBadge();
+      checkUnseenReportsBadge();
       subscribeBattleInvites();
       subscribeIncomingMessages();
       subscribeIncomingGifts();
+      subscribeIncomingReports();
     });
   }
 
@@ -2684,33 +2719,80 @@
     if(!supabaseClient || !cloudUserId) return;
     var el = document.getElementById("mailboxReportsList");
     if(el) el.innerHTML = '<div class="empty-hint">Yüklənir...</div>';
-    supabaseClient.from("reports").select("id,reporter_id,reported_id,reason,details,created_at")
+    supabaseClient.from("reports").select("id,reporter_id,reported_id,reason,details,created_at,seen")
       .order("created_at", {ascending:false}).limit(200)
       .then(function(res){
         el = document.getElementById("mailboxReportsList");
         if(!el) return;
         if(res.error){ el.innerHTML = '<div class="empty-hint">Yüklənmədi: ' + escapeHtml(res.error.message) + '</div>'; return; }
         var rows = res.data || [];
+        reportsCache = rows;
         if(!rows.length){ el.innerHTML = '<div class="empty-hint">Hələ şikayət yoxdur</div>'; return; }
         var ids = [];
         rows.forEach(function(r){ ids.push(r.reporter_id); ids.push(r.reported_id); });
-        supabaseClient.from("profiles").select("id,name,player_number").in("id", ids).then(function(res2){
+        supabaseClient.from("profiles").select("id,name,player_number,avatar_url,country_flag,active_frame,level").in("id", ids).then(function(res2){
           var profs = res2.data || [];
+          reportProfilesCache = {};
+          profs.forEach(function(p){ reportProfilesCache[p.id] = p; });
           function nameFor(id){
-            var p = profs.find(function(pp){ return pp.id === id; });
+            var p = reportProfilesCache[id];
             return p ? (p.name + " #" + (p.player_number || 0)) : "Naməlum oyunçu";
           }
           el.innerHTML = rows.map(function(r){
             var when = "";
             try{ when = new Date(r.created_at).toLocaleString("az-AZ"); }catch(e){}
-            return '<div class="report-row">' +
-              '<div class="report-row-top">🚩 ' + escapeHtml(nameFor(r.reported_id)) + ' — ' + escapeHtml(r.reason) + '</div>' +
+            return '<div class="report-row' + (r.seen ? "" : " unseen") + '" data-id="' + r.id + '">' +
+              '<div class="report-row-top">🚩 ' + escapeHtml(nameFor(r.reported_id)) + ' — ' + escapeHtml(r.reason) + (r.seen ? "" : '<span class="report-new-tag">Yeni</span>') + '</div>' +
               '<div class="report-row-meta">Şikayətçi: ' + escapeHtml(nameFor(r.reporter_id)) + ' · ' + when + '</div>' +
-              (r.details ? '<div class="report-row-details">' + escapeHtml(r.details) + '</div>' : '') +
               '</div>';
           }).join("");
+          el.querySelectorAll(".report-row").forEach(function(row){
+            row.addEventListener("click", function(){ openReportDetail(this.getAttribute("data-id")); });
+          });
         });
       });
+  }
+
+  function reportPlayerRowHtml(p, id){
+    p = p || {};
+    return '<div class="convo-row report-detail-player" data-id="' + id + '">' +
+      buildAvatarHtml({avatarUrl:p.avatar_url, countryFlag:p.country_flag, activeFrame:p.active_frame, level:p.level}) +
+      '<div class="convo-row-info"><div class="convo-row-name">' + escapeHtml(p.name || "Naməlum oyunçu") + ' <span class="friend-row-id">#' + (p.player_number || 0) + '</span></div></div>' +
+      '</div>';
+  }
+
+  function openReportDetail(reportId){
+    var r = reportsCache.find(function(x){ return x.id === reportId; });
+    if(!r) return;
+    document.getElementById("reportDetailReported").innerHTML = reportPlayerRowHtml(reportProfilesCache[r.reported_id], r.reported_id);
+    document.getElementById("reportDetailReporter").innerHTML = reportPlayerRowHtml(reportProfilesCache[r.reporter_id], r.reporter_id);
+    document.getElementById("reportDetailReason").textContent = r.reason;
+    var detailsWrap = document.getElementById("reportDetailDetailsWrap");
+    if(r.details){
+      detailsWrap.style.display = "";
+      document.getElementById("reportDetailDetails").textContent = r.details;
+    } else {
+      detailsWrap.style.display = "none";
+    }
+    var when = "";
+    try{ when = new Date(r.created_at).toLocaleString("az-AZ"); }catch(e){}
+    document.getElementById("reportDetailDate").textContent = when;
+    document.getElementById("reportDetailModal").classList.add("show");
+    document.querySelectorAll("#reportDetailModal .report-detail-player").forEach(function(elm){
+      elm.onclick = function(){
+        var pid = this.getAttribute("data-id");
+        if(!pid) return;
+        document.getElementById("reportDetailModal").classList.remove("show");
+        openPlayerCard(pid);
+      };
+    });
+    if(!r.seen){
+      r.seen = true;
+      supabaseClient.from("reports").update({seen:true}).eq("id", reportId).then(function(){
+        checkUnseenReportsBadge();
+        if(mailboxScreen.style.display !== "none" && mailboxActiveTab === "reports") loadMailboxReports();
+      });
+    }
   }
 
   function giftRowHtml(g, senderName){
@@ -2810,6 +2892,10 @@
   var receivedGiftsCache = [];
   var unseenGiftsTotal = 0;
   var giftsInboxChannel = null;
+  var unseenReportsTotal = 0;
+  var reportsInboxChannel = null;
+  var reportsCache = [];
+  var reportProfilesCache = {};
 
   function openMailbox(){
     if(!cloudUserId){ showToast("⚠️ Əvvəlcə Google ilə daxil olmalısan"); return; }
@@ -2838,7 +2924,7 @@
     var tabs = [{id:"messages", label:"💬 Mesajlar"}, {id:"gifts", label:"🎁 Hədiyyələr"}];
     if(isAdminUser()) tabs.push({id:"reports", label:"🚩 Şikayətlər"});
     tabsEl.innerHTML = tabs.map(function(t){
-      var showDot = (t.id === "messages" && unreadMessagesTotal > 0) || (t.id === "gifts" && unseenGiftsTotal > 0);
+      var showDot = (t.id === "messages" && unreadMessagesTotal > 0) || (t.id === "gifts" && unseenGiftsTotal > 0) || (t.id === "reports" && unseenReportsTotal > 0);
       return '<button class="shop-tab-btn' + (t.id === mailboxActiveTab ? " active" : "") + '" data-id="' + t.id + '" style="position:relative">' + t.label + (showDot ? '<span class="friend-tab-dot"></span>' : "") + '</button>';
     }).join("");
     tabsEl.querySelectorAll("button").forEach(function(btn){
@@ -2907,7 +2993,47 @@
   function refreshMailboxBtnDot(){
     var dot = document.getElementById("mailboxBtnDot");
     if(!dot) return;
-    dot.style.display = (unreadMessagesTotal > 0 || unseenGiftsTotal > 0) ? "" : "none";
+    dot.style.display = (unreadMessagesTotal > 0 || unseenGiftsTotal > 0 || unseenReportsTotal > 0) ? "" : "none";
+  }
+
+  function checkUnseenReportsBadge(){
+    if(!supabaseClient || !cloudUserId || !isAdminUser()) return;
+    supabaseClient.from("reports").select("id", {count:"exact", head:true})
+      .eq("seen", false)
+      .then(function(res){
+        if(res.error) return;
+        unseenReportsTotal = res.count || 0;
+        refreshMailboxBtnDot();
+        if(mailboxScreen.style.display !== "none") renderMailboxTabs();
+      });
+  }
+
+  function openMailboxToReports(){
+    openMailbox();
+    mailboxActiveTab = "reports";
+    renderMailboxTabs();
+    renderMailboxContent();
+  }
+
+  function subscribeIncomingReports(){
+    if(!supabaseClient || !cloudUserId || !isAdminUser()) return;
+    if(reportsInboxChannel){ supabaseClient.removeChannel(reportsInboxChannel); reportsInboxChannel = null; }
+    reportsInboxChannel = supabaseClient.channel("reports-inbox-" + cloudUserId)
+      .on("postgres_changes", {event:"INSERT", schema:"public", table:"reports"}, function(payload){
+        var r = payload.new;
+        checkUnseenReportsBadge();
+        if(mailboxScreen.style.display !== "none" && mailboxActiveTab === "reports") loadMailboxReports();
+        supabaseClient.from("profiles").select("name").eq("id", r.reported_id).maybeSingle().then(function(res){
+          var reportedName = (res.data && res.data.name) || "Oyunçu";
+          showTopNotification({
+            icon: "🚩",
+            title: "Yeni şikayət",
+            subtitle: reportedName + " — " + r.reason,
+            onClick: openMailboxToReports
+          });
+        });
+      })
+      .subscribe();
   }
 
   function subscribeIncomingGifts(){
@@ -5986,6 +6112,12 @@
     if(e.target === this) this.classList.remove("show");
   });
   document.getElementById("reportSubmitBtn").addEventListener("click", submitReport);
+  document.getElementById("reportDetailClose").addEventListener("click", function(){
+    document.getElementById("reportDetailModal").classList.remove("show");
+  });
+  document.getElementById("reportDetailModal").addEventListener("click", function(e){
+    if(e.target === this) this.classList.remove("show");
+  });
   document.getElementById("giftModalClose").addEventListener("click", function(){
     document.getElementById("giftModalOverlay").classList.remove("show");
   });
