@@ -68,6 +68,8 @@
   .shop-sticky-top{position:sticky;top:0;z-index:6;background:#faf8ef}
   .shop-header{display:flex;align-items:center;justify-content:space-between;padding-bottom:10px;border-bottom:2px solid var(--board-cell)}
   .shop-tabs{display:flex;flex-wrap:wrap;gap:6px;padding:10px 0}
+  .shop-sort-btn{background:var(--panel);color:var(--ink);border:2px solid transparent;border-radius:14px;padding:7px 14px;font-size:11px;font-weight:800;cursor:pointer;margin-bottom:8px}
+  .shop-sort-btn:active{border-color:var(--green)}
   .shop-tab-btn{flex:1 1 auto;min-width:76px;text-align:center;background:var(--panel);color:var(--ink);border:2px solid transparent;border-radius:16px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
   .shop-tab-btn.active{background:var(--green);color:#fff;box-shadow:0 3px 0 #4a9e3f}
   .shop-header h2{margin:0;font-size:22px;color:var(--ink)}
@@ -859,6 +861,7 @@
         <div class="shop-gold">🪙 <span id="shopGoldVal">0</span></div>
       </div>
       <div class="shop-tabs" id="shopTabs"></div>
+      <button class="shop-sort-btn" id="shopSortBtn">💰↑ Ucuzdan bahaya</button>
     </div>
     <div id="shopContent"></div>
   </div>
@@ -6130,8 +6133,24 @@
 
   // Tab-əsaslı mağaza: eyni anda YALNIZ seçilmiş kateqoriya göstərilir ki, oyunçu bütün
   // siyahını axtarmaq üçün scroll etməli olmasın — birbaşa istədiyi kateqoriyaya keçir
+  // Mağaza sıralaması: default ucuzdan-bahaya, düymə ilə əks (bahadan-ucuza) çevrilir.
+  // SHOP_CATEGORIES-in özünü dəyişmirik (kopya üzərində sort edirik) ki, başqa yerlərdə
+  // (məs. Çanta ekranının konsumabl siyahısı) sıra asılılığı yaranmasın.
+  var shopSortDescending = false;
+  function toggleShopSort(){
+    shopSortDescending = !shopSortDescending;
+    updateShopSortBtn();
+    renderShop();
+  }
+  function updateShopSortBtn(){
+    var btn = document.getElementById("shopSortBtn");
+    if(!btn) return;
+    btn.textContent = shopSortDescending ? "💰↓ Bahadan ucuza" : "💰↑ Ucuzdan bahaya";
+  }
+
   function renderShop(){
     renderShopTabs();
+    updateShopSortBtn();
     shopContent.innerHTML = "";
     var cat = SHOP_CATEGORIES[activeShopTab];
     if(!cat) return;
@@ -6143,7 +6162,10 @@
     section.appendChild(title);
     var grid = document.createElement("div");
     grid.className = "shop-grid";
-    cat.items.forEach(function(item){
+    var sortedItems = cat.items.slice().sort(function(a, b){
+      return shopSortDescending ? (b.price - a.price) : (a.price - b.price);
+    });
+    sortedItems.forEach(function(item){
       grid.appendChild(renderShopItemCard(item));
     });
     section.appendChild(grid);
@@ -7219,6 +7241,7 @@
   document.getElementById("shopBtn").addEventListener("click", openShop);
   document.getElementById("shopBtnCurrency").addEventListener("click", openShop);
   document.getElementById("shopBack").addEventListener("click", returnToMenu);
+  document.getElementById("shopSortBtn").addEventListener("click", toggleShopSort);
   document.getElementById("profileBtn").addEventListener("click", openProfile);
   document.getElementById("menuProfileCard").addEventListener("click", openProfile);
   document.getElementById("profileBack").addEventListener("click", closeProfile);
