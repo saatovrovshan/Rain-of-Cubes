@@ -172,6 +172,10 @@
   .sound-toggle.off{opacity:.5;border-color:transparent}
 
   .profile-edit{background:var(--panel);border-radius:12px;padding:12px;display:flex;align-items:center;gap:10px;margin-top:4px}
+  .name-save-btn{background:var(--green);color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:12px;font-weight:800;cursor:pointer;flex-shrink:0}
+  .name-ticket-hint{background:rgba(242,84,91,.12);border:1px solid rgba(242,84,91,.4);border-radius:10px;padding:8px 10px;font-size:11px;font-weight:700;color:var(--red);margin-top:6px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
+  .name-ticket-shop-btn{background:var(--red);color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:800;cursor:pointer}
+  .profile-bio-input{width:100%;box-sizing:border-box;background:var(--panel);border:2px solid var(--board-cell);border-radius:10px;padding:9px 12px;font-size:12px;font-family:inherit;color:var(--ink);resize:none;min-height:44px;margin-top:8px}
   .xp-progress{background:var(--panel);border-radius:12px;padding:12px 14px;margin:18px 0;text-align:left;width:100%;box-sizing:border-box}
   .xp-progress-menu{display:flex;align-items:center;gap:12px;cursor:pointer;border:2px solid transparent;transition:border-color .15s,transform .1s;position:relative}
   .menu-presence-dot{position:absolute;top:-2px;right:-2px;width:11px;height:11px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.35)}
@@ -310,7 +314,7 @@
   .google-auth-status{display:flex;align-items:center;gap:8px;background:var(--panel);border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;color:var(--ink)}
   .google-signout-btn{background:none;border:none;color:var(--red);font-size:11px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0}
   .profile-edit label{font-size:12px;font-weight:700;color:var(--ink)}
-  .profile-edit input{flex:1;border:2px solid var(--board-cell);border-radius:8px;padding:8px 10px;font-size:14px;font-family:inherit;min-width:0}
+  .profile-edit input{flex:1;border:2px solid var(--board-cell);border-radius:8px;padding:8px 10px;font-size:19px;font-weight:800;font-family:inherit;min-width:0;text-align:center;color:var(--ink)}
   .profile-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
   .profile-stat{background:var(--panel);border-radius:12px;padding:14px 8px;text-align:center}
   .profile-stat .pnum{font-size:19px;font-weight:800;color:var(--ink)}
@@ -802,9 +806,14 @@
       </div>
     </div>
     <div class="profile-edit">
-      <label for="nameInput">Ad:</label>
       <input type="text" id="nameInput" maxlength="14" placeholder="Adınız">
+      <button class="name-save-btn" id="nameSaveBtn">Saxla</button>
     </div>
+    <div class="name-ticket-hint" id="nameTicketHint" style="display:none">
+      🎫 Adı yenidən dəyişmək üçün bilet lazımdır (<span id="nameTicketCount">0</span> ədəd bilet)
+      <button class="name-ticket-shop-btn" id="nameTicketShopBtn">🛒 Mağazaya keç</button>
+    </div>
+    <textarea class="profile-bio-input" id="bioInput" maxlength="80" placeholder="Özün haqqında bir neçə söz yaz..."></textarea>
     <div class="profile-section-title">🚩 Ölkə Bayrağı</div>
     <button class="flag-current-btn" id="flagCurrentBtn"></button>
     <div class="xp-progress">
@@ -1511,6 +1520,13 @@
         {id:"stickerPackFun", name:"Əyləncə Stiker Paketi", desc:"6 əlavə stiker mesajlaşma üçün", price:150, icon:"😎", type:"sticker"},
         {id:"stickerPackLove", name:"Sevgi Stiker Paketi", desc:"6 sevgi mövzulu stiker mesajlaşma üçün", price:180, icon:"💌", type:"sticker"},
         {id:"stickerPackGaming", name:"Oyun Stiker Paketi", desc:"6 oyun mövzulu stiker mesajlaşma üçün", price:180, icon:"🕹️", type:"sticker"}
+      ]
+    },
+    {
+      title: "🎫 Biletlər",
+      tab: "🎫 Bilet",
+      items: [
+        {id:"nameChangeTicket", name:"Ad Dəyişmə Bileti", desc:"Adını 1 dəfə daha dəyişməyə icazə verir", price:300, icon:"🎫", type:"consumable"}
       ]
     }
   ];
@@ -4245,6 +4261,8 @@
     renderPhotoInto("profilePhotoBig", "lg");
     renderFlagPicker();
     document.getElementById("nameInput").value = profile.name;
+    document.getElementById("bioInput").value = profile.bio || "";
+    renderNameTicketHint();
     document.getElementById("statLevel").textContent = profile.level || 1;
     document.getElementById("statXpTotal").textContent = profile.xp || 0;
     document.getElementById("statGames").textContent = profile.gamesPlayed || 0;
@@ -4286,6 +4304,43 @@
       document.getElementById("statGiftsSent").textContent = "-";
       document.getElementById("profileIdNum").textContent = "#-";
     }
+  }
+
+  // Ad dəyişmə iqtisadiyyatı: 1-ci dəyişmə pulsuzdur, sonrakılar mağazadan alınan "Ad Dəyişmə Bileti"
+  // tələb edir. Bilet yoxdursa dəyişiklik tətbiq olunmur — sahə köhnə ada qaytarılır.
+  function renderNameTicketHint(){
+    var hint = document.getElementById("nameTicketHint");
+    var ticketCount = (profile.inventory && profile.inventory.nameChangeTicket) || 0;
+    var blocked = !!profile.nameFreeChangeUsed && ticketCount <= 0;
+    hint.style.display = blocked ? "flex" : "none";
+    document.getElementById("nameTicketCount").textContent = ticketCount;
+  }
+
+  function saveProfileName(){
+    var v = document.getElementById("nameInput").value.trim();
+    if(!v) v = "Oyunçu";
+    if(v === profile.name){ renderNameTicketHint(); return; }
+    if(!profile.nameFreeChangeUsed){
+      profile.name = v;
+      profile.nameFreeChangeUsed = true;
+      saveProfile();
+      renderProfile();
+      renderNameTicketHint();
+      showToast("✅ Ad dəyişdirildi");
+      return;
+    }
+    if(((profile.inventory && profile.inventory.nameChangeTicket) || 0) > 0){
+      profile.inventory.nameChangeTicket -= 1;
+      profile.name = v;
+      saveProfile();
+      renderProfile();
+      renderNameTicketHint();
+      showToast("🎫 Ad dəyişdirildi (1 bilet istifadə olundu)");
+      return;
+    }
+    document.getElementById("nameInput").value = profile.name;
+    renderNameTicketHint();
+    showToast("🔒 Ad dəyişmək üçün bilet lazımdır");
   }
 
   // Hər kateqoriya qutusunun açıq/qapalı olduğunu izləyir — açılışda cəldırılabilən (claimable)
@@ -6912,11 +6967,15 @@
     openArcadeMenu();
   });
   document.getElementById("arcadeMenuBtn").addEventListener("click", returnToMenu);
-  document.getElementById("nameInput").addEventListener("input", function(){
-    var v = this.value.trim();
-    profile.name = v || "Oyunçu";
+  document.getElementById("nameSaveBtn").addEventListener("click", saveProfileName);
+  document.getElementById("nameTicketShopBtn").addEventListener("click", function(){
+    closeProfile();
+    activeShopTab = SHOP_CATEGORIES.length - 1;
+    openShop();
+  });
+  document.getElementById("bioInput").addEventListener("input", function(){
+    profile.bio = this.value;
     saveProfile();
-    renderProfile();
   });
   document.getElementById("photoInput").addEventListener("change", function(e){
     if(e.target.files && e.target.files[0]) handlePhotoUpload(e.target.files[0]);
