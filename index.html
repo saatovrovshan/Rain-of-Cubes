@@ -453,7 +453,7 @@
   @keyframes comboGlow{from{box-shadow:0 0 0 rgba(255,159,67,0)}to{box-shadow:0 0 10px 2px rgba(255,159,67,.85)}}
   @keyframes comboShift{from{background-position:0% 0}to{background-position:200% 0}}
 
-  .powerups{margin:0 12px 6px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+  .powerups{margin:8px 12px 6px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;flex-shrink:0}
   .powerup-btn{width:42px;height:42px;border-radius:10px;background:var(--panel);border:2px solid var(--board-cell);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;position:relative;transition:transform .1s,border-color .2s}
   .powerup-btn:active{transform:scale(.9)}
   .powerup-btn .count{position:absolute;bottom:-4px;right:-4px;background:var(--red);color:#fff;font-size:9px;font-weight:800;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center}
@@ -866,16 +866,6 @@
     </div>
   </div>
 
-  <div class="powerups" id="powerups">
-    <button class="powerup-btn" id="puShield">🛡️<span class="count" id="puShieldCount">0</span></button>
-    <button class="powerup-btn" id="puSlow">⏱️<span class="count" id="puSlowCount">0</span></button>
-    <button class="powerup-btn" id="puFast">⏩<span class="count" id="puFastCount">0</span></button>
-    <button class="powerup-btn" id="puBomb">💣<span class="count" id="puBombCount">0</span></button>
-    <button class="powerup-btn" id="puHammer">🔨<span class="count" id="puHammerCount">0</span></button>
-    <button class="powerup-btn" id="puShuffle">🎲<span class="count" id="puShuffleCount">0</span></button>
-    <button class="powerup-btn" id="puRewind">⏪<span class="count" id="puRewindCount">0</span></button>
-  </div>
-
   <div id="field">
     <div class="slow-overlay" id="slowOverlay"></div>
     <div class="smash-timer" id="smashTimer">🔨 <span id="smashTimerVal">5</span>s</div>
@@ -939,6 +929,16 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <div class="powerups" id="powerups">
+    <button class="powerup-btn" id="puShield">🛡️<span class="count" id="puShieldCount">0</span></button>
+    <button class="powerup-btn" id="puSlow">⏱️<span class="count" id="puSlowCount">0</span></button>
+    <button class="powerup-btn" id="puFast">⏩<span class="count" id="puFastCount">0</span></button>
+    <button class="powerup-btn" id="puBomb">💣<span class="count" id="puBombCount">0</span></button>
+    <button class="powerup-btn" id="puHammer">🔨<span class="count" id="puHammerCount">0</span></button>
+    <button class="powerup-btn" id="puShuffle">🎲<span class="count" id="puShuffleCount">0</span></button>
+    <button class="powerup-btn" id="puRewind">⏪<span class="count" id="puRewindCount">0</span></button>
   </div>
 
   <div class="modal-overlay" id="settingsModalOverlay">
@@ -2025,10 +2025,10 @@
   function renderFriendsTabs(){
     var tabsEl = document.getElementById("friendsTabs");
     var tabs = [
-      {id:"search", label:"🔍 Axtar"},
-      {id:"requests", label:"📨 Sorğular"},
       {id:"friends", label:"👥 Dostlarım"},
-      {id:"messages", label:"💬 Mesajlar"}
+      {id:"messages", label:"💬 Mesajlar"},
+      {id:"requests", label:"📨 Sorğular"},
+      {id:"search", label:"🔍 Axtar"}
     ];
     tabsEl.innerHTML = tabs.map(function(t){
       var showDot = (t.id === "requests" && friendRequestsCache.length) || (t.id === "messages" && conversationsCache.some(function(c){ return c.unread; }));
@@ -4216,8 +4216,13 @@
     var el = document.createElement("div");
     el.className = "floating-text";
     el.textContent = text;
-    el.style.left = x + "px";
-    el.style.top = y + "px";
+    // Kubik sahənin lap altında tutulanda yazı "field"-in özündən aşağı düşüb kəsilməsin deyə
+    // (overflow:hidden onu görünməz edir) mövqeni sahənin görünən sərhədləri içində saxlayırıq
+    var fw = field.clientWidth, fh = field.clientHeight;
+    var clampedX = Math.min(Math.max(x, 30), Math.max(30, fw - 30));
+    var clampedY = Math.min(Math.max(y, 4), Math.max(4, fh - 30));
+    el.style.left = clampedX + "px";
+    el.style.top = clampedY + "px";
     field.appendChild(el);
     setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); }, 900);
   }
