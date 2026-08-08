@@ -19,7 +19,47 @@
   #menuScreen,#shopScreen,#profileScreen,#achievementsScreen,#arcadeScreen,#friendsScreen,#chatScreen,#leaderboardScreen,#mailboxScreen,#bagScreen,#wheelScreen{position:absolute;inset:0;z-index:100;background:linear-gradient(180deg,#faf8ef,#f0e6d6);display:flex;flex-direction:column;padding:0;text-align:center;overflow-y:auto}
   #menuScreen{justify-content:flex-start;align-items:center;padding:16px 16px 10px}
   #shopScreen{padding:16px;display:none}
-  #profileScreen{padding:16px;display:none;align-items:stretch}
+  #profileScreen{padding:16px;display:none;align-items:stretch;--profile-accent:#6bbf59;--profile-accent2:#4a90d9}
+
+  /* Profil arxa fonları: 4 sadə qradiyent + 6 dinamik animasiyalı */
+  #profileScreen.profile-bg-sunrise{background:linear-gradient(180deg,#ffd89b,#ff9a76,#ff6f91)}
+  #profileScreen.profile-bg-ocean{background:linear-gradient(180deg,#a1e8ff,#3eaee0,#1c6fa8)}
+  #profileScreen.profile-bg-forest{background:linear-gradient(180deg,#d7f0c2,#7fc97f,#2f7d4f)}
+  #profileScreen.profile-bg-night{background:linear-gradient(180deg,#2b2450,#191333,#0c081f)}
+  #profileScreen.profile-bg-aurora{background:linear-gradient(120deg,#00c9a7,#5b6bff,#a86bff,#00c9a7);background-size:300% 300%;animation:profileBgAurora 8s ease infinite}
+  @keyframes profileBgAurora{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+  #profileScreen.profile-bg-stars{
+    background-image: radial-gradient(2px 2px at 20% 30%,#fff,transparent),
+      radial-gradient(2px 2px at 70% 20%,#fff,transparent),
+      radial-gradient(1.5px 1.5px at 50% 60%,#fff,transparent),
+      radial-gradient(1.5px 1.5px at 85% 75%,#fff,transparent),
+      radial-gradient(2px 2px at 35% 85%,#fff,transparent),
+      radial-gradient(1.5px 1.5px at 10% 65%,#fff,transparent),
+      radial-gradient(ellipse at top,#1b1f4b,#05061a 70%);
+    background-repeat:no-repeat;
+    animation:profileBgStarsTwinkle 3s ease-in-out infinite alternate;
+  }
+  @keyframes profileBgStarsTwinkle{0%,100%{filter:brightness(.85)}50%{filter:brightness(1.15)}}
+  #profileScreen.profile-bg-neongrid{
+    background-color:#0d0221;
+    background-image: repeating-linear-gradient(0deg,rgba(0,255,255,.15) 0 2px,transparent 2px 40px),
+      repeating-linear-gradient(90deg,rgba(255,0,229,.15) 0 2px,transparent 2px 40px);
+    animation:profileBgGridMove 6s linear infinite;
+  }
+  @keyframes profileBgGridMove{0%{background-position:0 0,0 0}100%{background-position:0 80px,80px 0}}
+  #profileScreen.profile-bg-firestorm{background:linear-gradient(180deg,#3a0a02,#7a1d02 40%,#ff6a00 90%);animation:profileBgFireFlicker 1.4s ease-in-out infinite alternate}
+  @keyframes profileBgFireFlicker{0%{filter:brightness(.92) saturate(1)}50%{filter:brightness(1.08) saturate(1.15)}100%{filter:brightness(.96) saturate(1.05)}}
+  #profileScreen.profile-bg-cosmic{background:conic-gradient(from 0deg at 50% 50%,#1b0c3f,#5b2a86,#8e44ad,#2c3e91,#0d1b4c,#5b2a86,#1b0c3f);animation:profileBgCosmicSpin 20s linear infinite}
+  @keyframes profileBgCosmicSpin{to{filter:hue-rotate(360deg)}}
+  #profileScreen.profile-bg-electric{background:linear-gradient(180deg,#001433,#003366 50%,#00d2ff 120%);animation:profileBgElectricFlicker 1.8s linear infinite}
+  @keyframes profileBgElectricFlicker{0%,19%,21%,54%,56%,100%{filter:brightness(1)}20%{filter:brightness(1.4)}55%{filter:brightness(1.25)}}
+
+  /* Profil rəng palitraları: qızıl/nailiyyət kimi accent elementlərin rəngini dəyişir */
+  #profileScreen.profile-palette-sakura{--profile-accent:#ff5b9a;--profile-accent2:#ff9ec9}
+  #profileScreen.profile-palette-ocean{--profile-accent:#2f9ee0;--profile-accent2:#5be0d3}
+  #profileScreen.profile-palette-gold{--profile-accent:#e0a02c;--profile-accent2:#ffd76b}
+  #profileScreen.profile-palette-amethyst{--profile-accent:#9b5de5;--profile-accent2:#c77dff}
+  #profileScreen.profile-palette-emerald{--profile-accent:#1f9d55;--profile-accent2:#5be07e}
   #achievementsScreen{padding:16px;display:none;align-items:stretch}
   #arcadeScreen{padding:16px;display:none;align-items:stretch}
   #chatScreen{padding:0;display:none;align-items:stretch;overflow-y:hidden}
@@ -172,7 +212,7 @@
   .sound-toggle.off{opacity:.5;border-color:transparent}
 
   .profile-edit{background:var(--panel);border-radius:12px;padding:12px;display:flex;align-items:center;gap:10px;margin-top:4px}
-  .name-save-btn{background:var(--green);color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:12px;font-weight:800;cursor:pointer;flex-shrink:0}
+  .name-save-btn{background:var(--profile-accent,var(--green));color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:12px;font-weight:800;cursor:pointer;flex-shrink:0}
   .name-ticket-hint{background:rgba(242,84,91,.12);border:1px solid rgba(242,84,91,.4);border-radius:10px;padding:8px 10px;font-size:11px;font-weight:700;color:var(--red);margin-top:6px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
   .name-ticket-shop-btn{background:var(--red);color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:800;cursor:pointer}
   .profile-bio-input{width:100%;box-sizing:border-box;background:var(--panel);border:2px solid var(--board-cell);border-radius:10px;padding:9px 12px;font-size:12px;font-family:inherit;color:var(--ink);resize:none;min-height:44px;margin-top:8px}
@@ -305,7 +345,7 @@
   .xp-progress-body{flex:1;min-width:0}
   .menu-player-name{font-size:13px;font-weight:800;color:var(--ink);text-align:left;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .xp-progress-track{height:10px;border-radius:5px;background:#ddd2c4;overflow:hidden;margin-bottom:6px}
-  .xp-progress-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,#6bbf59,#4a90d9);width:0%;transition:width .4s ease}
+  .xp-progress-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,var(--profile-accent,#6bbf59),var(--profile-accent2,#4a90d9));width:0%;transition:width .4s ease}
   .xp-progress-text{font-size:11px;font-weight:700;color:var(--ink)}
   .xp-remaining{font-size:9px;font-weight:700;color:#a99;margin-left:5px;flex-shrink:0;white-space:nowrap}
   .google-auth-row{width:100%;display:flex;justify-content:center;margin:4px 0 12px}
@@ -319,7 +359,7 @@
   .profile-stat{background:var(--panel);border-radius:12px;padding:14px 8px;text-align:center}
   .profile-stat .pnum{font-size:19px;font-weight:800;color:var(--ink)}
   .profile-stat .plbl{font-size:9px;color:#a99;font-weight:700;text-transform:uppercase;margin-top:3px}
-  .profile-section-title{font-size:13px;font-weight:800;color:var(--ink);text-align:left;margin:18px 0 8px;padding-left:6px;border-left:4px solid var(--orange)}
+  .profile-section-title{font-size:13px;font-weight:800;color:var(--ink);text-align:left;margin:18px 0 8px;padding-left:6px;border-left:4px solid var(--profile-accent,var(--orange))}
   .settings-accordion-toggle{display:flex;align-items:center;justify-content:space-between;width:100%;background:none;border:none;font-size:13px;font-weight:800;color:var(--ink);text-align:left;margin:18px 0 8px;padding:8px 10px 8px 6px;border-left:4px solid var(--orange);cursor:pointer;font-family:inherit;box-sizing:border-box}
   .settings-accordion-toggle:active{background:var(--panel)}
   .settings-accordion-arrow{transition:transform .2s ease;font-size:12px}
@@ -1532,6 +1572,33 @@
       tab: "🎫 Bilet",
       items: [
         {id:"nameChangeTicket", name:"Ad Dəyişmə Bileti", desc:"Adını 1 dəfə daha dəyişməyə icazə verir", price:300, icon:"🎫", type:"consumable"}
+      ]
+    },
+    {
+      title: "🌄 Profil Fonu",
+      tab: "🌄 Fon",
+      items: [
+        {id:"bgSunrise", name:"Gündoğan", desc:"İsti gündoğan qradiyenti", price:400, icon:"🌅", type:"profilebg", bgValue:"sunrise"},
+        {id:"bgOcean", name:"Okean", desc:"Sakit göy-firuzəyi qradiyent", price:400, icon:"🌊", type:"profilebg", bgValue:"ocean"},
+        {id:"bgForest", name:"Meşə", desc:"Təbii yaşıl qradiyent", price:400, icon:"🌲", type:"profilebg", bgValue:"forest"},
+        {id:"bgNight", name:"Gecə", desc:"Tünd bənövşəyi gecə qradiyenti", price:400, icon:"🌌", type:"profilebg", bgValue:"night"},
+        {id:"bgAurora", name:"Şəfəq Dalğası", desc:"Davamlı rəng dəyişən dinamik fon", price:700, icon:"🌈", type:"profilebg", bgValue:"aurora"},
+        {id:"bgStars", name:"Ulduzlu Səma", desc:"Parpıldayan ulduzlarla tünd səma", price:700, icon:"✨", type:"profilebg", bgValue:"stars"},
+        {id:"bgNeonGrid", name:"Neon Şəbəkə", desc:"Hərəkətli neon şəbəkə xətləri", price:700, icon:"🟣", type:"profilebg", bgValue:"neongrid"},
+        {id:"bgFirestorm", name:"Atəş Fırtınası", desc:"Döyünən alov rəngli fon", price:700, icon:"🔥", type:"profilebg", bgValue:"firestorm"},
+        {id:"bgCosmic", name:"Kosmik Toz", desc:"Fırlanan kosmik rəng dumanı", price:700, icon:"🌀", type:"profilebg", bgValue:"cosmic"},
+        {id:"bgElectric", name:"Elektrik Fırtına", desc:"Çaxan elektrik mavisi fon", price:700, icon:"⚡", type:"profilebg", bgValue:"electric"}
+      ]
+    },
+    {
+      title: "🎨 Rəng Palitrası",
+      tab: "🎨 Palitra",
+      items: [
+        {id:"paletteSakura", name:"Sakura", desc:"Profil accent rəngini çəhrayıya çevirir", price:500, icon:"🌸", type:"profilepalette", paletteValue:"sakura"},
+        {id:"paletteOcean", name:"Okean Palitrası", desc:"Profil accent rəngini göy-firuzəyiyə çevirir", price:500, icon:"🐬", type:"profilepalette", paletteValue:"ocean"},
+        {id:"paletteGold", name:"Qızıl Palitrası", desc:"Profil accent rəngini qızılıya çevirir", price:500, icon:"👑", type:"profilepalette", paletteValue:"gold"},
+        {id:"paletteAmethyst", name:"Ametist", desc:"Profil accent rəngini bənövşəyiyə çevirir", price:500, icon:"💜", type:"profilepalette", paletteValue:"amethyst"},
+        {id:"paletteEmerald", name:"Zümrüd Palitrası", desc:"Profil accent rəngini zümrüd yaşılına çevirir", price:500, icon:"💚", type:"profilepalette", paletteValue:"emerald"}
       ]
     }
   ];
@@ -4310,6 +4377,8 @@
   }
 
   function renderProfileScreen(){
+    profileScreen.className = (profile.activeBackground ? "profile-bg-" + profile.activeBackground : "") +
+      (profile.activePalette ? " profile-palette-" + profile.activePalette : "");
     renderPhotoInto("profilePhotoBig", "lg");
     renderFlagPicker();
     document.getElementById("nameInput").value = profile.name;
@@ -5786,7 +5855,7 @@
     div.className = "shop-item";
     var owned = false;
     var isActive = false;
-    if(item.type === "unlock" || item.type === "effect" || item.type === "theme" || item.type === "breakfx" || item.type === "frame" || item.type === "sticker"){
+    if(item.type === "unlock" || item.type === "effect" || item.type === "theme" || item.type === "breakfx" || item.type === "frame" || item.type === "sticker" || item.type === "profilebg" || item.type === "profilepalette"){
       owned = profile.unlocks[item.id] || item.price === 0;
       if(owned && item.type === "effect"){
         isActive = profile.activeEffect === item.id.replace("fx","").toLowerCase();
@@ -5800,6 +5869,10 @@
         isActive = profile.activeFrame === item.frameValue;
       } else if(owned && item.type === "sticker"){
         isActive = true; // stiker paketi alındıqdan sonra daimi sahiblik statusu, aktiv/deaktiv anlayışı yoxdur
+      } else if(owned && item.type === "profilebg"){
+        isActive = profile.activeBackground === item.bgValue;
+      } else if(owned && item.type === "profilepalette"){
+        isActive = profile.activePalette === item.paletteValue;
       }
     }
     // Yaşıl çərçivə yalnız HAZIRKI aktiv olan effekt/tema/paket üçün
@@ -5872,7 +5945,7 @@
     // Level-kilidli satın almalar: item.requiredLevel təyin olunubsa, hələ sahib olunmayan əşya
     // kifayət qədər səviyyəyə çatana qədər satın alına bilməz. Sahib olunan əşyanı seçmək (reselect)
     // kilidlənmir — kilid yalnız YENİ satın almanı bloklayır.
-    var alreadyOwnedForGate = (item.type === "unlock" || item.type === "effect" || item.type === "theme" || item.type === "breakfx" || item.type === "frame" || item.type === "sticker")
+    var alreadyOwnedForGate = (item.type === "unlock" || item.type === "effect" || item.type === "theme" || item.type === "breakfx" || item.type === "frame" || item.type === "sticker" || item.type === "profilebg" || item.type === "profilepalette")
       ? (profile.unlocks[id] || item.price === 0)
       : false;
     if(item.requiredLevel && !alreadyOwnedForGate && (profile.level || 1) < item.requiredLevel){
@@ -5896,7 +5969,7 @@
       return;
     }
 
-    if(item.type === "unlock" || item.type === "effect" || item.type === "theme" || item.type === "breakfx" || item.type === "frame" || item.type === "sticker"){
+    if(item.type === "unlock" || item.type === "effect" || item.type === "theme" || item.type === "breakfx" || item.type === "frame" || item.type === "sticker" || item.type === "profilebg" || item.type === "profilepalette"){
       var alreadyOwned = profile.unlocks[id] || item.price === 0;
       if(alreadyOwned){
         profile.unlocks[id] = true;
@@ -5905,6 +5978,8 @@
         if(item.type === "breakfx"){ profile.activeBreakEffect = item.breakValue; saveProfile(); renderProfile(); showToast("💥 Sınma effekti seçildi!"); }
         if(item.type === "frame"){ profile.activeFrame = item.frameValue; saveProfile(); renderProfile(); showToast("🖼️ Çərçivə seçildi!"); }
         if(item.type === "sticker"){ showToast("😄 Bu stiker paketi artıq sənindir!"); }
+        if(item.type === "profilebg"){ profile.activeBackground = item.bgValue; saveProfile(); renderProfile(); showToast("🌄 Profil fonu seçildi!"); }
+        if(item.type === "profilepalette"){ profile.activePalette = item.paletteValue; saveProfile(); renderProfile(); showToast("🎨 Rəng palitrası seçildi!"); }
         if(item.type === "unlock"){
           var nowEnabled = profile.enabledUnlocks[id] === false;
           profile.enabledUnlocks[id] = nowEnabled;
@@ -5924,6 +5999,8 @@
       if(item.type === "theme") profile.activeTheme = item.themeValue;
       if(item.type === "breakfx") profile.activeBreakEffect = item.breakValue;
       if(item.type === "frame") profile.activeFrame = item.frameValue;
+      if(item.type === "profilebg") profile.activeBackground = item.bgValue;
+      if(item.type === "profilepalette") profile.activePalette = item.paletteValue;
       saveProfile();
       renderProfile();
       renderShop();
