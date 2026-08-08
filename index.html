@@ -297,7 +297,7 @@
   .friend-row:hover{border-color:var(--green)}
   .friend-row-info{flex:1;min-width:0;text-align:left}
   .friend-row-name{font-size:13px;font-weight:800;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .friend-row-meta{font-size:10px;color:#a99;font-weight:600}
+  .friend-row-meta{font-size:10px;color:#a99;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .friend-row-id{font-size:10px;color:#c3b8a8;font-weight:600}
   .friend-action-btn{background:var(--green);color:#fff;border:none;border-radius:8px;padding:7px 12px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;white-space:nowrap;box-shadow:0 3px 0 #4a9e3f;transition:transform .1s}
   .friend-action-btn:active{transform:translateY(2px);box-shadow:0 1px 0 #4a9e3f}
@@ -1863,7 +1863,7 @@
   }
 
   // ===== Dostluq sistemi =====
-  var friendsActiveTab = "search";
+  var friendsActiveTab = "friends";
   var friendRequestsCache = [];
   var friendsCache = [];
   var friendSearchResults = [];
@@ -1946,6 +1946,14 @@
     return '<span class="presence-dot' + (extraClass ? " " + extraClass : "") + ' ' + (isOnline(lastSeen) ? "online" : "offline") + '"></span>';
   }
 
+  function formatLastSeenText(lastSeen){
+    if(isOnline(lastSeen)) return "🟢 Onlayn";
+    if(!lastSeen) return "Heç vaxt girməyib";
+    var str = "";
+    try{ str = new Date(lastSeen).toLocaleString("az-AZ", {day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit"}); }catch(e){}
+    return "Son giriş: " + str;
+  }
+
   function updateLastSeen(){
     if(!supabaseClient || !cloudUserId) return;
     supabaseClient.from("profiles").update({last_seen: new Date().toISOString()}).eq("id", cloudUserId).then(function(res){
@@ -2003,6 +2011,7 @@
     menuScreen.style.display = "none";
     stopMenuBgAnim();
     friendsScreen.style.display = "flex";
+    friendsActiveTab = "friends";
     renderFriendsTabs();
     renderFriendsContent();
   }
@@ -2040,7 +2049,7 @@
     if(friendsActiveTab === "search"){
       el.innerHTML =
         '<div class="friend-search-bar">' +
-          '<input type="text" id="friendSearchInput" placeholder="Oyunçu adı axtar...">' +
+          '<input type="text" id="friendSearchInput" placeholder="Oyunçu adı və ya ID (#) axtar...">' +
           '<button class="friend-search-btn" id="friendSearchBtn">Axtar</button>' +
         '</div>' +
         '<div class="friend-list" id="friendSearchResults"></div>';
@@ -2065,7 +2074,7 @@
     var container = document.getElementById("friendSearchResults");
     if(!container) return;
     if(!friendSearchResults.length){
-      container.innerHTML = '<div class="empty-hint">Axtarış üçün ad yaz</div>';
+      container.innerHTML = '<div class="empty-hint">Axtarış üçün ad və ya ID (#) yaz</div>';
       return;
     }
     container.innerHTML = friendSearchResults.map(function(p){
@@ -2083,8 +2092,15 @@
     var input = document.getElementById("friendSearchInput");
     var q = input ? input.value.trim() : "";
     if(!q || !supabaseClient || !cloudUserId) return;
-    supabaseClient.from("profiles").select("id,name,avatar_url,country_flag,active_frame,level,last_seen,player_number")
-      .ilike("name", "%" + q + "%").neq("id", cloudUserId).limit(20)
+    // "#12" və ya sadəcə "12" yazılsa ID-yə görə də axtarır (ada görə axtarışla yanaşı)
+    var idQuery = q.replace(/^#/, "").trim();
+    var query = supabaseClient.from("profiles").select("id,name,avatar_url,country_flag,active_frame,level,last_seen,player_number").neq("id", cloudUserId).limit(20);
+    if(/^\d+$/.test(idQuery)){
+      query = query.or("name.ilike.%" + q + "%,player_number.eq." + idQuery);
+    } else {
+      query = query.ilike("name", "%" + q + "%");
+    }
+    query
       .then(function(res){
         if(res.error){ console.error("Axtarış xətası:", res.error); showToast("⚠️ Axtarış xətası: " + res.error.message); return; }
         friendSearchResults = res.data || [];
@@ -2183,6 +2199,12 @@
           friendsCache = (res2.data || []).map(function(p){
             return Object.assign({}, p, {friendshipId: friendshipByPeer[p.id]});
           });
+          // Onlayn dostlar ən üstdə, sonra son görünmə vaxtına görə (ən son fəal olan əvvəl)
+          friendsCache.sort(function(a, b){
+            var aOn = isOnline(a.last_seen), bOn = isOnline(b.last_seen);
+            if(aOn !== bOn) return aOn ? -1 : 1;
+            return new Date(b.last_seen || 0) - new Date(a.last_seen || 0);
+          });
           renderFriendsListUI(friendsCache);
         });
       });
@@ -2210,7 +2232,7 @@
     container.innerHTML = list.map(function(p){
       return '<div class="friend-row" data-id="' + p.id + '">' +
         buildAvatarHtml({avatarUrl:p.avatar_url, countryFlag:p.country_flag, level:p.level, activeFrame:p.active_frame, presence:{lastSeen:p.last_seen, corner:true}}) +
-        '<div class="friend-row-info"><div class="friend-row-name">' + escapeHtml(p.name) + '</div><div class="friend-row-meta">Lv.' + (p.level||1) + '</div></div>' +
+        '<div class="friend-row-info"><div class="friend-row-name">' + escapeHtml(p.name) + '</div><div class="friend-row-meta">Lv.' + (p.level||1) + ' · ' + formatLastSeenText(p.last_seen) + '</div></div>' +
         '<button class="friend-action-btn reject" data-action="remove-friend" data-fid="' + p.friendshipId + '" data-name="' + escapeHtml(p.name) + '">✕</button>' +
         '</div>';
     }).join("");
