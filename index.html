@@ -344,6 +344,34 @@
   .menu-settings-btn{position:absolute;top:16px;right:16px;font-size:18px;padding:8px 11px;z-index:5}
   .xp-progress-body{flex:1;min-width:0}
   .menu-player-name{font-size:13px;font-weight:800;color:var(--ink);text-align:left;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  /* Ad rəngləri (mağazadan alınıb "ancaq 1 ad üçün" seçilir) */
+  .name-color-red{color:#e63950}
+  .name-color-blue{color:#2f80ed}
+  .name-color-green{color:#27ae60}
+  .name-color-gold{background:linear-gradient(90deg,#ffd700,#ff8c00);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .name-color-rainbow{background:linear-gradient(90deg,#ff5b5b,#ffb347,#ffe066,#6bdc6b,#57c7ff,#b98bff);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+  /* Ad animasiyaları — rənglə eyni anda, müstəqil aktivləşdirilə bilər */
+  .name-wave-letter{display:inline-block;animation:nameWaveBounce 1.2s ease-in-out infinite}
+  @keyframes nameWaveBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+  .name-anim-glow{animation:nameGlowPulse 1.6s ease-in-out infinite alternate}
+  @keyframes nameGlowPulse{0%{text-shadow:0 0 2px rgba(255,255,255,.3)}100%{text-shadow:0 0 10px rgba(255,255,255,.9),0 0 16px currentColor}}
+  .name-anim-electric{animation:nameElectricFlicker 1.6s linear infinite}
+  @keyframes nameElectricFlicker{
+    0%,19%,21%,54%,56%,100%{text-shadow:0 0 4px currentColor}
+    20%{text-shadow:0 0 12px #fff,0 0 20px currentColor}
+    55%{text-shadow:0 0 9px #fff,0 0 14px currentColor}
+  }
+  .name-anim-neon{animation:nameNeonCycle 3s linear infinite}
+  @keyframes nameNeonCycle{
+    0%{text-shadow:0 0 6px #ff5b5b,0 0 12px #ff5b5b}
+    20%{text-shadow:0 0 6px #ffb347,0 0 12px #ffb347}
+    40%{text-shadow:0 0 6px #6bdc6b,0 0 12px #6bdc6b}
+    60%{text-shadow:0 0 6px #57c7ff,0 0 12px #57c7ff}
+    80%{text-shadow:0 0 6px #b98bff,0 0 12px #b98bff}
+    100%{text-shadow:0 0 6px #ff5b5b,0 0 12px #ff5b5b}
+  }
   .xp-progress-track{height:10px;border-radius:5px;background:#ddd2c4;overflow:hidden;margin-bottom:6px}
   .xp-progress-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,var(--profile-accent,#6bbf59),var(--profile-accent2,#4a90d9));width:0%;transition:width .4s ease}
   .xp-progress-text{font-size:11px;font-weight:700;color:var(--ink)}
@@ -1600,8 +1628,38 @@
         {id:"paletteAmethyst", name:"Ametist", desc:"Profil accent rəngini bənövşəyiyə çevirir", price:500, icon:"💜", type:"profilepalette", paletteValue:"amethyst"},
         {id:"paletteEmerald", name:"Zümrüd Palitrası", desc:"Profil accent rəngini zümrüd yaşılına çevirir", price:500, icon:"💚", type:"profilepalette", paletteValue:"emerald"}
       ]
+    },
+    {
+      title: "🎨 Ad Rəngi",
+      tab: "🎨 Ad Rəngi",
+      items: [
+        {id:"nameColorNone", name:"Heç biri", desc:"Ad rəngini sıfırlayır", price:0, icon:"⬜", type:"namecolor", colorValue:null},
+        {id:"nameColorRed", name:"Qırmızı", desc:"Adın qırmızı rəngdə görünsün", price:1000, icon:"🔴", type:"namecolor", colorValue:"red"},
+        {id:"nameColorBlue", name:"Mavi", desc:"Adın mavi rəngdə görünsün", price:1000, icon:"🔵", type:"namecolor", colorValue:"blue"},
+        {id:"nameColorGreen", name:"Yaşıl", desc:"Adın yaşıl rəngdə görünsün", price:1200, icon:"🟢", type:"namecolor", colorValue:"green"},
+        {id:"nameColorGold", name:"Qızılı", desc:"Adın qızılı qradiyentdə görünsün", price:1500, icon:"🟡", type:"namecolor", colorValue:"gold"},
+        {id:"nameColorRainbow", name:"Göy Qurşağı", desc:"Adın göy qurşağı rənglərində görünsün", price:2000, icon:"🌈", type:"namecolor", colorValue:"rainbow"}
+      ]
+    },
+    {
+      title: "✨ Ad Animasiyası",
+      tab: "✨ Ad Anim.",
+      items: [
+        {id:"nameAnimNone", name:"Heç biri", desc:"Ad animasiyasını sıfırlayır", price:0, icon:"⬜", type:"nameanim", animValue:null},
+        {id:"nameAnimWave", name:"Dalğa", desc:"Ad davamlı dalğalansın", price:2500, icon:"🌊", type:"nameanim", animValue:"wave"},
+        {id:"nameAnimGlow", name:"Parıltı", desc:"Ad döyünən parıltı ilə işıqlansın", price:2800, icon:"✨", type:"nameanim", animValue:"glow"},
+        {id:"nameAnimElectric", name:"Elektrik", desc:"Ad çaxan elektrik effekti ilə görünsün", price:3200, icon:"⚡", type:"nameanim", animValue:"electric"},
+        {id:"nameAnimNeon", name:"Neon", desc:"Ad rəng dəyişən neon parıltı ilə görünsün", price:3500, icon:"🎆", type:"nameanim", animValue:"neon"}
+      ]
     }
   ];
+
+  // Ad rəngi/animasiyası "ancaq 1 ad üçün" etibarlıdır: profile.unlocks[id] burda boolean yox,
+  // satın alındığı andakı AD STRİNQİdir. Ad dəyişəndə həmin dəyər artıq cari adla üst-üstə düşmür,
+  // deməli "sahiblik" avtomatik itir və yenidən mağazadan alınmalıdır (bax saveProfileName()).
+  function isNameCosmeticOwned(item){
+    return item.price === 0 || profile.unlocks[item.id] === profile.name;
+  }
 
   // ===== Arkada Rejimi: SONSUZ level — hər level konfiqurasiyası tələb olunanda düsturla
   // hesablanır (əvvəlcədən massiv kimi saxlanmır), ona görə oyunçu bacardığı qədər irəli gedə bilər =====
@@ -2357,6 +2415,21 @@
     return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
       return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
     });
+  }
+
+  // Mağazadan alınan ad rəngi/animasiyasını göstərmək üçün ad mətnini bir HTML parçasına bükür.
+  // "Dalğa" animasiyası hər hərfi ayrı span-a alıb gecikməli animasiya verir (əsl dalğa effekti üçün),
+  // digər animasiyalar bütöv mətnə tətbiq olunur (letter-splitting tələb etmir).
+  function buildNameHtml(name, colorValue, animValue){
+    var colorClass = colorValue ? "name-color-" + colorValue : "";
+    if(animValue === "wave"){
+      var chars = String(name).split("").map(function(ch, i){
+        return '<span class="name-wave-letter" style="animation-delay:' + (i * 0.08) + 's">' + escapeHtml(ch) + '</span>';
+      }).join("");
+      return '<span class="' + colorClass + ' name-anim-wave">' + chars + '</span>';
+    }
+    var animClass = animValue ? "name-anim-" + animValue : "";
+    return '<span class="' + colorClass + ' ' + animClass + '">' + escapeHtml(name) + '</span>';
   }
 
   // ===== Online/offline statusu (presence) =====
@@ -4348,7 +4421,7 @@
     xpValEl.textContent = sessionXpEarned || 0;
     playerNameEl.textContent = profile.name;
     levelBalloonEl.textContent = "Lv. " + (profile.level || 1);
-    document.getElementById("menuPlayerName").textContent = profile.name;
+    document.getElementById("menuPlayerName").innerHTML = buildNameHtml(profile.name, profile.activeNameColor, profile.activeNameAnim);
     document.getElementById("menuGold").textContent = profile.gold;
     document.getElementById("menuKeys").textContent = profile.keys || 0;
     var shopKeysEl = document.getElementById("shopKeysVal");
@@ -4443,12 +4516,20 @@
     document.getElementById("nameTicketCount").textContent = ticketCount;
   }
 
+  // Ad dəyişəndə aktiv ad rəngi/animasiyası ləğv edilir — onlar "yalnız 1 ad üçün" satın alınıb,
+  // yenidən istifadə etmək üçün oyuncu mağazadan yenidən almalıdır (bax isNameCosmeticOwned)
+  function applyNameChange(v){
+    profile.name = v;
+    profile.activeNameColor = null;
+    profile.activeNameAnim = null;
+  }
+
   function saveProfileName(){
     var v = document.getElementById("nameInput").value.trim();
     if(!v) v = "Oyunçu";
     if(v === profile.name){ renderNameTicketHint(); return; }
     if(!profile.nameFreeChangeUsed){
-      profile.name = v;
+      applyNameChange(v);
       profile.nameFreeChangeUsed = true;
       saveProfile();
       renderProfile();
@@ -4458,7 +4539,7 @@
     }
     if(((profile.inventory && profile.inventory.nameChangeTicket) || 0) > 0){
       profile.inventory.nameChangeTicket -= 1;
-      profile.name = v;
+      applyNameChange(v);
       saveProfile();
       renderProfile();
       renderNameTicketHint();
@@ -5874,6 +5955,10 @@
       } else if(owned && item.type === "profilepalette"){
         isActive = profile.activePalette === item.paletteValue;
       }
+    } else if(item.type === "namecolor" || item.type === "nameanim"){
+      owned = isNameCosmeticOwned(item);
+      if(owned && item.type === "namecolor") isActive = profile.activeNameColor === item.colorValue;
+      if(owned && item.type === "nameanim") isActive = profile.activeNameAnim === item.animValue;
     }
     // Yaşıl çərçivə yalnız HAZIRKI aktiv olan effekt/tema/paket üçün
     if(isActive) div.classList.add("owned");
@@ -5945,11 +6030,37 @@
     // Level-kilidli satın almalar: item.requiredLevel təyin olunubsa, hələ sahib olunmayan əşya
     // kifayət qədər səviyyəyə çatana qədər satın alına bilməz. Sahib olunan əşyanı seçmək (reselect)
     // kilidlənmir — kilid yalnız YENİ satın almanı bloklayır.
-    var alreadyOwnedForGate = (item.type === "unlock" || item.type === "effect" || item.type === "theme" || item.type === "breakfx" || item.type === "frame" || item.type === "sticker" || item.type === "profilebg" || item.type === "profilepalette")
+    var alreadyOwnedForGate = (item.type === "namecolor" || item.type === "nameanim") ? isNameCosmeticOwned(item)
+      : (item.type === "unlock" || item.type === "effect" || item.type === "theme" || item.type === "breakfx" || item.type === "frame" || item.type === "sticker" || item.type === "profilebg" || item.type === "profilepalette")
       ? (profile.unlocks[id] || item.price === 0)
       : false;
     if(item.requiredLevel && !alreadyOwnedForGate && (profile.level || 1) < item.requiredLevel){
       showToast("🔒 Bunu almaq üçün Səviyyə " + item.requiredLevel + " lazımdır");
+      return;
+    }
+
+    // Ad rəngi/animasiyası: "sahiblik" cari ada bağlıdır (bax isNameCosmeticOwned) — ad dəyişəndə
+    // itir və yenidən mağazadan alınmalıdır. Rəng və animasiya AYRI slotlardır, eyni anda ikisi də aktiv ola bilər.
+    if(item.type === "namecolor" || item.type === "nameanim"){
+      if(isNameCosmeticOwned(item)){
+        if(item.type === "namecolor") profile.activeNameColor = item.colorValue;
+        if(item.type === "nameanim") profile.activeNameAnim = item.animValue;
+        saveProfile();
+        renderProfile();
+        renderShop();
+        showToast(item.type === "namecolor" ? "🎨 Ad rəngi seçildi!" : "✨ Ad animasiyası seçildi!");
+        return;
+      }
+      if(profile.gold < item.price) return;
+      profile.gold -= item.price;
+      profile.totalGoldSpent = (profile.totalGoldSpent||0) + item.price;
+      profile.unlocks[id] = profile.name;
+      if(item.type === "namecolor") profile.activeNameColor = item.colorValue;
+      if(item.type === "nameanim") profile.activeNameAnim = item.animValue;
+      saveProfile();
+      renderProfile();
+      renderShop();
+      showToast("🎉 " + item.name + " alındı!");
       return;
     }
 
