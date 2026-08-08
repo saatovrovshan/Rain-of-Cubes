@@ -1450,6 +1450,14 @@
   var COMBO_MILESTONES = [5,10,25,50,100,250];
   var SCORE_MILESTONES = [100,250,500,1000,2500,5000,10000,25000];
   var ARCADE_STAR_MILESTONES = [10,25,50,100,200,400];
+  var ARCADE_LEVEL_MILESTONES = [5,10,25,50,100,200];
+  var ARCADE_PERFECT_MILESTONES = [5,10,25,50,100];
+  var FRIEND_COUNT_MILESTONES = [1,5,10,25,50];
+  var MESSAGE_MILESTONES = [10,50,100,500,1000];
+  var FRIEND_BATTLE_MILESTONES = [1,5,10,25,50,100];
+  var FRIEND_BATTLE_WIN_MILESTONES = [1,5,10,25,50];
+  var GIFT_SENT_MILESTONES = [1,5,10,25,50,100];
+  var GIFT_RECEIVED_MILESTONES = [1,5,10,25,50,100];
   var ACHIEVEMENT_GOLD_REWARD = 50;
 
   function formatMinutesLabel(min){
@@ -1526,6 +1534,98 @@
     });
   });
 
+  ARCADE_LEVEL_MILESTONES.forEach(function(n){
+    ACHIEVEMENTS.push({
+      id: "arclevel_" + n,
+      name: n + "-ci Səviyyə",
+      desc: "Arkada rejimində " + n + "-ci səviyyəyə çat",
+      icon: n >= 100 ? "🌌" : "🕹️",
+      category: "arcade",
+      check: function(p){ return ((p.arcade && p.arcade.unlockedLevel) || 1) >= n; }
+    });
+  });
+
+  ARCADE_PERFECT_MILESTONES.forEach(function(n){
+    ACHIEVEMENTS.push({
+      id: "arcperfect_" + n,
+      name: n + " Mükəmməl Səviyyə",
+      desc: "Arkada rejimində " + n + " səviyyəni 3 ulduzla tamamla",
+      icon: "💯",
+      category: "arcade",
+      check: function(p){
+        var count = 0;
+        if(p.arcade && p.arcade.stars){ Object.keys(p.arcade.stars).forEach(function(k){ if(p.arcade.stars[k] === 3) count++; }); }
+        return count >= n;
+      }
+    });
+  });
+
+  FRIEND_COUNT_MILESTONES.forEach(function(n){
+    ACHIEVEMENTS.push({
+      id: "friends_" + n,
+      name: n + " Dost",
+      desc: n + " dost qazan",
+      icon: n >= 25 ? "🌐" : "👥",
+      category: "social",
+      check: function(p){ return (p.friendsCount||0) >= n; }
+    });
+  });
+
+  MESSAGE_MILESTONES.forEach(function(n){
+    ACHIEVEMENTS.push({
+      id: "messages_" + n,
+      name: n + " Mesaj",
+      desc: n + " mesaj göndər",
+      icon: n >= 500 ? "📮" : "💬",
+      category: "social",
+      check: function(p){ return (p.messagesSent||0) >= n; }
+    });
+  });
+
+  FRIEND_BATTLE_MILESTONES.forEach(function(n){
+    ACHIEVEMENTS.push({
+      id: "friendbattle_" + n,
+      name: n + " Dost Döyüşü",
+      desc: "Dostlarla " + n + " döyüş oyna",
+      icon: n >= 50 ? "🎪" : "🎮",
+      category: "social",
+      check: function(p){ return (p.friendBattlesPlayed||0) >= n; }
+    });
+  });
+
+  FRIEND_BATTLE_WIN_MILESTONES.forEach(function(n){
+    ACHIEVEMENTS.push({
+      id: "friendbattlewin_" + n,
+      name: n + " Qələbə",
+      desc: "Dostlarla döyüşdə " + n + " qələbə qazan",
+      icon: n >= 25 ? "🏆" : "⚔️",
+      category: "social",
+      check: function(p){ return (p.friendBattlesWon||0) >= n; }
+    });
+  });
+
+  GIFT_SENT_MILESTONES.forEach(function(n){
+    ACHIEVEMENTS.push({
+      id: "giftsent_" + n,
+      name: n + " Göndərilən Hədiyyə",
+      desc: n + " hədiyyə göndər",
+      icon: n >= 50 ? "💝" : "🎁",
+      category: "gifts",
+      check: function(p){ return (p.giftsSent||0) >= n; }
+    });
+  });
+
+  GIFT_RECEIVED_MILESTONES.forEach(function(n){
+    ACHIEVEMENTS.push({
+      id: "giftreceived_" + n,
+      name: n + " Alınan Hədiyyə",
+      desc: n + " hədiyyə al",
+      icon: n >= 50 ? "🏵️" : "🎀",
+      category: "gifts",
+      check: function(p){ return (p.giftsReceived||0) >= n; }
+    });
+  });
+
   MISSION_MILESTONES.forEach(function(n){
     ACHIEVEMENTS.push({
       id: "mission_" + n,
@@ -1577,6 +1677,8 @@
     {id:"gold", title:"Qızıl", icon:"🪙"},
     {id:"score", title:"Ən yüksək xal", icon:"🎯"},
     {id:"arcade", title:"Arkada", icon:"🕹️"},
+    {id:"social", title:"Dostlar", icon:"👥"},
+    {id:"gifts", title:"Hədiyyələr", icon:"🎁"},
     {id:"time", title:"Oyun vaxtı", icon:"⏳"},
     {id:"login", title:"Giriş günləri", icon:"🗓️"},
     {id:"general", title:"Ümumi", icon:"🎮"}
@@ -1819,6 +1921,12 @@
     if(!p.arcade) p.arcade = {stars:{}, unlockedLevel:1};
     if(!p.arcade.stars) p.arcade.stars = {};
     if(!p.arcade.unlockedLevel) p.arcade.unlockedLevel = 1;
+    if(!p.friendsCount) p.friendsCount = 0;
+    if(!p.messagesSent) p.messagesSent = 0;
+    if(!p.giftsSent) p.giftsSent = 0;
+    if(!p.giftsReceived) p.giftsReceived = 0;
+    if(!p.friendBattlesPlayed) p.friendBattlesPlayed = 0;
+    if(!p.friendBattlesWon) p.friendBattlesWon = 0;
     p.level = levelFromXp(p.xp);
     return p;
   }
@@ -2270,6 +2378,10 @@
             if(aOn !== bOn) return aOn ? -1 : 1;
             return new Date(b.last_seen || 0) - new Date(a.last_seen || 0);
           });
+          // Dost sayı nailiyyətləri lokal profildə saxlanılır (bax "social" kateqoriyası) —
+          // hər dəfə dostlar siyahısı yüklənəndə ən son sayla təzələnir
+          profile.friendsCount = friendsCache.length;
+          saveProfile();
           renderFriendsListUI(friendsCache);
         });
       });
@@ -2711,6 +2823,8 @@
         if(res.error){ showToast("⚠️ Mesaj göndərilmədi: " + res.error.message); return; }
         appendChatBubble(res.data);
         scrollChatToBottom();
+        profile.messagesSent = (profile.messagesSent||0) + 1;
+        saveProfile();
       });
   }
 
@@ -2754,6 +2868,8 @@
         if(res.error){ showToast("⚠️ Stiker göndərilmədi: " + res.error.message); return; }
         appendChatBubble(res.data);
         scrollChatToBottom();
+        profile.messagesSent = (profile.messagesSent||0) + 1;
+        saveProfile();
       });
   }
 
@@ -3566,6 +3682,11 @@
     else if(myScore < oppScore) titleEl.textContent = "💔 Rəqib qalib gəldi";
     else titleEl.textContent = "🤝 Bərabərə";
     statsEl.innerHTML = "Sənin xalın: <b>" + myScore + "</b><br>Rəqibin xalı: <b>" + oppScore + "</b>" + rankedExtra;
+    // "Dostlarla oyun" nailiyyətləri yalnız dost-dəvətli döyüşləri sayır, pullu reytinqli oyunları yox
+    if(!battleIsRanked){
+      profile.friendBattlesPlayed = (profile.friendBattlesPlayed||0) + 1;
+      if(myScore > oppScore) profile.friendBattlesWon = (profile.friendBattlesWon||0) + 1;
+    }
     battleResultOverlay.classList.add("show");
     battleTimerBadge.style.display = "none";
     battleOpponentBadge.style.display = "none";
@@ -3964,6 +4085,10 @@
         document.getElementById("statGiftsReceived").textContent = res.data.total_gifts_received || 0;
         document.getElementById("statGiftsSent").textContent = res.data.total_gifts_sent || 0;
         document.getElementById("profileIdNum").textContent = "#" + (res.data.player_number || 0);
+        // Hədiyyə sayları server tərəfdə (RPC ilə) artırılır — nailiyyət yoxlaması üçün lokal profildə keşlə
+        profile.giftsReceived = res.data.total_gifts_received || 0;
+        profile.giftsSent = res.data.total_gifts_sent || 0;
+        saveProfile();
       });
     } else {
       document.getElementById("statPopularity").textContent = "-";
@@ -6235,9 +6360,9 @@
     menuScreen.style.display = "none";
     stopMenuBgAnim();
     achievementsScreen.style.display = "flex";
-    // Cəldırılabilən nailiyyəti olan qutular hər açılışda avtomatik açılsın ki, oyunçu onu tapsın
+    // Qutular həmişə bağlı açılır — oyunçu özü açıb mükafatı özü götürməlidir
     ACHIEVEMENT_CATEGORIES.forEach(function(cat){
-      achievementCategoryOpen[cat.id] = categoryHasClaimable(cat.id);
+      achievementCategoryOpen[cat.id] = false;
     });
     renderAchievementsScreen();
   }
