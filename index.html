@@ -6377,8 +6377,15 @@
   // davam edən oyun musiqisinin ÜSTÜNDƏN başladıb 2 musiqinin eyni anda çalmasına səbəb ola bilər.
   // Həmçinin, açıq qalmış bir "önizləmə" (preview) varsa, əvvəlcə onu söndürürük ki, önizləmə +
   // yeni başlayan menyu musiqisi bir yerdə çalmasın.
+  // Əsas bug: bu funksiya köhnə mənbəni dayandırmadan sadəcə menuMusicSource DƏYİŞƏNİNİ üstünə
+  // yazırdı — "geri" kimi bir çox düymə (məs. mağaza) faktiki oyundan çıxmadığı halda da
+  // returnToMenu() çağırır, o da HƏR DƏFƏ startMenuMusic()-i yenidən çağırır. Menyu musiqisi
+  // artıq çalırkən bu YENİ bir nüsxəni köhnəsinin ÜSTÜNDƏN başladırdı (2 musiqi bug-u). Proseduran
+  // sintez (startMusic) bu barədə öz-özünə qorunurdu (musicIntervalId yoxlanışı) — xüsusi trek yolu
+  // isə qorunmurdu, ona görə bug yalnız istifadəçi xüsusi musiqi seçəndə görünürdü.
   function startMenuMusic(){
     if(gameActive) return;
+    if(menuMusicSource || musicIntervalId) return; // artıq çalır, yenidən başlatma
     if(previewingId){ stopSource(previewSource); previewSource = null; previewingId = null; renderCustomMusicList(); }
     var myToken = ++menuMusicToken;
     if(profile.customMusic.menu){
@@ -6405,6 +6412,7 @@
   // köhnə önizləmə hələ çalarkən üstünə YENİ oyun musiqisi başlayıb 2 musiqi eyni anda çalırdı.
   function startGameMusic(){
     if(!gameActive) return;
+    if(gameMusicSource || musicIntervalId) return; // artıq çalır, yenidən başlatma (bax startMenuMusic-dəki eyni fix)
     if(previewingId){ stopSource(previewSource); previewSource = null; previewingId = null; renderCustomMusicList(); }
     var myToken = ++gameMusicToken;
     if(profile.customMusic.game){
