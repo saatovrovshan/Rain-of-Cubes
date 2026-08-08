@@ -17,7 +17,7 @@
   #app{max-width:480px;margin:0 auto;height:100vh;height:100dvh;background:var(--bg);display:flex;flex-direction:column;position:relative;overflow:hidden;box-shadow:0 0 40px rgba(0,0,0,.5)}
 
   #menuScreen,#shopScreen,#profileScreen,#achievementsScreen,#dailyScreen,#arcadeScreen,#friendsScreen,#chatScreen,#leaderboardScreen,#mailboxScreen{position:absolute;inset:0;z-index:100;background:linear-gradient(180deg,#faf8ef,#f0e6d6);display:flex;flex-direction:column;padding:0;text-align:center;overflow-y:auto}
-  #menuScreen{justify-content:center;align-items:center;padding:24px}
+  #menuScreen{justify-content:flex-start;align-items:center;padding:16px 16px 10px}
   #shopScreen{padding:16px;display:none}
   #profileScreen{padding:16px;display:none;align-items:stretch}
   #achievementsScreen{padding:16px;display:none;align-items:stretch}
@@ -48,35 +48,69 @@
   .shop-item-btn.disabled-btn{background:#b9ac9d}
   .shop-item-owned{font-size:10px;font-weight:700;color:var(--ink);opacity:.65}
 
-  #menuScreen h1{font-size:34px;font-weight:800;color:var(--ink);margin:0 0 6px}
-  #menuScreen .subtitle{font-size:13px;color:#a99;font-weight:600;margin-bottom:20px}
-  .menu-stats{background:var(--panel);border-radius:12px;padding:14px 20px;display:flex;gap:24px;width:100%;box-sizing:border-box;justify-content:center}
-  .menu-stat{text-align:center}
-  .menu-stat .num{font-size:22px;font-weight:800;color:var(--ink)}
-  .menu-stat .lbl{font-size:10px;color:#a99;font-weight:700;text-transform:uppercase}
-  .menu-btn{background:var(--green);color:#fff;border:none;border-radius:10px;padding:14px 48px;font-size:17px;font-weight:800;cursor:pointer;box-shadow:0 4px 0 #4a9e3f,0 6px 12px rgba(0,0,0,.2);transition:transform .1s;margin-bottom:10px;width:220px}
-  .menu-btn:active{transform:translateY(3px);box-shadow:0 1px 0 #4a9e3f,0 2px 4px rgba(0,0,0,.2)}
-  .menu-btn.shop-btn{background:var(--orange);box-shadow:0 4px 0 #e68a33,0 6px 12px rgba(0,0,0,.2)}
-  .menu-btn.shop-btn:active{box-shadow:0 1px 0 #e68a33,0 2px 4px rgba(0,0,0,.2)}
-  .menu-btn.profile-btn{background:var(--blue);box-shadow:0 4px 0 #3a75b3,0 6px 12px rgba(0,0,0,.2)}
-  .menu-btn.profile-btn:active{box-shadow:0 1px 0 #3a75b3,0 2px 4px rgba(0,0,0,.2)}
-  .menu-btn.achievements-btn{background:var(--purple);box-shadow:0 4px 0 #7d3fa8,0 6px 12px rgba(0,0,0,.2);position:relative}
-  .menu-btn.achievements-btn:active{box-shadow:0 1px 0 #7d3fa8,0 2px 4px rgba(0,0,0,.2)}
-  .menu-btn.daily-btn{background:var(--pink);box-shadow:0 4px 0 #cc4d78,0 6px 12px rgba(0,0,0,.2);position:relative}
-  .menu-btn.daily-btn:active{box-shadow:0 1px 0 #cc4d78,0 2px 4px rgba(0,0,0,.2)}
-  .daily-btn-dot{position:absolute;top:-4px;right:16px;width:14px;height:14px;border-radius:50%;background:var(--red);border:2px solid #fff;animation:dailyDotPulse 1s ease-in-out infinite alternate}
-  @keyframes dailyDotPulse{from{transform:scale(1)}to{transform:scale(1.25)}}
-  .menu-btn.arcade-btn{background:var(--cyan);box-shadow:0 4px 0 #00a3a4,0 6px 12px rgba(0,0,0,.2)}
-  .menu-btn.arcade-btn:active{box-shadow:0 1px 0 #00a3a4,0 2px 4px rgba(0,0,0,.2)}
-  .menu-btn.friends-btn{background:#5b6fd6;box-shadow:0 4px 0 #3d4fae,0 6px 12px rgba(0,0,0,.2);position:relative}
-  .menu-btn.friends-btn:active{box-shadow:0 1px 0 #3d4fae,0 2px 4px rgba(0,0,0,.2)}
-  .menu-btn.leaderboard-btn{background:#d9992e;box-shadow:0 4px 0 #a86f14,0 6px 12px rgba(0,0,0,.2)}
-  .menu-btn.leaderboard-btn:active{box-shadow:0 1px 0 #a86f14,0 2px 4px rgba(0,0,0,.2)}
-  .menu-btn.mailbox-btn{background:#3fa9a0;box-shadow:0 4px 0 #297a73,0 6px 12px rgba(0,0,0,.2);position:relative}
-  .menu-btn.mailbox-btn:active{box-shadow:0 1px 0 #297a73,0 2px 4px rgba(0,0,0,.2)}
-  .menu-btn.ranked-btn{background:#d6455b;box-shadow:0 4px 0 #a02a3d,0 6px 12px rgba(0,0,0,.2);position:relative;display:flex;flex-direction:column;align-items:center;gap:2px}
-  .menu-btn.ranked-btn:active{box-shadow:0 1px 0 #a02a3d,0 2px 4px rgba(0,0,0,.2)}
-  .ranked-btn-price{font-size:10px;font-weight:700;opacity:.85}
+  .menu-topbar{display:flex;align-items:center;gap:8px;width:100%;margin-bottom:14px}
+  .menu-level-chip{flex:1;min-width:0;display:flex;align-items:center;gap:8px;background:var(--panel);border-radius:14px;padding:6px 10px 6px 6px;cursor:pointer;border:2px solid transparent;transition:border-color .15s,transform .1s;position:relative}
+  .menu-level-chip:active{transform:translateY(1px)}
+  .menu-avatar-wrap{position:relative;flex-shrink:0}
+  .menu-level-hex{position:absolute;bottom:-5px;right:-5px;width:20px;height:20px;background:linear-gradient(160deg,#7fd858,var(--green));clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:10px;box-shadow:0 1px 2px rgba(0,0,0,.3)}
+  .menu-topbar-info{flex:1;min-width:0;text-align:left}
+  .menu-topbar-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
+  .menu-currency-pill{display:flex;align-items:center;gap:5px;background:linear-gradient(160deg,#5a4636,#3d2f24);color:#ffd966;border-radius:20px;padding:8px 12px;font-size:13px;font-weight:800;box-shadow:inset 0 1px 0 rgba(255,255,255,.15),0 2px 4px rgba(0,0,0,.25);white-space:nowrap}
+  #menuScreen .menu-settings-btn{position:static;background:linear-gradient(160deg,#5a4636,#3d2f24);color:#fff;border-radius:12px;padding:9px 11px}
+
+  .menu-title-wrap{text-align:center;margin-bottom:10px}
+  .menu-title{margin:2px 0 4px;line-height:1}
+  .mt-rain{display:inline-block;font-size:36px;font-weight:900;font-style:italic;color:var(--ink-light);-webkit-text-stroke:2px #5c4a3a;text-shadow:0 3px 0 #5c4a3a,0 6px 8px rgba(0,0,0,.35);letter-spacing:1px}
+  .mt-of{display:inline-block;font-size:13px;font-weight:800;color:#5c4a3a;background:linear-gradient(160deg,#ffe27a,var(--gold));padding:2px 10px;border-radius:8px;margin:0 4px;vertical-align:middle;box-shadow:0 2px 0 #cc9d00}
+  .mt-cubes{display:inline-block;font-size:40px;font-weight:900;letter-spacing:2px;-webkit-text-stroke:2px #5c4a3a;text-shadow:0 3px 0 #5c4a3a,0 6px 10px rgba(0,0,0,.35)}
+  #menuScreen .subtitle{font-size:12px;color:#a99;font-weight:700;letter-spacing:1px}
+
+  .menu-stats{background:var(--panel);border-radius:12px;padding:12px 16px;display:flex;gap:16px;width:100%;box-sizing:border-box;justify-content:center;margin-bottom:8px}
+  .menu-stat{text-align:center;flex:1}
+  .menu-stat .num{font-size:19px;font-weight:800;color:var(--ink)}
+  .menu-stat .lbl{font-size:9px;color:#a99;font-weight:700;text-transform:uppercase}
+
+  .menu-play-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;background:linear-gradient(160deg,#8fe066,var(--green));color:#fff;border:none;border-radius:20px;padding:16px;font-size:22px;font-weight:900;cursor:pointer;box-shadow:inset 0 2px 0 rgba(255,255,255,.35),0 5px 0 #4a9e3f,0 9px 16px rgba(0,0,0,.25);transition:transform .1s;margin:10px 0 14px}
+  .menu-play-btn:active{transform:translateY(3px);box-shadow:inset 0 2px 0 rgba(255,255,255,.35),0 2px 0 #4a9e3f,0 4px 8px rgba(0,0,0,.25)}
+  .mp-icon{font-size:20px}
+  .mp-text{display:flex;flex-direction:column;align-items:flex-start;line-height:1.15}
+  .mp-text small{font-size:11px;font-weight:700;opacity:.85}
+
+  .menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%}
+  .menu-btn{grid-column:span 1;display:flex;align-items:center;gap:8px;text-align:left;background:var(--green);color:#fff;border:none;border-radius:14px;padding:9px 10px;font-size:12px;font-weight:800;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 4px 0 #4a9e3f,0 6px 10px rgba(0,0,0,.2);transition:transform .1s;position:relative;min-height:56px}
+  .menu-btn:active{transform:translateY(3px);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 1px 0 #4a9e3f,0 2px 4px rgba(0,0,0,.2)}
+  .menu-btn-wide{grid-column:1 / -1}
+  .menu-btn-icon{flex-shrink:0;width:32px;height:32px;border-radius:10px;background:rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:inset 0 1px 2px rgba(0,0,0,.15)}
+  .menu-btn-text{min-width:0;display:flex;flex-direction:column;gap:1px}
+  .menu-btn-text b{font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .menu-btn-text small{font-size:9px;font-weight:600;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .menu-btn.shop-btn{background:var(--orange);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 4px 0 #e68a33,0 6px 10px rgba(0,0,0,.2)}
+  .menu-btn.shop-btn:active{box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 1px 0 #e68a33,0 2px 4px rgba(0,0,0,.2)}
+  .menu-btn.profile-btn{background:var(--blue);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 4px 0 #3a75b3,0 6px 10px rgba(0,0,0,.2)}
+  .menu-btn.profile-btn:active{box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 1px 0 #3a75b3,0 2px 4px rgba(0,0,0,.2)}
+  .menu-btn.achievements-btn{background:var(--purple);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 4px 0 #7d3fa8,0 6px 10px rgba(0,0,0,.2)}
+  .menu-btn.achievements-btn:active{box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 1px 0 #7d3fa8,0 2px 4px rgba(0,0,0,.2)}
+  .menu-btn.daily-btn{background:var(--pink);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 4px 0 #cc4d78,0 6px 10px rgba(0,0,0,.2)}
+  .menu-btn.daily-btn:active{box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 1px 0 #cc4d78,0 2px 4px rgba(0,0,0,.2)}
+  .menu-badge{position:absolute;top:-5px;right:-5px;width:18px;height:18px;border-radius:50%;background:var(--red);border:2px solid #fff;box-shadow:0 2px 3px rgba(0,0,0,.3);animation:dailyDotPulse 1s ease-in-out infinite alternate}
+  @keyframes dailyDotPulse{from{transform:scale(1)}to{transform:scale(1.2)}}
+  .menu-btn.arcade-btn{background:var(--cyan);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 4px 0 #00a3a4,0 6px 10px rgba(0,0,0,.2)}
+  .menu-btn.arcade-btn:active{box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 1px 0 #00a3a4,0 2px 4px rgba(0,0,0,.2)}
+  .menu-btn.friends-btn{background:#5b6fd6;box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 4px 0 #3d4fae,0 6px 10px rgba(0,0,0,.2)}
+  .menu-btn.friends-btn:active{box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 1px 0 #3d4fae,0 2px 4px rgba(0,0,0,.2)}
+  .menu-btn.leaderboard-btn{background:#d9992e;box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 4px 0 #a86f14,0 6px 10px rgba(0,0,0,.2)}
+  .menu-btn.leaderboard-btn:active{box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 1px 0 #a86f14,0 2px 4px rgba(0,0,0,.2)}
+  .menu-btn.mailbox-btn{background:#3fa9a0;box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 4px 0 #297a73,0 6px 10px rgba(0,0,0,.2)}
+  .menu-btn.mailbox-btn:active{box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 1px 0 #297a73,0 2px 4px rgba(0,0,0,.2)}
+  .menu-btn.ranked-btn{background:#d6455b;box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 4px 0 #a02a3d,0 6px 10px rgba(0,0,0,.2)}
+  .menu-btn.ranked-btn:active{box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 1px 0 #a02a3d,0 2px 4px rgba(0,0,0,.2)}
+  .ranked-btn-price{position:absolute;bottom:6px;right:9px;font-size:9px;font-weight:800;opacity:.9;background:rgba(0,0,0,.2);padding:1px 6px;border-radius:8px}
+
+  .menu-hint-card{width:100%;display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:14px;padding:10px 12px;margin-top:14px;text-align:left}
+  .menu-hint-icon{flex-shrink:0;width:36px;height:36px;border-radius:10px;background:linear-gradient(160deg,#e0d2b8,#c9b795);display:flex;align-items:center;justify-content:center;font-size:18px}
+  .menu-hint-body{min-width:0}
+  .menu-hint-title{font-size:12px;font-weight:800;color:var(--ink)}
+  .menu-hint-text{font-size:10px;color:#a99;font-weight:600;line-height:1.4}
 
   .arcade-level-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:14px 8px}
   .arcade-level-card{background:var(--panel);border-radius:10px;padding:8px 4px 10px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;border:2px solid transparent;transition:transform .1s}
@@ -136,7 +170,7 @@
   .profile-edit{background:var(--panel);border-radius:12px;padding:12px;display:flex;align-items:center;gap:10px;margin-top:4px}
   .xp-progress{background:var(--panel);border-radius:12px;padding:12px 14px;margin:18px 0;text-align:left;width:100%;box-sizing:border-box}
   .xp-progress-menu{display:flex;align-items:center;gap:12px;cursor:pointer;border:2px solid transparent;transition:border-color .15s,transform .1s;position:relative}
-  .menu-presence-dot{position:absolute;right:12px;bottom:12px;width:13px;height:13px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.35)}
+  .menu-presence-dot{position:absolute;top:-2px;right:-2px;width:11px;height:11px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.35)}
   .menu-presence-dot.online{background:#3ecf5e}
   .menu-presence-dot.offline{background:#9aa0a6}
   .presence-dot{position:absolute;right:-2px;bottom:-2px;width:11px;height:11px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 2px rgba(0,0,0,.3);z-index:6}
@@ -565,23 +599,41 @@
 
   <div id="menuScreen">
     <div class="menu-bg-cubes" id="menuBgCubes"></div>
-    <button class="icon-btn menu-settings-btn" id="settingsBtn" title="Parametrlər">⚙️</button>
-    <h1>🔥 Rəngli Kublar</h1>
-    <div class="subtitle">MİSYA REJİMİ</div>
-    <div class="menu-stats">
-      <div class="menu-stat"><div class="num" id="menuLvl">1</div><div class="lbl">Səviyyə</div></div>
-      <div class="menu-stat"><div class="num" id="menuGold">0</div><div class="lbl">Qızıl</div></div>
-      <div class="menu-stat"><div class="num" id="menuMissions">0</div><div class="lbl">Misyalar</div></div>
-    </div>
-    <div class="xp-progress xp-progress-menu" id="menuProfileCard" role="button" title="Profilə keç">
-      <div class="ppic ppic-md" id="menuPhoto"></div>
-      <div class="xp-progress-body">
-        <div class="menu-player-name" id="menuPlayerName">Oyunçu</div>
-        <div class="xp-progress-track"><div class="xp-progress-fill" id="menuXpFill"></div></div>
-        <div class="xp-progress-text" id="menuXpText">0 / 3000 XP</div>
+
+    <div class="menu-topbar">
+      <div class="menu-level-chip" id="menuProfileCard" role="button" title="Profilə keç">
+        <div class="menu-avatar-wrap">
+          <div class="ppic ppic-sm" id="menuPhoto"></div>
+          <div class="menu-level-hex"><span id="menuLvl">1</span></div>
+          <span class="menu-presence-dot" id="menuPresenceDot" style="display:none"></span>
+        </div>
+        <div class="menu-topbar-info">
+          <div class="menu-player-name" id="menuPlayerName">Oyunçu</div>
+          <div class="xp-progress-track"><div class="xp-progress-fill" id="menuXpFill"></div></div>
+          <div class="xp-progress-text" id="menuXpText">0 / 3000 XP</div>
+        </div>
       </div>
-      <span class="menu-presence-dot" id="menuPresenceDot" style="display:none"></span>
+      <div class="menu-topbar-right">
+        <div class="menu-currency-pill" id="shopBtnCurrency" role="button" title="Mağazaya keç">🪙 <span id="menuGold">0</span></div>
+        <button class="icon-btn menu-settings-btn" id="settingsBtn" title="Parametrlər">⚙️</button>
+      </div>
     </div>
+
+    <div class="menu-title-wrap">
+      <h1 class="menu-title">
+        <span class="mt-rain">RAIN</span>
+        <span class="mt-of">OF</span><br>
+        <span class="mt-cubes"><span style="color:var(--red)">C</span><span style="color:var(--yellow)">U</span><span style="color:var(--green)">B</span><span style="color:var(--blue)">E</span><span style="color:var(--purple)">S</span></span>
+      </h1>
+      <div class="subtitle">MİSYA REJİMİ</div>
+    </div>
+
+    <div class="menu-stats">
+      <div class="menu-stat"><div class="num" id="menuXpStat">0</div><div class="lbl">Xal</div></div>
+      <div class="menu-stat"><div class="num" id="menuGamesStat">0</div><div class="lbl">Oyun</div></div>
+      <div class="menu-stat"><div class="num" id="menuStarsStat">0</div><div class="lbl">Ulduz</div></div>
+    </div>
+
     <div class="google-auth-row" id="googleAuthRow">
       <button class="google-signin-btn" id="googleSignInBtn">
         <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.9-2.26 5.36-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
@@ -592,22 +644,27 @@
         <button class="google-signout-btn" id="googleSignOutBtn">Çıxış</button>
       </div>
     </div>
-    <button class="menu-btn" id="startBtn">▶ Oyna</button>
-    <button class="menu-btn shop-btn" id="shopBtn">🛒 Mağaza</button>
-    <button class="menu-btn profile-btn" id="profileBtn">👤 Profil</button>
-    <button class="menu-btn achievements-btn" id="achievementsBtn">🎖️ Nailiyyətlər<span class="daily-btn-dot" id="achievementsBtnDot" style="display:none"></span></button>
-    <button class="menu-btn friends-btn" id="friendsBtn">👥 Dostlar<span class="daily-btn-dot" id="friendsBtnDot" style="display:none"></span></button>
-    <button class="menu-btn leaderboard-btn" id="leaderboardBtn">🏆 Reytinq Cədvəli</button>
-    <button class="menu-btn mailbox-btn" id="mailboxBtn">📬 Poçt qutusu<span class="daily-btn-dot" id="mailboxBtnDot" style="display:none"></span></button>
-    <button class="menu-btn ranked-btn" id="rankedBtn">🌐 Online Rəqib Tap<span class="ranked-btn-price">500 🪙</span></button>
-    <button class="menu-btn daily-btn" id="dailyBtn">🎁 Gündəlik Mükafat<span class="daily-btn-dot" id="dailyBtnDot" style="display:none"></span></button>
-    <button class="menu-btn arcade-btn" id="arcadeBtn">🕹️ Arkada Rejimi</button>
-    <div class="menu-hint">
-      <b>Qaydalar:</b><br>
-      Düşən kubiklərdən misyadakı rəngləri yığ.<br>
-      Səhv rəngə toxunma — can itirərsən!<br>
-      <b>Heç bir kubik yerə düşməsin!</b><br>
-      Hər kubikə toxunmalısan.
+
+    <button class="menu-play-btn" id="startBtn"><span class="mp-icon">▶</span><span class="mp-text">OYNA<small>Macərana başla</small></span></button>
+
+    <div class="menu-grid">
+      <button class="menu-btn shop-btn" id="shopBtn"><span class="menu-btn-icon">🛒</span><span class="menu-btn-text"><b>Mağaza</b><small>Kublar və çərçivələr</small></span></button>
+      <button class="menu-btn profile-btn" id="profileBtn"><span class="menu-btn-icon">👤</span><span class="menu-btn-text"><b>Profil</b><small>Statistika və rekordlar</small></span></button>
+      <button class="menu-btn achievements-btn" id="achievementsBtn"><span class="menu-btn-icon">🎖️</span><span class="menu-btn-text"><b>Nailiyyətlər</b><small>Ulduzlarını topla</small></span><span class="menu-badge" id="achievementsBtnDot" style="display:none"></span></button>
+      <button class="menu-btn daily-btn" id="dailyBtn"><span class="menu-btn-icon">🎁</span><span class="menu-btn-text"><b>Gündəlik Mükafat</b><small>Hər gün bir hədiyyə</small></span><span class="menu-badge" id="dailyBtnDot" style="display:none"></span></button>
+      <button class="menu-btn arcade-btn" id="arcadeBtn"><span class="menu-btn-icon">🕹️</span><span class="menu-btn-text"><b>Arkada</b><small>Səviyyələri keç</small></span></button>
+      <button class="menu-btn friends-btn" id="friendsBtn"><span class="menu-btn-icon">👥</span><span class="menu-btn-text"><b>Dostlar</b><small>Oyna və söhbət et</small></span><span class="menu-badge" id="friendsBtnDot" style="display:none"></span></button>
+      <button class="menu-btn leaderboard-btn" id="leaderboardBtn"><span class="menu-btn-icon">🏆</span><span class="menu-btn-text"><b>Liderbord</b><small>Ən yüksək xallar</small></span></button>
+      <button class="menu-btn ranked-btn" id="rankedBtn"><span class="menu-btn-icon">👑</span><span class="menu-btn-text"><b>Reytinqli Oyun</b><small>Çevrimçi yarış</small></span><span class="ranked-btn-price">500 🪙</span></button>
+      <button class="menu-btn mailbox-btn menu-btn-wide" id="mailboxBtn"><span class="menu-btn-icon">📬</span><span class="menu-btn-text"><b>Poçt qutusu</b><small>Mesajlar və hədiyyələr</small></span><span class="menu-badge" id="mailboxBtnDot" style="display:none"></span></button>
+    </div>
+
+    <div class="menu-hint-card">
+      <div class="menu-hint-icon">📦</div>
+      <div class="menu-hint-body">
+        <div class="menu-hint-title">Necə oynamaq olar?</div>
+        <div class="menu-hint-text">Düşən kubiklərdən misyadakı rəngləri yığ, heç birini yerə salma!</div>
+      </div>
     </div>
     <div class="sound-toggles">
       <button class="sound-toggle" id="musicToggleMenu">🎵 Musiqi</button>
@@ -3480,10 +3537,16 @@
     document.getElementById("menuLvl").textContent = profile.level || 1;
     document.getElementById("menuPlayerName").textContent = profile.name;
     document.getElementById("menuGold").textContent = profile.gold;
-    document.getElementById("menuMissions").textContent = profile.missionsDone || 0;
+    document.getElementById("menuXpStat").textContent = profile.xp || 0;
+    document.getElementById("menuGamesStat").textContent = profile.gamesPlayed || 0;
+    var menuTotalStars = 0;
+    if(profile.arcade && profile.arcade.stars){
+      Object.keys(profile.arcade.stars).forEach(function(k){ menuTotalStars += profile.arcade.stars[k] || 0; });
+    }
+    document.getElementById("menuStarsStat").textContent = menuTotalStars;
     shopGoldVal.textContent = profile.gold;
     renderXpProgress();
-    renderPhotoInto("menuPhoto", "md");
+    renderPhotoInto("menuPhoto", "sm");
     renderPhotoInto("gamePhoto", "sm");
     var menuDot = document.getElementById("menuPresenceDot");
     if(menuDot){
@@ -5764,6 +5827,7 @@
 
   document.getElementById("startBtn").addEventListener("click", function(){ gameMode = "endless"; arcadeLevelNum = null; startGame(); });
   document.getElementById("shopBtn").addEventListener("click", openShop);
+  document.getElementById("shopBtnCurrency").addEventListener("click", openShop);
   document.getElementById("shopBack").addEventListener("click", returnToMenu);
   document.getElementById("profileBtn").addEventListener("click", openProfile);
   document.getElementById("menuProfileCard").addEventListener("click", openProfile);
