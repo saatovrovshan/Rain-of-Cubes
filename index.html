@@ -1236,6 +1236,7 @@
       <div class="gift-reveal-popularity" id="giftRevealPopularity">+0 populyarlıq</div>
       <div class="gift-reveal-sender" id="giftRevealSender">Oyunçu tərəfindən</div>
       <div class="gift-reveal-note" id="giftRevealNote"></div>
+      <button class="friend-action-btn" id="giftThanksBtn" style="width:100%;padding:12px;margin-top:12px;background:#7d6adf">🙏 Təşəkkür et</button>
     </div>
   </div>
 
@@ -3557,6 +3558,7 @@
     });
   }
 
+  var giftRevealTarget = null;
   function openGiftReveal(x){
     var g = x.gift;
     var catalogItem = GIFT_CATALOG.find(function(c){ return c.id === g.gift_id; }) || {icon:"🎁", name:g.gift_id};
@@ -3568,6 +3570,11 @@
     noteEl.textContent = g.note ? ('"' + g.note + '"') : "";
     noteEl.style.display = g.note ? "" : "none";
     document.getElementById("giftRevealModal").classList.add("show");
+    giftRevealTarget = {senderId: g.from_user, senderName: x.senderName};
+    var thanksBtn = document.getElementById("giftThanksBtn");
+    thanksBtn.disabled = false;
+    thanksBtn.textContent = "🙏 Təşəkkür et";
+    thanksBtn.style.display = (cloudUserId && g.from_user !== cloudUserId) ? "" : "none";
     if(!g.seen && supabaseClient){
       supabaseClient.from("gifts").update({seen:true}).eq("id", g.id).then(function(res){
         if(res.error) return;
@@ -3575,6 +3582,21 @@
         checkUnseenGiftsBadge();
       });
     }
+  }
+
+  // Hədiyyəni açanda göndərənə tez bir "təşəkkür" mesajı göndərmək — tam söhbət ekranını açmadan
+  function sendGiftThanks(){
+    if(!giftRevealTarget || !supabaseClient || !cloudUserId || giftRevealTarget.senderId === cloudUserId) return;
+    var t = giftRevealTarget;
+    var thanksBtn = document.getElementById("giftThanksBtn");
+    thanksBtn.disabled = true;
+    supabaseClient.from("messages").insert({from_user: cloudUserId, to_user: t.senderId, body: "Hədiyyəyə görə təşəkkür edirəm! 🙏"}).then(function(res){
+      if(res.error){ showToast("⚠️ Göndərilmədi"); thanksBtn.disabled = false; return; }
+      profile.messagesSent = (profile.messagesSent||0) + 1;
+      saveProfile();
+      thanksBtn.textContent = "✅ Göndərildi";
+      showToast("🙏 Təşəkkür mesajı göndərildi!");
+    });
   }
 
   // ===== Bildirişlər (üst-ortada banner) =====
@@ -7212,6 +7234,7 @@
   document.getElementById("giftRevealModal").addEventListener("click", function(e){
     if(e.target === this) this.classList.remove("show");
   });
+  document.getElementById("giftThanksBtn").addEventListener("click", sendGiftThanks);
   document.getElementById("playerCardClose").addEventListener("click", closePlayerCard);
   document.getElementById("playerCardModal").addEventListener("click", function(e){
     if(e.target === this) closePlayerCard();
