@@ -417,6 +417,13 @@
   @keyframes achievementClaimPulse{from{box-shadow:0 0 0 rgba(255,215,0,0)}to{box-shadow:0 0 10px 2px rgba(255,215,0,.7)}}
   .achievement-claim-btn{background:var(--gold);color:#7a5a00;border:none;border-radius:8px;padding:7px 12px;font-size:11px;font-weight:800;cursor:pointer;flex-shrink:0;box-shadow:0 3px 0 #c9a200}
   .achievement-claim-btn:active{transform:translateY(2px);box-shadow:0 1px 0 #c9a200}
+  .achievement-category{background:var(--panel);border-radius:12px;padding:4px;margin-bottom:8px}
+  .achievement-category-toggle{display:flex;align-items:center;gap:8px;width:100%;background:none;border:none;padding:10px 8px;cursor:pointer;font-family:inherit;box-sizing:border-box}
+  .achievement-category-icon{font-size:18px;flex-shrink:0}
+  .achievement-category-title{font-size:13px;font-weight:800;color:var(--ink);text-align:left;flex:1}
+  .achievement-category-progress{font-size:11px;font-weight:700;color:#a99;flex-shrink:0}
+  .achievement-category-dot{width:9px;height:9px;border-radius:50%;background:var(--red);flex-shrink:0;animation:dailyDotPulse 1s ease-in-out infinite alternate}
+  .achievement-category-body{flex-direction:column;gap:6px;padding:0 8px 8px}
 
   header{padding:8px 12px 4px;display:flex;align-items:center;justify-content:space-between;gap:8px}
   .title{font-size:20px;font-weight:800;color:var(--ink);letter-spacing:.5px}
@@ -1446,12 +1453,14 @@
     return (min/1440) + " gün";
   }
 
+  // Hər nailiyyət bir "category" daşıyır ki, Nailiyyətlər ekranında növünə uyğun qutuya düşsün —
+  // bax ACHIEVEMENT_CATEGORIES (aşağıda) qutuların başlıq/ikon/sırası üçün
   var ACHIEVEMENTS = [
-    {id:"level_5", name:"İnkişaf Edən", desc:"5-ci levelə çat", icon:"⭐", check:function(p){ return (p.level||1) >= 5; }},
-    {id:"level_10", name:"Təcrübəli", desc:"10-cu levelə çat", icon:"🌟", check:function(p){ return (p.level||1) >= 10; }},
-    {id:"games_10", name:"Davamlı Oyunçu", desc:"10 oyun oyna", icon:"🎮", check:function(p){ return (p.gamesPlayed||0) >= 10; }},
-    {id:"powerup_10", name:"Ulti Ustası", desc:"10 ulti istifadə et", icon:"⚡", check:function(p){ return (p.powerupsUsed||0) >= 10; }},
-    {id:"combo_5", name:"Combo Ustası", desc:"Combo rejimini 5 dəfə aktivləşdir", icon:"🔥", check:function(p){ return (p.comboActivations||0) >= 5; }}
+    {id:"level_5", name:"İnkişaf Edən", desc:"5-ci levelə çat", icon:"⭐", category:"level", check:function(p){ return (p.level||1) >= 5; }},
+    {id:"level_10", name:"Təcrübəli", desc:"10-cu levelə çat", icon:"🌟", category:"level", check:function(p){ return (p.level||1) >= 10; }},
+    {id:"games_10", name:"Davamlı Oyunçu", desc:"10 oyun oyna", icon:"🎮", category:"general", check:function(p){ return (p.gamesPlayed||0) >= 10; }},
+    {id:"powerup_10", name:"Ulti Ustası", desc:"10 ulti istifadə et", icon:"⚡", category:"general", check:function(p){ return (p.powerupsUsed||0) >= 10; }},
+    {id:"combo_5", name:"Combo Ustası", desc:"Combo rejimini 5 dəfə aktivləşdir", icon:"🔥", category:"general", check:function(p){ return (p.comboActivations||0) >= 5; }}
   ];
 
   MISSION_MILESTONES.forEach(function(n){
@@ -1460,6 +1469,7 @@
       name: n + " Misya",
       desc: n + " misya tamamla",
       icon: n >= 1000 ? "🏆" : "📦",
+      category: "missions",
       check: function(p){ return (p.missionsDone||0) >= n; }
     });
   });
@@ -1470,6 +1480,7 @@
       name: n + " Qızıl",
       desc: "Ümumi " + n + " qızıl qazan",
       icon: n >= 10000 ? "💎" : "🪙",
+      category: "gold",
       check: function(p){ return (p.totalGoldEarned||0) >= n; }
     });
   });
@@ -1481,6 +1492,7 @@
       name: label + " Oyun",
       desc: label + " oyun oyna",
       icon: "⏳",
+      category: "time",
       check: function(p){ return (p.totalPlayTimeMs||0) >= min * 60000; }
     });
   });
@@ -1491,9 +1503,19 @@
       name: n + " Gün Giriş",
       desc: n + " gün oyuna daxil ol",
       icon: n >= 100 ? "📅" : "🗓️",
+      category: "login",
       check: function(p){ return (p.totalLoginDays||0) >= n; }
     });
   });
+
+  var ACHIEVEMENT_CATEGORIES = [
+    {id:"level", title:"Səviyyə", icon:"⭐"},
+    {id:"missions", title:"Misyalar", icon:"📦"},
+    {id:"gold", title:"Qızıl", icon:"🪙"},
+    {id:"time", title:"Oyun vaxtı", icon:"⏳"},
+    {id:"login", title:"Giriş günləri", icon:"🗓️"},
+    {id:"general", title:"Ümumi", icon:"🎯"}
+  ];
 
   function getVar(name){
     return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -3864,20 +3886,60 @@
     }
   }
 
+  // Hər kateqoriya qutusunun açıq/qapalı olduğunu izləyir — açılışda cəldırılabilən (claimable)
+  // nailiyyəti olan qutular avtomatik açılır ki, oyunçu onu tapmaq üçün axtarmasın (bax openAchievements)
+  var achievementCategoryOpen = {};
+
+  function achievementsInCategory(catId){
+    return ACHIEVEMENTS.filter(function(a){ return a.category === catId; });
+  }
+
+  function categoryHasClaimable(catId){
+    return achievementsInCategory(catId).some(function(a){
+      return !!profile.unlockedAchievements[a.id] && !profile.claimedAchievements[a.id];
+    });
+  }
+
   function renderAchievementsScreen(){
     var achListEl = document.getElementById("achievementsList");
-    achListEl.innerHTML = ACHIEVEMENTS.map(function(a){
-      var unlocked = a.check(profile);
-      var claimed = !!profile.claimedAchievements[a.id];
-      var claimable = unlocked && !claimed;
-      return '<div class="achievement-row' + (unlocked ? " unlocked" : "") + (claimable ? " claimable" : "") + '">' +
-        '<div class="achievement-icon">' + (unlocked ? a.icon : "🔒") + '</div>' +
-        '<div class="achievement-info"><div class="achievement-name">' + a.name + '</div><div class="achievement-desc">' + a.desc + '</div></div>' +
-        (claimable ? '<button class="achievement-claim-btn" data-id="' + a.id + '">+' + ACHIEVEMENT_GOLD_REWARD + ' 🪙</button>' : '') +
+    achListEl.innerHTML = ACHIEVEMENT_CATEGORIES.map(function(cat){
+      var items = achievementsInCategory(cat.id);
+      var unlockedCount = items.filter(function(a){ return a.check(profile); }).length;
+      var hasClaimable = categoryHasClaimable(cat.id);
+      var isOpen = !!achievementCategoryOpen[cat.id];
+      var rowsHtml = items.map(function(a){
+        var unlocked = a.check(profile);
+        var claimed = !!profile.claimedAchievements[a.id];
+        var claimable = unlocked && !claimed;
+        return '<div class="achievement-row' + (unlocked ? " unlocked" : "") + (claimable ? " claimable" : "") + '">' +
+          '<div class="achievement-icon">' + (unlocked ? a.icon : "🔒") + '</div>' +
+          '<div class="achievement-info"><div class="achievement-name">' + a.name + '</div><div class="achievement-desc">' + a.desc + '</div></div>' +
+          (claimable ? '<button class="achievement-claim-btn" data-id="' + a.id + '">+' + ACHIEVEMENT_GOLD_REWARD + ' 🪙</button>' : '') +
+          '</div>';
+      }).join("");
+      return '<div class="achievement-category">' +
+        '<button type="button" class="achievement-category-toggle" data-cat="' + cat.id + '">' +
+          '<span class="achievement-category-icon">' + cat.icon + '</span>' +
+          '<span class="achievement-category-title">' + cat.title + '</span>' +
+          '<span class="achievement-category-progress">' + unlockedCount + '/' + items.length + '</span>' +
+          (hasClaimable ? '<span class="achievement-category-dot"></span>' : '') +
+          '<span class="settings-accordion-arrow' + (isOpen ? " open" : "") + '">▾</span>' +
+        '</button>' +
+        '<div class="achievement-category-body" style="display:' + (isOpen ? "flex" : "none") + '">' + rowsHtml + '</div>' +
         '</div>';
     }).join("");
+    achListEl.querySelectorAll(".achievement-category-toggle").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var catId = this.getAttribute("data-cat");
+        achievementCategoryOpen[catId] = !achievementCategoryOpen[catId];
+        renderAchievementsScreen();
+      });
+    });
     achListEl.querySelectorAll(".achievement-claim-btn").forEach(function(btn){
-      btn.addEventListener("click", function(){ claimAchievement(this.getAttribute("data-id")); });
+      btn.addEventListener("click", function(e){
+        e.stopPropagation();
+        claimAchievement(this.getAttribute("data-id"));
+      });
     });
   }
 
@@ -6081,6 +6143,10 @@
     menuScreen.style.display = "none";
     stopMenuBgAnim();
     achievementsScreen.style.display = "flex";
+    // Cəldırılabilən nailiyyəti olan qutular hər açılışda avtomatik açılsın ki, oyunçu onu tapsın
+    ACHIEVEMENT_CATEGORIES.forEach(function(cat){
+      achievementCategoryOpen[cat.id] = categoryHasClaimable(cat.id);
+    });
     renderAchievementsScreen();
   }
 
