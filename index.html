@@ -176,6 +176,8 @@
   .arcade-level-card.locked{opacity:.4;cursor:not-allowed}
   .arcade-level-card.perfect{background:linear-gradient(160deg,#fff3c4,#ffd966);border-color:var(--gold)}
   .arcade-level-card.perfect .arcade-level-num{background:var(--gold);color:#7a5b00}
+  .arcade-level-card.boss-level{background:linear-gradient(160deg,#3a332c,#211c17);border-color:#f4c542}
+  .arcade-level-card.boss-level .arcade-level-num{background:#f4c542;color:#3a1f00}
   .arcade-level-num{font-size:15px;font-weight:800;color:var(--ink);background:var(--board);color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center}
   .arcade-level-badges{font-size:10px;min-height:12px;letter-spacing:1px}
   .arcade-level-stars{font-size:11px;color:var(--gold);letter-spacing:1px}
@@ -645,6 +647,19 @@
   .slot.filled{border-style:solid;box-shadow:inset 0 -3px 0 rgba(0,0,0,.15);animation:pop .3s cubic-bezier(.34,1.56,.64,1)}
   @keyframes pop{0%{transform:scale(.3)}70%{transform:scale(1.15)}100%{transform:scale(1)}}
 
+  .boss-health-row{display:none;align-items:center;gap:6px;margin-top:4px}
+  .boss-health-icon{font-size:16px;flex-shrink:0}
+  .boss-health-track{flex:1;height:10px;border-radius:6px;background:rgba(0,0,0,.15);overflow:hidden}
+  .boss-health-fill{height:100%;width:100%;background:linear-gradient(90deg,#f2545b,#ff9f43);border-radius:6px;transition:width .3s ease}
+  .boss-health-text{font-size:10px;font-weight:800;color:var(--ink);flex-shrink:0;white-space:nowrap}
+  .boss-banner{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:45;opacity:0;transition:opacity .35s ease}
+  .boss-banner.show{opacity:1}
+  .boss-banner-inner{background:linear-gradient(160deg,#3a332c,#211c17);color:#fff;padding:18px 26px;border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,.5);text-align:center;animation:pop .4s cubic-bezier(.34,1.56,.64,1);border:3px solid #f4c542}
+  .boss-banner-icon{font-size:44px;display:block;margin-bottom:4px}
+  .boss-banner-title{font-size:12px;font-weight:800;letter-spacing:1px;color:#f4c542;text-transform:uppercase}
+  .boss-banner-name{font-size:18px;font-weight:900;margin-top:2px}
+  .boss-banner-sub{font-size:11px;font-weight:700;color:#ffd76b;margin-top:6px}
+
   #field{position:relative;flex:1;margin:0 12px 8px;background:var(--board);border-radius:10px;overflow:hidden}
   .cube{position:absolute;width:46px;height:46px;border-radius:9px;box-shadow:inset 0 -5px 0 rgba(0,0,0,.18),0 3px 6px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.9);font-size:22px;cursor:pointer;will-change:transform;top:-56px;z-index:5}
   .cube.flying{transition:transform .45s cubic-bezier(.5,0,.5,1),opacity .45s ease;z-index:20}
@@ -1080,6 +1095,11 @@
         <div class="mission-text"><span class="mission-progress" id="missionProgress"></span>Misya: <b id="missionText">7 qırmızı kub</b></div>
       </div>
       <div class="slots" id="slots"></div>
+      <div class="boss-health-row" id="bossHealthRow">
+        <span class="boss-health-icon" id="bossHealthIcon"></span>
+        <div class="boss-health-track"><div class="boss-health-fill" id="bossHealthFill"></div></div>
+        <span class="boss-health-text" id="bossHealthText"></span>
+      </div>
     </div>
 
     <div class="profile">
@@ -1106,6 +1126,7 @@
       <div class="shield-timer" id="shieldTimer">🛡️ <span id="shieldTimerVal">20</span>s</div>
       <div class="fast-timer" id="fastTimer">⏩ <span id="fastTimerVal">15</span>s</div>
     </div>
+    <div class="boss-banner" id="bossBanner"></div>
     <div class="toast" id="toast"></div>
     <div class="overlay" id="overlay">
       <h2>Oyun bitdi</h2>
@@ -1753,22 +1774,53 @@
     if(n <= 3) return 3;
     return Math.min(12, 3 + Math.ceil((n - 3) / 5));
   }
+  // ===== Boss döyüşləri: arkadada hər 10 leveldən, sonsuz rejimdə hər 10 misyadan bir =====
+  // "Tier" 1,2,3... ilə eyni boss roster-i iki rejimdə də dövr edir ki, eyni boslar görünsün.
+  var BOSS_ROSTER = [
+    {name:"Qırmızı Nəhəng", icon:"👹"},
+    {name:"Dərya Kalmarı", icon:"🐙"},
+    {name:"Yaşıl Əjdaha", icon:"🐲"},
+    {name:"Qızıl Div", icon:"👺"},
+    {name:"Bənövşəyi Kabus", icon:"👻"},
+    {name:"Kölgə Canavarı", icon:"🐺"}
+  ];
+  function bossForTier(tier){
+    return BOSS_ROSTER[(tier - 1) % BOSS_ROSTER.length];
+  }
+  function bossHpForArcadeLevel(n){
+    return Math.min(80, 10 + n);
+  }
+  function bossHpForTier(tier){
+    return Math.min(60, 10 + tier * 5);
+  }
+  function bossXpReward(tier){
+    return 100 + tier * 25;
+  }
+  function bossGoldReward(tier){
+    return 60 + tier * 20;
+  }
+
   function buildArcadeLevel(n){
-    var missionsRequired = arcadeMissionsForLevel(n);
+    var isBoss = n % 10 === 0;
+    var bossTier = isBoss ? Math.round(n / 10) : 0;
+    var missionsRequired = isBoss ? 1 : arcadeMissionsForLevel(n);
     var speedMult = Math.round((1 + (n-1) * 0.01) * 100) / 100;
     var colorCount = arcadeColorCountForLevel(n);
     var forcePureSmiley = n >= 11 && (n % 3 === 0);
     var noPowerups = n >= 21 && (n % 4 === 0);
-    var goldReward = 20 + n * 4;
+    var goldReward = (isBoss ? 60 : 20) + n * 4;
     return {
       n: n,
-      name: arcadeTierName(n) + " " + n,
+      name: isBoss ? ("👹 BOSS: " + bossForTier(bossTier).name) : (arcadeTierName(n) + " " + n),
       missionsRequired: missionsRequired,
       speedMult: speedMult,
       colorCount: colorCount,
       forcePureSmiley: forcePureSmiley,
       noPowerups: noPowerups,
-      goldReward: goldReward
+      goldReward: goldReward,
+      isBoss: isBoss,
+      bossTier: bossTier,
+      bossHp: isBoss ? bossHpForArcadeLevel(n) : 0
     };
   }
 
@@ -2118,6 +2170,11 @@
   var missionTextEl = document.getElementById("missionText");
   var missionSwatchEl = document.getElementById("missionSwatch");
   var missionProgressEl = document.getElementById("missionProgress");
+  var bossHealthRowEl = document.getElementById("bossHealthRow");
+  var bossHealthIconEl = document.getElementById("bossHealthIcon");
+  var bossHealthFillEl = document.getElementById("bossHealthFill");
+  var bossHealthTextEl = document.getElementById("bossHealthText");
+  var bossBannerEl = document.getElementById("bossBanner");
   var toastEl = document.getElementById("toast");
   var overlayEl = document.getElementById("overlay");
   var overlayStatsEl = document.getElementById("overlayStats");
@@ -2251,6 +2308,9 @@
   var arcadeColorCount = null; // null (arkada deyil) | 3..12 aktiv rəng sayı
   var arcadeThemeOverride = null; // null | "puresmiley"
   var arcadeNoPowerups = false;
+  var arcadeIsBossLevel = false;
+  var arcadeBossTier = 0;
+  var arcadeBossHp = 0;
 
   var recentSpawnColors = [];
   var urgentColorId = null;
@@ -5121,6 +5181,20 @@
 
   function newMission(){
     updateMissionProgressDisplay();
+    // Boss tetiklənməsi: arkadada hər 10-cu level tam bir boss döyüşüdür (bax buildArcadeLevel);
+    // sonsuz rejimdə tamamlanan misyaların 10,20,30... -cusu boss olur. Battle rejimi toxunulmur.
+    var bossTier = 0;
+    if(gameMode === "arcade"){
+      if(arcadeIsBossLevel) bossTier = arcadeBossTier;
+    } else if(gameMode === "endless" && (missionCount + 1) % 10 === 0){
+      bossTier = (missionCount + 1) / 10;
+    }
+    if(bossTier){
+      startBossMission(bossTier, gameMode === "arcade" ? arcadeBossHp : bossHpForTier(bossTier));
+      return;
+    }
+    bossHealthRowEl.style.display = "none";
+    slotsEl.style.display = "";
     var color = pickMissionColor();
     // Oyunun ilk 5 misyası həmişə asan olsun (2-4). Sonra tələb olunan say ekrandakı
     // bu rəngin sayına görə tənzimlənir: rəng çoxdursa daha çox, azdırsa daha az tələb olunur —
@@ -5148,6 +5222,47 @@
     }
     // Bildiriş yazmaq əvəzinə rəng birbaşa yuxarıdakı göstəricidə (swatch) görünür
     flashMissionColor(color);
+  }
+
+  function startBossMission(tier, hp){
+    var boss = bossForTier(tier);
+    var color = pickMissionColor();
+    mission = {color:color, count:hp, filled:0, isBoss:true, bossTier:tier, bossName:boss.name, bossIcon:boss.icon};
+    prevMissionColorId = color.id;
+    applyThemedSwatch(missionSwatchEl, color);
+    missionTextEl.textContent = boss.icon + " BOSS: " + boss.name;
+    slotsEl.style.display = "none";
+    slotsEl.innerHTML = "";
+    bossHealthIconEl.textContent = boss.icon;
+    bossHealthRowEl.style.display = "flex";
+    updateBossHealthUI();
+    flashMissionColor(color);
+    showBossBanner(boss, color.name + " rəngli kubları tut!");
+  }
+
+  function updateBossHealthUI(){
+    var pct = Math.max(0, Math.min(100, 100 - (mission.filled / mission.count) * 100));
+    bossHealthFillEl.style.width = pct + "%";
+    bossHealthTextEl.textContent = Math.max(0, mission.count - mission.filled) + "/" + mission.count;
+  }
+
+  function fillBossHit(){
+    mission.filled++;
+    updateBossHealthUI();
+    if(mission.filled >= mission.count){
+      completeMission();
+    }
+    return null;
+  }
+
+  function showBossBanner(boss, sub){
+    bossBannerEl.innerHTML = '<div class="boss-banner-inner"><span class="boss-banner-icon">' + boss.icon + '</span>' +
+      '<div class="boss-banner-title">Boss Döyüşü</div>' +
+      '<div class="boss-banner-name">' + boss.name + '</div>' +
+      (sub ? '<div class="boss-banner-sub">' + sub + '</div>' : '') + '</div>';
+    bossBannerEl.classList.add("show");
+    clearTimeout(showBossBanner._t);
+    showBossBanner._t = setTimeout(function(){ bossBannerEl.classList.remove("show"); }, 2200);
   }
 
   // Yeni misya gələndə oyunçu aşağı baxmadan rəngi dərhal görsün deyə ekranın ortasında qısa parıltı göstərir
@@ -5185,6 +5300,10 @@
   }
 
   function completeMission(){
+    if(mission.isBoss){
+      completeBossMission();
+      return;
+    }
     addXp(MISSION_XP);
     addGold(MISSION_GOLD);
     profile.missionsDone = (profile.missionsDone||0) + 1;
@@ -5201,6 +5320,31 @@
       return;
     }
     // Kubiklər silinmir, oyun fasiləsiz davam edir — yeni misya gözləmədən dərhal verilir
+    newMission();
+  }
+
+  function completeBossMission(){
+    var tier = mission.bossTier;
+    var xp = bossXpReward(tier);
+    var gold = bossGoldReward(tier);
+    var bossName = mission.bossName;
+    var bossIcon = mission.bossIcon;
+    addXp(xp);
+    addGold(gold);
+    profile.missionsDone = (profile.missionsDone||0) + 1;
+    profile.bossesDefeated = (profile.bossesDefeated||0) + 1;
+    saveProfile();
+    renderProfile();
+    playRewardSound();
+    showBossBanner({name:bossName, icon:bossIcon}, "Məğlub edildi! +" + xp + " XP, +" + gold + " qızıl");
+    missionCount++;
+    updateMissionProgressDisplay();
+    if(gameMode !== "arcade") applySpeedFromMissions();
+    renderProfile();
+    if(gameMode === "arcade" && missionCount >= arcadeMissionsRequired){
+      arcadeLevelEnd(true);
+      return;
+    }
     newMission();
   }
 
@@ -5878,7 +6022,7 @@
     var relY = cubeRect.top - frect.top;
     showFloatingText(relX, relY, remainingAfterThisCatch > 0 ? (remainingAfterThisCatch + " qaldı") : "Tamamlandı! 🎉");
 
-    var slot = fillNextSlot();
+    var slot = mission.isBoss ? fillBossHit() : fillNextSlot();
     var baseY = record.y || 0;
     if(slot){
       var slotRect = slot.getBoundingClientRect();
@@ -6956,6 +7100,9 @@
     arcadeColorCount = conf.colorCount;
     arcadeThemeOverride = conf.forcePureSmiley ? "puresmiley" : null;
     arcadeNoPowerups = conf.noPowerups;
+    arcadeIsBossLevel = !!conf.isBoss;
+    arcadeBossTier = conf.bossTier || 0;
+    arcadeBossHp = conf.bossHp || 0;
     rebuildColorPool();
     powerupsEl.style.display = arcadeNoPowerups ? "none" : "";
   }
@@ -6966,6 +7113,9 @@
     arcadeColorCount = null;
     arcadeThemeOverride = null;
     arcadeNoPowerups = false;
+    arcadeIsBossLevel = false;
+    arcadeBossTier = 0;
+    arcadeBossHp = 0;
     rebuildColorPool();
     powerupsEl.style.display = "";
   }
@@ -7015,6 +7165,8 @@
     }).join("");
     if(won){
       statsEl.innerHTML = conf.name + "<br>Qalan can: <b>" + lives + "</b> · Qazanılan qızıl: <b>+" + conf.goldReward + "</b>";
+    } else if(conf.isBoss && mission && mission.isBoss){
+      statsEl.innerHTML = conf.name + "<br>Boss canı: <b>" + Math.max(0, mission.count - mission.filled) + "/" + mission.count + "</b> qaldı";
     } else {
       statsEl.innerHTML = conf.name + "<br>Tələb olunan: <b>" + arcadeMissionsRequired + " misya</b> · Tamamlanan: <b>" + missionCount + "</b>";
     }
@@ -7052,8 +7204,9 @@
       if(conf.forcePureSmiley) badges += '<span title="Yalnız smaylidən tanı">😎</span>';
       if(conf.noPowerups) badges += '<span title="Ultilər söndürülüb">🚫</span>';
       if(conf.speedMult >= 1.5) badges += '<span title="Yüksək sürət">⚡</span>';
+      if(conf.isBoss) badges += '<span title="Boss döyüşü">' + bossForTier(conf.bossTier).icon + '</span>';
       var starsHtml = unlocked ? [1,2,3].map(function(i){ return i <= stars ? "⭐" : "☆"; }).join("") : "🔒";
-      html += '<div class="arcade-level-card' + (unlocked ? "" : " locked") + (stars >= 3 ? " perfect" : "") + '" data-n="' + n + '">' +
+      html += '<div class="arcade-level-card' + (unlocked ? "" : " locked") + (stars >= 3 ? " perfect" : "") + (conf.isBoss ? " boss-level" : "") + '" data-n="' + n + '">' +
         '<div class="arcade-level-num">' + n + '</div>' +
         '<div class="arcade-level-badges">' + badges + '</div>' +
         '<div class="arcade-level-stars">' + starsHtml + '</div>' +
