@@ -659,8 +659,8 @@
   .boss-banner-title{font-size:12px;font-weight:800;letter-spacing:1px;color:#f4c542;text-transform:uppercase}
   .boss-banner-name{font-size:18px;font-weight:900;margin-top:2px}
   .boss-banner-sub{font-size:11px;font-weight:700;color:#ffd76b;margin-top:6px}
-  .boss-segment{position:absolute;width:46px;height:46px;border-radius:9px;box-shadow:inset 0 -5px 0 rgba(0,0,0,.18),0 3px 6px rgba(0,0,0,.25);cursor:pointer;z-index:6;transition:top .32s cubic-bezier(.34,1.56,.64,1),left .32s cubic-bezier(.34,1.56,.64,1)}
-  .boss-head{position:absolute;width:56px;height:56px;border-radius:14px;background:radial-gradient(circle at 35% 30%,#4a3f36,#211c17 75%);box-shadow:0 0 14px 3px rgba(244,197,66,.55),inset 0 -5px 0 rgba(0,0,0,.3),0 3px 8px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;font-size:30px;z-index:7;pointer-events:none;transition:top .32s cubic-bezier(.34,1.56,.64,1),left .32s cubic-bezier(.34,1.56,.64,1);border:2px solid #f4c542}
+  .boss-segment{position:absolute;width:46px;height:46px;border-radius:9px;box-shadow:inset 0 -5px 0 rgba(0,0,0,.18),0 3px 6px rgba(0,0,0,.25);cursor:pointer;z-index:6}
+  .boss-head{position:absolute;width:56px;height:56px;border-radius:14px;background:radial-gradient(circle at 35% 30%,#4a3f36,#211c17 75%);box-shadow:0 0 14px 3px rgba(244,197,66,.55),inset 0 -5px 0 rgba(0,0,0,.3),0 3px 8px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;font-size:30px;z-index:7;pointer-events:none;border:2px solid #f4c542}
 
   #field{position:relative;flex:1;margin:0 12px 8px;background:var(--board);border-radius:10px;overflow:hidden}
   .cube{position:absolute;width:46px;height:46px;border-radius:9px;box-shadow:inset 0 -5px 0 rgba(0,0,0,.18),0 3px 6px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.9);font-size:22px;cursor:pointer;will-change:transform;top:-56px;z-index:5}
@@ -5237,18 +5237,14 @@
     // Boss girməzdən əvvəl ekrandakı adi kubiklər sürətlə geri çəkilir — boss döyüşü bitənə
     // qədər sahədə YALNIZ bossun öz bədən kubikləri olur.
     recallFieldCubes(function(){
-      missionSwatchEl.style.background = "none";
-      missionSwatchEl.style.boxShadow = "none";
-      missionSwatchEl.classList.remove("themed-glow");
-      missionSwatchEl.textContent = boss.icon;
       missionTextEl.textContent = boss.icon + " BOSS: " + boss.name;
       slotsEl.style.display = "none";
       slotsEl.innerHTML = "";
       bossHealthIconEl.textContent = boss.icon;
       bossHealthRowEl.style.display = "flex";
+      buildBossSnake(boss, hp, tier);
       updateBossHealthUI();
-      buildBossSnake(boss, hp);
-      showBossBanner(boss, hp + " kubu sındır!");
+      showBossBanner(boss, hp + " kubu sındır, finişə çatmasın!");
     });
   }
 
@@ -5272,40 +5268,26 @@
     }, 300);
   }
 
-  // Boss "ilan" yolunu — sahə daxilində sağa-sola dolaşan, sonrakı sıraya keçən zigzaq — qurur.
-  // Ardıcıl nöqtələr arası məsafə kubik ölçüsünün (46px) yarısından çox olduğu üçün qonşu
-  // kubiklər bir-birinin sahəsinin 50%-dən çoxunu örtmür, amma yenə "birləşmiş" görünür.
-  function buildSnakePath(count){
+  // Boss "ilan" yolunun ixtiyari məsafədəki nöqtəsini hesablayır — adi kubiklər kimi sadəcə
+  // aşağı deyil, sağa-sola dalğalanaraq (ilan kimi süzərək) finişə doğru hərəkət etsin deyə
+  var BOSS_WAVE_LEN = 170;
+  function bossPathPointAt(dist){
     var fw = field.clientWidth || 300;
-    var fh = field.clientHeight || 420;
-    var marginX = 30, marginTop = 26, marginBottom = 34;
-    var spacing = 30;
-    var usableW = Math.max(90, fw - marginX*2);
-    var colsPerRow = Math.max(3, Math.floor(usableW / spacing) + 1);
-    var rowH = 30;
-    var maxRows = Math.max(1, Math.floor((fh - marginTop - marginBottom) / rowH));
-    var pts = [];
-    var row = 0, col = 0, dir = 1;
-    for(var i=0; i<=count; i++){
-      var rr = Math.min(row, maxRows - 1);
-      var xIndex = dir === 1 ? col : (colsPerRow - 1 - col);
-      var x = Math.min(marginX + xIndex * spacing, fw - marginX);
-      var y = marginTop + rr * rowH;
-      pts.push({x:x, y:y});
-      col++;
-      if(col >= colsPerRow){ col = 0; row++; dir *= -1; }
-    }
-    return pts;
+    var marginX = 34;
+    var halfW = Math.max(30, (fw - marginX*2) / 2);
+    var x = marginX + halfW + halfW * Math.sin((dist / BOSS_WAVE_LEN) * Math.PI * 2);
+    return {x:x, y:dist};
   }
 
-  // Boss başını (üzünü) və arxasınca ilan kimi bağlı bədən kubiklərini qurur
-  function buildBossSnake(boss, count){
-    var path = buildSnakePath(count);
+  // Boss başını (üzünü) və arxasınca ilan kimi bağlı bədən kubiklərini qurur. Adi kubiklər
+  // düşdüyü kimi başdan (ekranın üstündən) daxil olub davamlı finişə (sahənin altına) doğru
+  // sürüşür — hər çərçivədə bossTick() headProgress-i artırır.
+  function buildBossSnake(boss, count, tier){
+    var fh = field.clientHeight || 420;
+    var totalMs = Math.max(9000, 16000 - tier * 400);
     var headEl = document.createElement("div");
     headEl.className = "boss-head";
     headEl.textContent = boss.icon;
-    headEl.style.top = "-70px";
-    headEl.style.left = (field.clientWidth/2 - 28) + "px";
     field.appendChild(headEl);
 
     var segments = [];
@@ -5314,9 +5296,6 @@
       el.className = "boss-segment";
       var color = ALL_COLORS[Math.floor(Math.random()*ALL_COLORS.length)];
       applyThemedSwatch(el, color);
-      el.style.top = "-60px";
-      el.style.left = (field.clientWidth/2 - 23) + "px";
-      el.style.transitionDelay = Math.min(i * 30, 900) + "ms";
       field.appendChild(el);
       var seg = {el:el, color:color};
       (function(seg){
@@ -5330,20 +5309,45 @@
       })(seg);
       segments.push(seg);
     }
-    bossSnake = {segments:segments, headEl:headEl, path:path};
-    requestAnimationFrame(function(){ requestAnimationFrame(relayoutBossSnake); });
+    bossSnake = {
+      segments: segments, headEl: headEl,
+      headProgress: -40, // yuxarıdan bir az yuxarıda başlasın ki, adi kubik kimi "düşərək" girsin
+      spacing: 30,
+      speed: fh / totalMs,
+      lastFrame: performance.now(),
+      rafId: null,
+      finishY: fh
+    };
+    relayoutBossSnake();
+    bossSnake.rafId = requestAnimationFrame(bossTick);
   }
 
-  // Hər sındırılan kubikdən sonra çağırılır: qalan kubiklər + baş boşluqsuz geriyə "çəkilir"
+  // Hər çərçivədə çağırılır: boss davamlı finişə doğru irəliləyir; finişə çatarsa can gedir
+  // və boss yenidən başdan başlayır (artıq sındırılmış kubiklər geri qayıtmır)
+  function bossTick(now){
+    if(!bossSnake || !gameActive || paused) return;
+    var dt = now - bossSnake.lastFrame;
+    bossSnake.lastFrame = now;
+    bossSnake.headProgress += dt * bossSnake.speed;
+    if(bossSnake.headProgress >= bossSnake.finishY){
+      bossSnake.headProgress = -40;
+      loseLife("Boss finişə çatdı!");
+      if(!bossSnake) return; // loseLife oyunu bitirə bilər (arcadeLevelEnd/gameOver) — təmizlənmiş ola bilər
+    }
+    relayoutBossSnake();
+    bossSnake.rafId = requestAnimationFrame(bossTick);
+  }
+
+  // Baş + qalan bədən kubiklərinin cari yol məsafəsinə görə mövqeyini yeniləyir. Sındırılan
+  // kubikdən sonra da çağırılır — qalan kubiklər başın arxasında boşluqsuz sırayla düzülür
   function relayoutBossSnake(){
     if(!bossSnake) return;
-    var remaining = bossSnake.segments.length;
-    var path = bossSnake.path;
-    var headPt = path[remaining] || path[path.length-1];
+    var headPt = bossPathPointAt(bossSnake.headProgress);
     bossSnake.headEl.style.left = (headPt.x - 28) + "px";
     bossSnake.headEl.style.top = (headPt.y - 28) + "px";
     bossSnake.segments.forEach(function(seg, i){
-      var pt = path[remaining - 1 - i] || path[0];
+      var dist = bossSnake.headProgress - (i + 1) * bossSnake.spacing;
+      var pt = bossPathPointAt(dist);
       seg.el.style.left = (pt.x - 23) + "px";
       seg.el.style.top = (pt.y - 23) + "px";
     });
@@ -5361,12 +5365,15 @@
     if(seg.el.parentNode) seg.el.parentNode.removeChild(seg.el);
     addXp(CUBE_XP);
     addGold(CUBE_GOLD);
+    // Hər sındırılan kubikdən sonra boss geri çəkilir — 1 kubik boşluqsuz geri gedir
+    bossSnake.headProgress = Math.max(-40, bossSnake.headProgress - bossSnake.spacing);
     relayoutBossSnake();
     fillBossHit();
   }
 
   function clearBossSnake(){
     if(!bossSnake) return;
+    if(bossSnake.rafId) cancelAnimationFrame(bossSnake.rafId);
     if(bossSnake.headEl && bossSnake.headEl.parentNode) bossSnake.headEl.parentNode.removeChild(bossSnake.headEl);
     bossSnake.segments.forEach(function(seg){ if(seg.el.parentNode) seg.el.parentNode.removeChild(seg.el); });
     bossSnake = null;
@@ -5377,6 +5384,15 @@
     var pct = Math.max(0, Math.min(100, 100 - (mission.filled / mission.count) * 100));
     bossHealthFillEl.style.width = pct + "%";
     bossHealthTextEl.textContent = Math.max(0, mission.count - mission.filled) + "/" + mission.count;
+    // Misya rəngi bossun öz bədənindəki (ən öndəki) kubikin rənginə görə göstərilir
+    if(bossSnake && bossSnake.segments.length){
+      applyThemedSwatch(missionSwatchEl, bossSnake.segments[0].color);
+    } else {
+      missionSwatchEl.style.background = "none";
+      missionSwatchEl.style.boxShadow = "none";
+      missionSwatchEl.classList.remove("themed-glow");
+      missionSwatchEl.textContent = mission.bossIcon || "";
+    }
   }
 
   function fillBossHit(){
@@ -5397,7 +5413,6 @@
     clearTimeout(showBossBanner._t);
     showBossBanner._t = setTimeout(function(){ bossBannerEl.classList.remove("show"); }, 2200);
   }
-
 
   // Yeni misya gələndə oyunçu aşağı baxmadan rəngi dərhal görsün deyə ekranın ortasında qısa parıltı göstərir
   function flashMissionColor(color){
@@ -6218,6 +6233,7 @@
     fieldCubes.forEach(function(c){
       if(c.rafId){ cancelAnimationFrame(c.rafId); c.rafId = null; }
     });
+    if(bossSnake && bossSnake.rafId){ cancelAnimationFrame(bossSnake.rafId); bossSnake.rafId = null; }
     pauseBtn.textContent = "▶️";
     pauseMainPanel.style.display = "";
     pauseConfirmPanel.style.display = "none";
@@ -6246,6 +6262,10 @@
       c.lastFrame = performance.now();
       if(c.animate) c.rafId = requestAnimationFrame(c.animate);
     });
+    if(bossSnake){
+      bossSnake.lastFrame = performance.now();
+      bossSnake.rafId = requestAnimationFrame(bossTick);
+    }
     waveEndsAt += pausedFor;
     hammerEndsAt += pausedFor;
     if(slowMode){
