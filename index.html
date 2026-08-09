@@ -1185,12 +1185,14 @@
         <span>🎵 Jenerik Musiqilər</span>
         <span class="settings-accordion-arrow" id="musicAccordionArrow">▾</span>
       </button>
-      <div class="music-volume-row">
-        <span>🔊</span>
-        <input type="range" min="0" max="100" value="100" id="musicVolumeSlider">
-        <span id="musicVolumeVal">100%</span>
+      <div id="musicAccordionBody" style="display:none">
+        <div class="music-volume-row">
+          <span>🔊</span>
+          <input type="range" min="0" max="100" value="100" id="musicVolumeSlider">
+          <span id="musicVolumeVal">100%</span>
+        </div>
+        <div class="music-track-list" id="settingsMusicList"></div>
       </div>
-      <div class="music-track-list" id="settingsMusicList" style="display:none"></div>
       <div class="settings-signout-row" id="settingsSignOutRow" style="display:none">
         <button class="friend-action-btn reject" id="googleSignOutBtn" style="padding:10px 24px;font-size:12px">🚪 Google Hesabdan çıxış et</button>
       </div>
@@ -4652,7 +4654,7 @@
   var settingsAutoPaused = false;
   function openSettingsModal(){
     renderCustomMusicList();
-    document.getElementById("settingsMusicList").style.display = "none";
+    document.getElementById("musicAccordionBody").style.display = "none";
     document.getElementById("musicAccordionArrow").classList.remove("open");
     document.getElementById("settingsSignOutRow").style.display = cloudUserId ? "" : "none";
     var volPct = Math.round((profile.musicVolume != null ? profile.musicVolume : 1) * 100);
@@ -4678,10 +4680,10 @@
     }
   }
   function toggleMusicAccordion(){
-    var list = document.getElementById("settingsMusicList");
+    var body = document.getElementById("musicAccordionBody");
     var arrow = document.getElementById("musicAccordionArrow");
-    var showing = list.style.display === "none";
-    list.style.display = showing ? "flex" : "none";
+    var showing = body.style.display === "none";
+    body.style.display = showing ? "" : "none";
     arrow.classList.toggle("open", showing);
   }
 
