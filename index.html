@@ -1740,24 +1740,31 @@
     };
   }
 
-  var MISSION_MILESTONES = [1,10,50,100,250,500,1000,2000,3000,5000,10000,20000,40000,60000,1000000];
-  var GOLD_MILESTONES = [50,100,250,500,1000,2000,3000,5000,10000,20000,40000,60000,1000000];
-  var TIME_MILESTONES_MIN = [5,15,30,60,120,300,600,1440,4320,10080];
-  var LOGIN_MILESTONES = [3,7,15,30,60,150,240,300,365];
-  var GAMES_MILESTONES = [5,10,25,50,100,250,500,1000];
-  var POWERUP_MILESTONES = [10,25,50,100,250,500];
-  var COMBO_MILESTONES = [5,10,25,50,100,250];
-  var SCORE_MILESTONES = [100,250,500,1000,2500,5000,10000,25000];
-  var ARCADE_STAR_MILESTONES = [10,25,50,100,200,400];
-  var ARCADE_LEVEL_MILESTONES = [5,10,25,50,100,200];
-  var ARCADE_PERFECT_MILESTONES = [5,10,25,50,100];
-  var FRIEND_COUNT_MILESTONES = [1,5,10,25,50];
-  var MESSAGE_MILESTONES = [10,50,100,500,1000];
-  var FRIEND_BATTLE_MILESTONES = [1,5,10,25,50,100];
-  var FRIEND_BATTLE_WIN_MILESTONES = [1,5,10,25,50];
-  var GIFT_SENT_MILESTONES = [1,5,10,25,50,100];
-  var GIFT_RECEIVED_MILESTONES = [1,5,10,25,50,100];
+  var LEVEL_MILESTONES = [1,5,10,15,20,25,30,40,50,60,70,80,90,100];
+  var MISSION_MILESTONES = [1,5,10,25,50,75,100,150,200,250,500,750,1000,1500,2000,3000,4000,5000,7500,10000,12500,15000,17500,20000,25000,35000,50000,75000,100000,150000,250000,500000,750000,1000000];
+  var GOLD_MILESTONES = [100,250,500,750,1000,1250,1500,2500,5000,7500,10000,15000,25000,50000,75000,100000,250000,500000,750000,1000000];
+  var TIME_MILESTONES_MIN = [5,15,30,60,120,300,600,1440,4320,10080,43200];
+  var LOGIN_MILESTONES = [1,3,7,15,30,40,60,100,120,150,180,200,240,280,300,330,360,361,362,363,364,365];
+  var LOGIN_STREAK_MILESTONES = [2,3,4,5,7,10,14,20,25,30,40,50,60,75,90,100,120,140,160,180,200,220,240,260,280,300,310,320,330,340,345,350,355,358,360,361,362,363,364,365];
+  var GAMES_MILESTONES = [5,10,25,50,100,250,500,1000,1250,1500,2000,3000,4000,5000,6000,7000,8000,9000,10000];
+  var POWERUP_MILESTONES = [10,25,50,100,250,500,750,1000,1500,2000,3000,4000,4500,5000];
+  var COMBO_MILESTONES = [5,10,25,50,100,250,500,750,1000,1500,2000,2500,3000,3500,4000,4500,5000,6000,7000,8000,9000,10000,12500,15000,17500,20000,25000,30000,35000,40000,45000,50000,55000,60000,65000,70000,75000,85000,92500,100000];
+  var SCORE_MILESTONES = [100,500,1000,1500,2000,2500,3500,4500,5500,6500,7500,10000,12500,15000,17500,20000,25000,30000];
+  var ARCADE_STAR_MILESTONES = [3,6,9,15,20,25,40,50,75,100,125,150,175,200,250,300,350,400,450,500,600,700];
+  var ARCADE_LEVEL_MILESTONES = [1,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,110,120,130,140,150,160,170,180,190,200,210,220,230,240,250];
+  var ARCADE_PERFECT_MILESTONES = [5,10,15,20,25,30,35,40,45,50,60,70,80,90,100,125,150,175,200,225,250];
+  var ARCADE_GOLD_MILESTONES = [100,250,500,1000,1500,2000,3000,4000,5000,7500,10000,12500,15000,20000,25000,30000,35000,40000,50000,55000,60000,65000,70000,75000,80000,85000,90000,95000,97500,100000];
+  var ARCADE_GAMES_MILESTONES = [1,5,10,25,50,75,100,150,200,250,300,400,500,600,700,800,900,1000,1200,1400,1600,1800,2000,2250,2500];
+  var FRIEND_COUNT_MILESTONES = [1,5,10,25,50,75,100];
+  var MESSAGE_MILESTONES = [10,50,100,500,1000,2000,3000,5000,7500,10000,12500,15000,20000,25000,30000,35000,40000,45000,50000,55000,60000,65000,70000,75000,80000,85000,90000,95000,97500,100000];
+  var FRIEND_BATTLE_MILESTONES = [1,5,10,25,50,100,200,300,500,750,1000,1500,2000,2500];
+  var FRIEND_BATTLE_WIN_MILESTONES = [1,5,10,25,50,75,100,150,200,300,400,500,600,800,1000,1250,1500,1750,2000,2500];
+  var GIFT_SENT_MILESTONES = [1,5,10,25,50,100,150,200,300,500,750,1000,1500,2000,2500,3000,3500,4000,4500,5000,6000,7000,8000,9000,10000];
+  var GIFT_RECEIVED_MILESTONES = GIFT_SENT_MILESTONES.slice(); // istifadəçi tələbi ilə göndərilənlə eyni siyahı
   var VIEW_COUNT_MILESTONES = [1,5,10,25,50,100,250,500,1000,2500,5000,10000,25000,50000,100000,200000,350000,500000,750000,1000000];
+  var LIKES_MILESTONES = [1,5,10,25,50,75,100,150,200,250,300,400,500,600,700,800,900,1000,1250,1500,1750,2000,2250,2500,3000,3500,4000,4500,5000,6000,7000,8000,9000,9500,10000];
+  var SHOP_PURCHASE_MILESTONES = [1,5,10,15,25,50,75,100,150,200,250,300,400,500,600,750,900,1000,1250,1500,1750,2000,2250,2500,2750,3000,3250,3500,3750,4000,4250,4500,4750,4900,5000];
+  var NAME_CHANGE_MILESTONES = [1,3,5,10,15,20,25];
   var ACHIEVEMENT_GOLD_REWARD = 50;
 
   function formatMinutesLabel(min){
@@ -1768,12 +1775,18 @@
 
   // Hər nailiyyət bir "category" daşıyır ki, Nailiyyətlər ekranında növünə uyğun qutuya düşsün —
   // bax ACHIEVEMENT_CATEGORIES (aşağıda) qutuların başlıq/ikon/sırası üçün
-  var ACHIEVEMENTS = [
-    {id:"level_5", name:"İnkişaf Edən", desc:"5-ci levelə çat", icon:"⭐", category:"level", check:function(p){ return (p.level||1) >= 5; }},
-    {id:"level_10", name:"Təcrübəli", desc:"10-cu levelə çat", icon:"🌟", category:"level", check:function(p){ return (p.level||1) >= 10; }},
-    {id:"level_25", name:"Usta", desc:"25-ci levelə çat", icon:"🌠", category:"level", check:function(p){ return (p.level||1) >= 25; }},
-    {id:"level_50", name:"Əfsanə", desc:"50-ci levelə çat", icon:"👑", category:"level", check:function(p){ return (p.level||1) >= 50; }}
-  ];
+  var ACHIEVEMENTS = [];
+
+  LEVEL_MILESTONES.forEach(function(n){
+    ACHIEVEMENTS.push({
+      id: "level_" + n,
+      name: n + "-ci Səviyyə",
+      desc: n + "-ci levelə çat",
+      icon: n >= 90 ? "👑" : n >= 50 ? "🌠" : n >= 10 ? "🌟" : "⭐",
+      category: "level",
+      check: function(p){ return (p.level||1) >= n; }
+    });
+  });
 
   GAMES_MILESTONES.forEach(function(n){
     ACHIEVEMENTS.push({
@@ -1860,6 +1873,28 @@
     });
   });
 
+  ARCADE_GOLD_MILESTONES.forEach(function(n){
+    ACHIEVEMENTS.push({
+      id: "arcgold_" + n,
+      name: n + " Arkada Qızılı",
+      desc: "Arkada rejimində ümumi " + n + " qızıl qazan",
+      icon: n >= 50000 ? "💎" : "🪙",
+      category: "arcade",
+      check: function(p){ return (p.arcadeGoldEarned||0) >= n; }
+    });
+  });
+
+  ARCADE_GAMES_MILESTONES.forEach(function(n){
+    ACHIEVEMENTS.push({
+      id: "arcgames_" + n,
+      name: n + " Arkada Oyunu",
+      desc: "Arkada rejimində " + n + " oyun oyna",
+      icon: n >= 1000 ? "🏅" : "🕹️",
+      category: "arcade",
+      check: function(p){ return (p.arcadeGamesPlayed||0) >= n; }
+    });
+  });
+
   FRIEND_COUNT_MILESTONES.forEach(function(n){
     ACHIEVEMENTS.push({
       id: "friends_" + n,
@@ -1937,6 +1972,39 @@
     });
   });
 
+  LIKES_MILESTONES.forEach(function(n){
+    ACHIEVEMENTS.push({
+      id: "likes_" + n,
+      name: n + " Bəyənmə",
+      desc: "Profilin " + n + " dəfə bəyənilsin",
+      icon: n >= 5000 ? "💖" : n >= 500 ? "❤️" : "🤍",
+      category: "profile",
+      check: function(p){ return (p.likesCount||0) >= n; }
+    });
+  });
+
+  SHOP_PURCHASE_MILESTONES.forEach(function(n){
+    ACHIEVEMENTS.push({
+      id: "shoppurchase_" + n,
+      name: n + " Satın Alma",
+      desc: "Mağazadan " + n + " əşya satın al",
+      icon: n >= 2500 ? "👑" : n >= 500 ? "💳" : "🛒",
+      category: "general",
+      check: function(p){ return (p.shopPurchaseCount||0) >= n; }
+    });
+  });
+
+  NAME_CHANGE_MILESTONES.forEach(function(n){
+    ACHIEVEMENTS.push({
+      id: "namechange_" + n,
+      name: n + " Ad Dəyişikliyi",
+      desc: "Adını " + n + " dəfə dəyiş",
+      icon: n >= 20 ? "🎭" : "✏️",
+      category: "profile",
+      check: function(p){ return (p.nameChangeCount||0) >= n; }
+    });
+  });
+
   MISSION_MILESTONES.forEach(function(n){
     ACHIEVEMENTS.push({
       id: "mission_" + n,
@@ -1982,6 +2050,19 @@
     });
   });
 
+  // Fərq: yuxarıdakı LOGIN_MILESTONES ÜMUMI giriş gün sayını izləyir (fasilə önəmli deyil),
+  // bunlar isə ARDICIL (fasiləsiz) neçə gün üst-üstə girdiyini (profile.loginStreak, bax checkDailyLogin)
+  LOGIN_STREAK_MILESTONES.forEach(function(n){
+    ACHIEVEMENTS.push({
+      id: "loginstreak_" + n,
+      name: n + " Ardıcıl Gün",
+      desc: n + " gün ardıcıl oyuna daxil ol",
+      icon: n >= 300 ? "🔥" : n >= 60 ? "⚡" : "📆",
+      category: "login",
+      check: function(p){ return (p.loginStreak||0) >= n; }
+    });
+  });
+
   var ACHIEVEMENT_CATEGORIES = [
     {id:"level", title:"Səviyyə", icon:"⭐"},
     {id:"missions", title:"Misyalar", icon:"📦"},
@@ -1992,7 +2073,7 @@
     {id:"gifts", title:"Hədiyyələr", icon:"🎁"},
     {id:"time", title:"Oyun vaxtı", icon:"⏳"},
     {id:"login", title:"Giriş günləri", icon:"🗓️"},
-    {id:"profile", title:"Profil baxışı", icon:"👤"},
+    {id:"profile", title:"Profil", icon:"👤"},
     {id:"general", title:"Ümumi", icon:"🎮"}
   ];
 
@@ -4325,6 +4406,7 @@
   function addGold(amount){
     profile.gold += amount;
     profile.totalGoldEarned = (profile.totalGoldEarned||0) + amount;
+    if(gameMode === "arcade") profile.arcadeGoldEarned = (profile.arcadeGoldEarned||0) + amount;
     sessionGoldEarned += amount;
     saveProfile();
     renderProfile();
@@ -4649,6 +4731,7 @@
         profile.giftsReceived = res.data.total_gifts_received || 0;
         profile.giftsSent = res.data.total_gifts_sent || 0;
         profile.viewCount = res.data.view_count || 0;
+        profile.likesCount = res.data.likes_count || 0;
         saveProfile();
         renderProfile();
       });
@@ -4678,6 +4761,7 @@
     profile.name = v;
     profile.activeNameColor = null;
     profile.activeNameAnim = null;
+    profile.nameChangeCount = (profile.nameChangeCount||0) + 1;
   }
 
   function saveProfileName(){
@@ -4799,8 +4883,10 @@
     if(profile.lastLoginDate){
       var diff = daysBetweenStr(profile.lastLoginDate, todayStr);
       profile.rewardDayIndex = (diff === 1) ? ((profile.rewardDayIndex + 1) % 7) : 0;
+      profile.loginStreak = (diff === 1) ? ((profile.loginStreak||0) + 1) : 1;
     } else {
       profile.rewardDayIndex = 0;
+      profile.loginStreak = 1;
     }
     profile.dailyClaimedToday = false;
     profile.totalLoginDays = (profile.totalLoginDays||0) + 1;
@@ -6244,6 +6330,7 @@
       if(profile.gold < item.price) return;
       profile.gold -= item.price;
       profile.totalGoldSpent = (profile.totalGoldSpent||0) + item.price;
+      profile.shopPurchaseCount = (profile.shopPurchaseCount||0) + 1;
       profile.unlocks[id] = profile.name;
       if(item.type === "namecolor") profile.activeNameColor = item.colorValue;
       if(item.type === "nameanim") profile.activeNameAnim = item.animValue;
@@ -6258,6 +6345,7 @@
       if(profile.gold < item.price) return;
       profile.gold -= item.price;
       profile.totalGoldSpent = (profile.totalGoldSpent||0) + item.price;
+      profile.shopPurchaseCount = (profile.shopPurchaseCount||0) + 1;
       // Artıq aktiv sürətləndirici varsa qalan vaxtın üstünə əlavə edir (itmir), yoxdursa indidən başlayır
       var now = Date.now();
       var base = (profile.xpBoostUntil && profile.xpBoostUntil > now) ? profile.xpBoostUntil : now;
@@ -6294,6 +6382,7 @@
       if(profile.gold < item.price) return;
       profile.gold -= item.price;
       profile.totalGoldSpent = (profile.totalGoldSpent||0) + item.price;
+      profile.shopPurchaseCount = (profile.shopPurchaseCount||0) + 1;
       profile.unlocks[id] = true;
       if(item.type === "unlock"){ profile.enabledUnlocks[id] = true; rebuildColorPool(); }
       if(item.type === "effect") profile.activeEffect = id.replace("fx","").toLowerCase();
@@ -6310,6 +6399,7 @@
       if(profile.gold < item.price) return;
       profile.gold -= item.price;
       profile.totalGoldSpent = (profile.totalGoldSpent||0) + item.price;
+      profile.shopPurchaseCount = (profile.shopPurchaseCount||0) + 1;
       profile.inventory[id] = (profile.inventory[id] || 0) + 1;
       saveProfile();
       renderProfile();
@@ -6982,6 +7072,7 @@
     gameActive = true;
     spawning = true;
     profile.gamesPlayed = (profile.gamesPlayed||0) + 1;
+    if(gameMode === "arcade") profile.arcadeGamesPlayed = (profile.arcadeGamesPlayed||0) + 1;
     sessionStartTime = performance.now();
     saveProfile();
     newMission();
