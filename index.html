@@ -139,6 +139,13 @@
   .menu-btn.daily-btn:active{box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 1px 0 #cc4d78,0 2px 4px rgba(0,0,0,.2)}
   .menu-badge{position:absolute;top:-5px;right:-5px;width:18px;height:18px;border-radius:50%;background:var(--red);border:2px solid #fff;box-shadow:0 2px 3px rgba(0,0,0,.3);animation:dailyDotPulse 1s ease-in-out infinite alternate}
   @keyframes dailyDotPulse{from{transform:scale(1)}to{transform:scale(1.2)}}
+
+  /* Ana menyunun altındakı ikon sırası: Mağaza/Nailiyyətlər/Dostlar/Liderbord/Çanta/Poçt qutusu —
+     yazısız, sırf ikon, yan-yana. Digər menu-btn-lərdən fərqli olaraq mətn daşımır. */
+  .menu-bottom-icons{display:flex;justify-content:center;align-items:center;gap:12px;width:100%;margin-top:14px;padding-top:10px;border-top:1px solid rgba(0,0,0,.08)}
+  .menu-icon-btn{position:relative;flex-shrink:0;background:var(--panel);border:none;border-radius:14px;width:50px;height:50px;font-size:22px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.12),0 4px 8px rgba(0,0,0,.15)}
+  .menu-icon-btn:active{transform:translateY(3px);box-shadow:0 0 0 rgba(0,0,0,.12)}
+  .menu-icon-dot{position:absolute;top:2px;right:2px;width:10px;height:10px;border-radius:50%;background:var(--red);border:2px solid var(--bg);animation:dailyDotPulse 1s ease-in-out infinite alternate}
   .menu-btn.arcade-btn{background:var(--cyan);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 4px 0 #00a3a4,0 6px 10px rgba(0,0,0,.2)}
   .menu-btn.arcade-btn:active{box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 1px 0 #00a3a4,0 2px 4px rgba(0,0,0,.2)}
   .menu-btn.friends-btn{background:#5b6fd6;box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 4px 0 #3d4fae,0 6px 10px rgba(0,0,0,.2)}
@@ -829,17 +836,11 @@
     <button class="menu-play-btn" id="startBtn"><span class="mp-icon">▶</span><span class="mp-text">OYNA<small>Macərana başla</small></span></button>
 
     <div class="menu-grid">
-      <button class="menu-btn shop-btn" id="shopBtn"><span class="menu-btn-icon">🛒</span><span class="menu-btn-text"><b>Mağaza</b><small>Kublar və çərçivələr</small></span></button>
       <button class="menu-btn profile-btn" id="profileBtn"><span class="menu-btn-icon">👤</span><span class="menu-btn-text"><b>Profil</b><small>Statistika və rekordlar</small></span></button>
-      <button class="menu-btn achievements-btn" id="achievementsBtn"><span class="menu-btn-icon">🎖️</span><span class="menu-btn-text"><b>Nailiyyətlər</b><small>Ulduzlarını topla</small></span><span class="menu-badge" id="achievementsBtnDot" style="display:none"></span></button>
       <button class="menu-btn daily-btn" id="dailyBtn"><span class="menu-btn-icon">🎁</span><span class="menu-btn-text"><b>Gündəlik Mükafat</b><small>Hər gün bir hədiyyə</small></span><span class="menu-badge" id="dailyBtnDot" style="display:none"></span></button>
       <button class="menu-btn arcade-btn" id="arcadeBtn"><span class="menu-btn-icon">🕹️</span><span class="menu-btn-text"><b>Arkada</b><small>Səviyyələri keç</small></span></button>
-      <button class="menu-btn friends-btn" id="friendsBtn"><span class="menu-btn-icon">👥</span><span class="menu-btn-text"><b>Dostlar</b><small>Oyna və söhbət et</small></span><span class="menu-badge" id="friendsBtnDot" style="display:none"></span></button>
-      <button class="menu-btn leaderboard-btn" id="leaderboardBtn"><span class="menu-btn-icon">🏆</span><span class="menu-btn-text"><b>Liderbord</b><small>Ən yüksək xallar</small></span></button>
       <button class="menu-btn ranked-btn" id="rankedBtn"><span class="menu-btn-icon">👑</span><span class="menu-btn-text"><b>Reytinqli Oyun</b><small>Çevrimçi yarış</small></span><span class="ranked-btn-price">500 🪙</span></button>
-      <button class="menu-btn bag-btn" id="bagBtn"><span class="menu-btn-icon">🎒</span><span class="menu-btn-text"><b>Çanta</b><small>Əşyalarını gör</small></span></button>
       <button class="menu-btn wheel-btn" id="wheelBtn"><span class="menu-btn-icon">🎡</span><span class="menu-btn-text"><b>Mükafat Çarxı</b><small>Açarla çevir</small></span></button>
-      <button class="menu-btn mailbox-btn menu-btn-wide" id="mailboxBtn"><span class="menu-btn-icon">📬</span><span class="menu-btn-text"><b>Poçt qutusu</b><small>Mesajlar və hədiyyələr</small></span><span class="menu-badge" id="mailboxBtnDot" style="display:none"></span></button>
     </div>
 
     <div class="menu-hint-card">
@@ -852,6 +853,15 @@
     <div class="sound-toggles">
       <button class="sound-toggle" id="musicToggleMenu">🎵 Musiqi</button>
       <button class="sound-toggle" id="sfxToggleMenu">🔔 Səs effekti</button>
+    </div>
+
+    <div class="menu-bottom-icons">
+      <button class="menu-icon-btn" id="shopBtn" title="Mağaza">🛒</button>
+      <button class="menu-icon-btn" id="achievementsBtn" title="Nailiyyətlər">🎖️<span class="menu-icon-dot" id="achievementsBtnDot" style="display:none"></span></button>
+      <button class="menu-icon-btn" id="friendsBtn" title="Dostlar">👥<span class="menu-icon-dot" id="friendsBtnDot" style="display:none"></span></button>
+      <button class="menu-icon-btn" id="leaderboardBtn" title="Liderbord">🏆</button>
+      <button class="menu-icon-btn" id="bagBtn" title="Çanta">🎒</button>
+      <button class="menu-icon-btn" id="mailboxBtn" title="Poçt qutusu">📬<span class="menu-icon-dot" id="mailboxBtnDot" style="display:none"></span></button>
     </div>
   </div>
 
