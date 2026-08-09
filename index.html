@@ -662,6 +662,8 @@
   .boss-banner-sub{font-size:11px;font-weight:700;color:#ffd76b;margin-top:6px}
   .boss-segment{position:absolute;width:46px;height:46px;border-radius:9px;box-shadow:inset 0 -5px 0 rgba(0,0,0,.18),0 3px 6px rgba(0,0,0,.25);cursor:pointer;z-index:6}
   .boss-head{position:absolute;width:56px;height:56px;border-radius:14px;background:radial-gradient(circle at 35% 30%,#4a3f36,#211c17 75%);box-shadow:0 0 14px 3px rgba(244,197,66,.55),inset 0 -5px 0 rgba(0,0,0,.3),0 3px 8px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;font-size:30px;z-index:7;pointer-events:none;border:2px solid #f4c542}
+  @keyframes bossHeadShake{0%,100%{transform:translate(0,0) rotate(0)}20%{transform:translate(-4px,-2px) rotate(-6deg)}40%{transform:translate(4px,2px) rotate(6deg)}60%{transform:translate(-3px,1px) rotate(-4deg)}80%{transform:translate(3px,-1px) rotate(4deg)}}
+  .boss-head.boss-head-shake{animation:bossHeadShake .35s ease}
 
   #field{position:relative;flex:1;margin:0 12px 8px;background:var(--board);border-radius:10px;overflow:hidden}
   .cube{position:absolute;width:46px;height:46px;border-radius:9px;box-shadow:inset 0 -5px 0 rgba(0,0,0,.18),0 3px 6px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.9);font-size:22px;cursor:pointer;will-change:transform;top:-56px;z-index:5}
@@ -1791,10 +1793,10 @@
     return BOSS_ROSTER[(tier - 1) % BOSS_ROSTER.length];
   }
   function bossHpForArcadeLevel(n){
-    return Math.min(80, 10 + n);
+    return Math.min(80, 10 + n) + 15;
   }
   function bossHpForTier(tier){
-    return Math.min(60, 10 + tier * 5);
+    return Math.min(60, 10 + tier * 5) + 15;
   }
   function bossXpReward(tier){
     return 100 + tier * 25;
@@ -5234,23 +5236,22 @@
     // bossFightActive dərhal (sinxron) qoyulur ki, geri çağırma animasiyası bitənə qədər olan
     // qısa pəncərədə belə spawnCube/spawnHammerCube heç bir yeni adi kubik yaratmasın
     bossFightActive = true;
-    // Misya əvvəlki kimi rəng+say əsaslıdır: bossun bədənindəki qarışıq rəngli kubiklər arasından
-    // MƏHZ bu rəngdəkiləri tapıb sındırmaq lazımdır — səhv rəngə toxunmaq can aparır (adi kubik kimi)
+    // Misya quyruğa görə verilir: bütün bədən eyni (misya) rəngdədir və döyüş quyruqdakı
+    // kubiklər tamamilə bitənə qədər davam edir — say = quyruğun tam uzunluğu
     var missionColor = ALL_COLORS[Math.floor(Math.random()*ALL_COLORS.length)];
-    var targetCount = Math.min(hp, 2 + Math.floor(Math.random()*4));
-    mission = {color:missionColor, count:targetCount, filled:0, isBoss:true, bossTier:tier, bossName:boss.name, bossIcon:boss.icon};
+    mission = {color:missionColor, count:hp, filled:0, isBoss:true, bossTier:tier, bossName:boss.name, bossIcon:boss.icon};
     // Boss girməzdən əvvəl ekrandakı adi kubiklər sürətlə geri çəkilir — boss döyüşü bitənə
     // qədər sahədə YALNIZ bossun öz bədən kubikləri olur.
     recallFieldCubes(function(){
       applyThemedSwatch(missionSwatchEl, missionColor);
-      missionTextEl.textContent = targetCount + " " + missionColor.name + " kub";
+      missionTextEl.textContent = hp + " " + missionColor.name + " kub";
       slotsEl.style.display = "none";
       slotsEl.innerHTML = "";
       bossHealthIconEl.textContent = boss.icon;
       bossHealthRowEl.style.display = "flex";
-      buildBossSnake(boss, hp, tier, missionColor, targetCount);
+      buildBossSnake(boss, hp, tier, missionColor);
       updateBossHealthUI();
-      showBossBanner(boss, targetCount + " " + missionColor.name + " kubu tap, finişə çatmasın!");
+      showBossBanner(boss, hp + " kubu sındır, finişə çatmasın!");
     });
   }
 
@@ -5337,9 +5338,9 @@
 
   // Boss başını (üzünü) və arxasınca ilan kimi bitişik bədən kubiklərini qurur. Adi kubiklər
   // düşdüyü kimi başdan (ekranın üstündən) daxil olub davamlı finişə (sahənin altına) doğru
-  // sürüşür — hər çərçivədə bossTick() headProgress-i artırır. Bədəndəki kubiklərin arasında
-  // targetCount ədəd missionColor rəngində, qalanları başqa (səhv) rənglərdə olur.
-  function buildBossSnake(boss, count, tier, missionColor, targetCount){
+  // sürüşür — hər çərçivədə bossTick() headProgress-i artırır. Bütün bədən eyni (misya) rəngdədir
+  // ki, döyüş quyruqdakı kubiklər tamamilə bitənə qədər davam etsin.
+  function buildBossSnake(boss, count, tier, missionColor){
     var fh = field.clientHeight || 420;
     var totalMs = Math.max(9000, 16000 - tier * 400) * 3; // 3 dəfə yavaş
     var pathPts = buildBossPathTable();
@@ -5348,23 +5349,11 @@
     headEl.textContent = boss.icon;
     field.appendChild(headEl);
 
-    var colorPool = [];
-    for(var i=0; i<targetCount; i++) colorPool.push(missionColor);
-    var otherColors = ALL_COLORS.filter(function(c){ return c.id !== missionColor.id; });
-    if(!otherColors.length) otherColors = ALL_COLORS;
-    for(var i=targetCount; i<count; i++){
-      colorPool.push(otherColors[Math.floor(Math.random()*otherColors.length)]);
-    }
-    for(var i=colorPool.length-1; i>0; i--){
-      var j = Math.floor(Math.random()*(i+1));
-      var tmp = colorPool[i]; colorPool[i] = colorPool[j]; colorPool[j] = tmp;
-    }
-
     var segments = [];
     for(var i=0; i<count; i++){
       var el = document.createElement("div");
       el.className = "boss-segment";
-      var color = colorPool[i];
+      var color = missionColor;
       applyThemedSwatch(el, color);
       field.appendChild(el);
       var seg = {el:el, color:color};
@@ -5438,21 +5427,23 @@
     spawnBreakEffect(segRect.left - frect.left + segRect.width/2, segRect.top - frect.top + segRect.height/2, seg.color.hex);
     if(seg.el.parentNode) seg.el.parentNode.removeChild(seg.el);
 
-    if(seg.color.id !== mission.color.id){
-      // Səhv rəng: əvvəlki adi kubik məntiqi kimi — kubik sınır, misyaya təsir etmir, can gedir
-      playBreakSound();
-      relayoutBossSnake();
-      loseLife();
-      return;
-    }
-
     playCatchSound();
     addXp(CUBE_XP);
     addGold(CUBE_GOLD);
-    // Düzgün rəng sındırılanda boss geri çəkilir — 1 kubik boşluqsuz geri gedir
+    // Hər sındırılan kubikdən sonra boss geri çəkilir — 1 kubik boşluqsuz geri gedir
     bossSnake.headProgress = Math.max(-40, bossSnake.headProgress - bossSnake.spacing);
     relayoutBossSnake();
+    shakeBossHead();
     fillBossHit();
+  }
+
+  // Hər kubik sındırıldıqda bossun başı titrəsin deyə qısa "shake" animasiyası
+  function shakeBossHead(){
+    if(!bossSnake || !bossSnake.headEl) return;
+    var el = bossSnake.headEl;
+    el.classList.remove("boss-head-shake");
+    void el.offsetWidth; // reflow məcburi — animasiya hər dəfə təzədən başlasın
+    el.classList.add("boss-head-shake");
   }
 
   function clearBossSnake(){
