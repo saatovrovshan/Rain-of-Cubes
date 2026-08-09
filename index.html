@@ -1188,8 +1188,8 @@
       <div id="musicAccordionBody" style="display:none">
         <div class="music-volume-row">
           <span>🔊</span>
-          <input type="range" min="0" max="100" value="100" id="musicVolumeSlider">
-          <span id="musicVolumeVal">100%</span>
+          <input type="range" min="0" max="100" value="50" id="musicVolumeSlider">
+          <span id="musicVolumeVal">50%</span>
         </div>
         <div class="music-track-list" id="settingsMusicList"></div>
       </div>
@@ -2313,6 +2313,7 @@
     if(!p.activeBreakEffect) p.activeBreakEffect = "none";
     if(typeof p.musicMuted !== "boolean") p.musicMuted = (typeof p.muted === "boolean") ? p.muted : false;
     if(typeof p.sfxMuted !== "boolean") p.sfxMuted = (typeof p.muted === "boolean") ? p.muted : false;
+    if(typeof p.musicVolume !== "number") p.musicVolume = 0.5;
     if(!p.totalPlayTimeMs) p.totalPlayTimeMs = 0;
     if(!p.gamesPlayed) p.gamesPlayed = 0;
     if(!p.totalGoldEarned) p.totalGoldEarned = 0;
@@ -4657,7 +4658,7 @@
     document.getElementById("musicAccordionBody").style.display = "none";
     document.getElementById("musicAccordionArrow").classList.remove("open");
     document.getElementById("settingsSignOutRow").style.display = cloudUserId ? "" : "none";
-    var volPct = Math.round((profile.musicVolume != null ? profile.musicVolume : 1) * 100);
+    var volPct = Math.round((profile.musicVolume != null ? profile.musicVolume : 0.5) * 100);
     document.getElementById("musicVolumeSlider").value = volPct;
     document.getElementById("musicVolumeVal").textContent = volPct + "%";
     if(gameActive && !paused){
@@ -6828,8 +6829,10 @@
     if(musicIntervalId){ clearInterval(musicIntervalId); musicIntervalId = null; }
   }
 
+  // Slayder 0-100% arası xəttidir, amma 0.16 (əvvəlki sabit səviyyə) artıq MAKSIMUM deyil,
+  // 50%-ə uyğun gəlir — 50%dən yuxarı qaldırdıqda musiqi əvvəlkindən də qüvvətli ola bilsin.
   function currentMusicGainValue(){
-    return profile.musicMuted ? 0 : 0.16 * (profile.musicVolume != null ? profile.musicVolume : 1);
+    return profile.musicMuted ? 0 : 0.32 * (profile.musicVolume != null ? profile.musicVolume : 0.5);
   }
 
   function setMusicVolume(pct){
