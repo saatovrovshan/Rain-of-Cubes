@@ -659,6 +659,8 @@
   .boss-banner-title{font-size:12px;font-weight:800;letter-spacing:1px;color:#f4c542;text-transform:uppercase}
   .boss-banner-name{font-size:18px;font-weight:900;margin-top:2px}
   .boss-banner-sub{font-size:11px;font-weight:700;color:#ffd76b;margin-top:6px}
+  .boss-segment{position:absolute;width:46px;height:46px;border-radius:9px;box-shadow:inset 0 -5px 0 rgba(0,0,0,.18),0 3px 6px rgba(0,0,0,.25);cursor:pointer;z-index:6;transition:top .32s cubic-bezier(.34,1.56,.64,1),left .32s cubic-bezier(.34,1.56,.64,1)}
+  .boss-head{position:absolute;width:56px;height:56px;border-radius:14px;background:radial-gradient(circle at 35% 30%,#4a3f36,#211c17 75%);box-shadow:0 0 14px 3px rgba(244,197,66,.55),inset 0 -5px 0 rgba(0,0,0,.3),0 3px 8px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;font-size:30px;z-index:7;pointer-events:none;transition:top .32s cubic-bezier(.34,1.56,.64,1),left .32s cubic-bezier(.34,1.56,.64,1);border:2px solid #f4c542}
 
   #field{position:relative;flex:1;margin:0 12px 8px;background:var(--board);border-radius:10px;overflow:hidden}
   .cube{position:absolute;width:46px;height:46px;border-radius:9px;box-shadow:inset 0 -5px 0 rgba(0,0,0,.18),0 3px 6px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.9);font-size:22px;cursor:pointer;will-change:transform;top:-56px;z-index:5}
@@ -2311,6 +2313,8 @@
   var arcadeIsBossLevel = false;
   var arcadeBossTier = 0;
   var arcadeBossHp = 0;
+  var bossFightActive = false;
+  var bossSnake = null; // {segments:[{el,color}], headEl, path:[{x,y}...]}
 
   var recentSpawnColors = [];
   var urgentColorId = null;
@@ -5226,18 +5230,147 @@
 
   function startBossMission(tier, hp){
     var boss = bossForTier(tier);
-    var color = pickMissionColor();
-    mission = {color:color, count:hp, filled:0, isBoss:true, bossTier:tier, bossName:boss.name, bossIcon:boss.icon};
-    prevMissionColorId = color.id;
-    applyThemedSwatch(missionSwatchEl, color);
-    missionTextEl.textContent = boss.icon + " BOSS: " + boss.name;
-    slotsEl.style.display = "none";
-    slotsEl.innerHTML = "";
-    bossHealthIconEl.textContent = boss.icon;
-    bossHealthRowEl.style.display = "flex";
-    updateBossHealthUI();
-    flashMissionColor(color);
-    showBossBanner(boss, color.name + " rəngli kubları tut!");
+    // bossFightActive dərhal (sinxron) qoyulur ki, geri çağırma animasiyası bitənə qədər olan
+    // qısa pəncərədə belə spawnCube/spawnHammerCube heç bir yeni adi kubik yaratmasın
+    bossFightActive = true;
+    mission = {count:hp, filled:0, isBoss:true, bossTier:tier, bossName:boss.name, bossIcon:boss.icon};
+    // Boss girməzdən əvvəl ekrandakı adi kubiklər sürətlə geri çəkilir — boss döyüşü bitənə
+    // qədər sahədə YALNIZ bossun öz bədən kubikləri olur.
+    recallFieldCubes(function(){
+      missionSwatchEl.style.background = "none";
+      missionSwatchEl.style.boxShadow = "none";
+      missionSwatchEl.classList.remove("themed-glow");
+      missionSwatchEl.textContent = boss.icon;
+      missionTextEl.textContent = boss.icon + " BOSS: " + boss.name;
+      slotsEl.style.display = "none";
+      slotsEl.innerHTML = "";
+      bossHealthIconEl.textContent = boss.icon;
+      bossHealthRowEl.style.display = "flex";
+      updateBossHealthUI();
+      buildBossSnake(boss, hp);
+      showBossBanner(boss, hp + " kubu sındır!");
+    });
+  }
+
+  // Boss girməzdən əvvəl sahədəki bütün adi düşən kubiklər sürətlə yuxarı çəkilib silinir
+  function recallFieldCubes(cb){
+    var cubes = fieldCubes.slice();
+    fieldCubes = [];
+    if(!cubes.length){ cb(); return; }
+    cubes.forEach(function(c){
+      if(c.rafId) cancelAnimationFrame(c.rafId);
+      c.caught = true;
+      c.el.style.transition = "top .28s ease, opacity .28s ease";
+      requestAnimationFrame(function(){
+        c.el.style.top = "-60px";
+        c.el.style.opacity = "0";
+      });
+    });
+    setTimeout(function(){
+      cubes.forEach(function(c){ if(c.el.parentNode) c.el.parentNode.removeChild(c.el); });
+      cb();
+    }, 300);
+  }
+
+  // Boss "ilan" yolunu — sahə daxilində sağa-sola dolaşan, sonrakı sıraya keçən zigzaq — qurur.
+  // Ardıcıl nöqtələr arası məsafə kubik ölçüsünün (46px) yarısından çox olduğu üçün qonşu
+  // kubiklər bir-birinin sahəsinin 50%-dən çoxunu örtmür, amma yenə "birləşmiş" görünür.
+  function buildSnakePath(count){
+    var fw = field.clientWidth || 300;
+    var fh = field.clientHeight || 420;
+    var marginX = 30, marginTop = 26, marginBottom = 34;
+    var spacing = 30;
+    var usableW = Math.max(90, fw - marginX*2);
+    var colsPerRow = Math.max(3, Math.floor(usableW / spacing) + 1);
+    var rowH = 30;
+    var maxRows = Math.max(1, Math.floor((fh - marginTop - marginBottom) / rowH));
+    var pts = [];
+    var row = 0, col = 0, dir = 1;
+    for(var i=0; i<=count; i++){
+      var rr = Math.min(row, maxRows - 1);
+      var xIndex = dir === 1 ? col : (colsPerRow - 1 - col);
+      var x = Math.min(marginX + xIndex * spacing, fw - marginX);
+      var y = marginTop + rr * rowH;
+      pts.push({x:x, y:y});
+      col++;
+      if(col >= colsPerRow){ col = 0; row++; dir *= -1; }
+    }
+    return pts;
+  }
+
+  // Boss başını (üzünü) və arxasınca ilan kimi bağlı bədən kubiklərini qurur
+  function buildBossSnake(boss, count){
+    var path = buildSnakePath(count);
+    var headEl = document.createElement("div");
+    headEl.className = "boss-head";
+    headEl.textContent = boss.icon;
+    headEl.style.top = "-70px";
+    headEl.style.left = (field.clientWidth/2 - 28) + "px";
+    field.appendChild(headEl);
+
+    var segments = [];
+    for(var i=0; i<count; i++){
+      var el = document.createElement("div");
+      el.className = "boss-segment";
+      var color = ALL_COLORS[Math.floor(Math.random()*ALL_COLORS.length)];
+      applyThemedSwatch(el, color);
+      el.style.top = "-60px";
+      el.style.left = (field.clientWidth/2 - 23) + "px";
+      el.style.transitionDelay = Math.min(i * 30, 900) + "ms";
+      field.appendChild(el);
+      var seg = {el:el, color:color};
+      (function(seg){
+        function onTap(ev){
+          ev.preventDefault();
+          ev.stopPropagation();
+          onBossSegmentTap(seg);
+        }
+        el.addEventListener("click", onTap);
+        el.addEventListener("touchstart", onTap, {passive:false});
+      })(seg);
+      segments.push(seg);
+    }
+    bossSnake = {segments:segments, headEl:headEl, path:path};
+    requestAnimationFrame(function(){ requestAnimationFrame(relayoutBossSnake); });
+  }
+
+  // Hər sındırılan kubikdən sonra çağırılır: qalan kubiklər + baş boşluqsuz geriyə "çəkilir"
+  function relayoutBossSnake(){
+    if(!bossSnake) return;
+    var remaining = bossSnake.segments.length;
+    var path = bossSnake.path;
+    var headPt = path[remaining] || path[path.length-1];
+    bossSnake.headEl.style.left = (headPt.x - 28) + "px";
+    bossSnake.headEl.style.top = (headPt.y - 28) + "px";
+    bossSnake.segments.forEach(function(seg, i){
+      var pt = path[remaining - 1 - i] || path[0];
+      seg.el.style.left = (pt.x - 23) + "px";
+      seg.el.style.top = (pt.y - 23) + "px";
+    });
+  }
+
+  function onBossSegmentTap(seg){
+    if(!bossSnake || !mission || !mission.isBoss) return;
+    var idx = bossSnake.segments.indexOf(seg);
+    if(idx === -1) return;
+    bossSnake.segments.splice(idx, 1);
+    var segRect = seg.el.getBoundingClientRect();
+    var frect = field.getBoundingClientRect();
+    spawnBreakEffect(segRect.left - frect.left + segRect.width/2, segRect.top - frect.top + segRect.height/2, seg.color.hex);
+    playBreakSound();
+    if(seg.el.parentNode) seg.el.parentNode.removeChild(seg.el);
+    addXp(CUBE_XP);
+    addGold(CUBE_GOLD);
+    relayoutBossSnake();
+    fillBossHit();
+  }
+
+  function clearBossSnake(){
+    if(!bossSnake) return;
+    if(bossSnake.headEl && bossSnake.headEl.parentNode) bossSnake.headEl.parentNode.removeChild(bossSnake.headEl);
+    bossSnake.segments.forEach(function(seg){ if(seg.el.parentNode) seg.el.parentNode.removeChild(seg.el); });
+    bossSnake = null;
+    bossFightActive = false;
   }
 
   function updateBossHealthUI(){
@@ -5264,6 +5397,7 @@
     clearTimeout(showBossBanner._t);
     showBossBanner._t = setTimeout(function(){ bossBannerEl.classList.remove("show"); }, 2200);
   }
+
 
   // Yeni misya gələndə oyunçu aşağı baxmadan rəngi dərhal görsün deyə ekranın ortasında qısa parıltı göstərir
   function flashMissionColor(color){
@@ -5329,6 +5463,7 @@
     var gold = bossGoldReward(tier);
     var bossName = mission.bossName;
     var bossIcon = mission.bossIcon;
+    clearBossSnake();
     addXp(xp);
     addGold(gold);
     profile.missionsDone = (profile.missionsDone||0) + 1;
@@ -5465,6 +5600,7 @@
       if(c.el && c.el.parentNode) c.el.parentNode.removeChild(c.el);
     });
     fieldCubes = [];
+    clearBossSnake();
   }
 
   // Rənglər bərabər ehtimalla düşür, eyni rəng 2-3 saniyə "soyuyur" və ardıcıl təkrarlanmır — kaotik düşüş
@@ -5627,7 +5763,7 @@
   }
 
   function spawnCube(opts){
-    if(!gameActive) return;
+    if(!gameActive || bossFightActive) return;
     opts = opts || {};
     // Ekran həddindən artıq izdihamlı olmasın deyə maksimum sayı aşanda spawn ötürülür —
     // AMMA misyadakı rəng ekranda heç yoxdursa bu qoruma keçilir, yoxsa oyunçu lazımlı rəngi əbədi gözləyər
@@ -5780,7 +5916,7 @@
 
   // Nadir bonus: Çəkic kubiki. Yerə düşərsə can getmir (sadəcə bonus fürsəti itir).
   function spawnHammerCube(){
-    if(!gameActive) return;
+    if(!gameActive || bossFightActive) return;
     var fw = field.clientWidth;
     var cubeSize = 46;
     var el = document.createElement("div");
@@ -5986,6 +6122,15 @@
       return;
     }
 
+    // Boss döyüşü zamanı normal düşən kubik olmamalıdır (spawn dayandırılıb) — amma keçid
+    // anındakı bir kubik yenə də toxunularsa, mission.color mövcud olmadığı üçün sadəcə
+    // zərərsizcə silinsin (missiyaya təsir etməsin)
+    if(mission.isBoss){
+      spawnBreakEffect(brkX, brkY, record.color.hex);
+      shakeAndRemove(record);
+      return;
+    }
+
     if(record.color.id !== mission.color.id){
       loseLife();
       spawnBreakEffect(brkX, brkY, record.color.hex);
@@ -6022,7 +6167,7 @@
     var relY = cubeRect.top - frect.top;
     showFloatingText(relX, relY, remainingAfterThisCatch > 0 ? (remainingAfterThisCatch + " qaldı") : "Tamamlandı! 🎉");
 
-    var slot = mission.isBoss ? fillBossHit() : fillNextSlot();
+    var slot = fillNextSlot();
     var baseY = record.y || 0;
     if(slot){
       var slotRect = slot.getBoundingClientRect();
