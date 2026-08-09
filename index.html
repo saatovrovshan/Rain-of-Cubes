@@ -431,11 +431,13 @@
   .wheel-wrap{position:relative;width:250px;height:250px;margin:16px auto 20px}
   .wheel-pointer{position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:30px;z-index:5;color:var(--red);text-shadow:0 2px 3px rgba(0,0,0,.4)}
   .wheel-disc{width:100%;height:100%;border-radius:50%;position:relative;transition:transform 4s cubic-bezier(.13,.75,.24,1);border:7px solid #5c4a3a;box-shadow:0 8px 24px rgba(0,0,0,.35);box-sizing:border-box}
-  .wheel-segment-label{position:absolute;top:50%;left:50%;width:0;height:0;font-size:13px;font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6);white-space:nowrap;text-align:center}
+  .wheel-segment-label{position:absolute;top:50%;left:50%;width:0;height:0;font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6);white-space:nowrap;text-align:center}
   .wheel-prize-reveal{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:10;opacity:0;transition:opacity .3s ease}
   .wheel-prize-reveal.show{opacity:1}
   .wheel-prize-reveal-inner{background:linear-gradient(160deg,#ffd76b,#f4c542);color:#5c4a1a;font-weight:900;font-size:15px;padding:12px 18px;border-radius:16px;box-shadow:0 6px 20px rgba(0,0,0,.4);text-align:center;animation:pop .4s cubic-bezier(.34,1.56,.64,1)}
-  .wheel-segment-label span{display:block;transform:translate(-50%,-8px)}
+  .wheel-segment-label span{display:flex;flex-direction:column;align-items:center;gap:0;transform:translate(-50%,-8px)}
+  .wheel-segment-label b{font-size:15px;line-height:1.15;display:block}
+  .wheel-segment-label i{font-style:normal;font-size:10px;font-weight:800;line-height:1.15;display:block}
   .wheel-free-hint{font-size:12px;color:#a99;font-weight:700;margin-bottom:10px}
   .wheel-spin-btn{background:var(--green);color:#fff;border:none;border-radius:12px;padding:14px 36px;font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 4px 0 #4a9e3f,0 6px 12px rgba(0,0,0,.2);margin-bottom:20px}
   .wheel-spin-btn:active{transform:translateY(3px);box-shadow:0 1px 0 #4a9e3f,0 2px 4px rgba(0,0,0,.2)}
@@ -7358,7 +7360,7 @@
     disc.style.background = "conic-gradient(" + stops + ")";
     disc.innerHTML = WHEEL_PRIZES.map(function(p, i){
       var angle = seg * i + seg/2;
-      return '<div class="wheel-segment-label" style="transform:rotate(' + angle + 'deg) translateY(-65px) rotate(' + (-angle) + 'deg)"><span>' + p.icon + ' ' + p.label + '</span></div>';
+      return '<div class="wheel-segment-label" style="transform:rotate(' + angle + 'deg) translateY(-78px) rotate(' + (-angle) + 'deg)"><span><b>' + p.icon + '</b><i>' + p.label + '</i></span></div>';
     }).join("");
   }
 
