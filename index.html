@@ -123,6 +123,7 @@
   .mp-text small{font-size:11px;font-weight:700;opacity:.85}
 
   .menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%}
+  .menu-btn-full{width:100%;margin-bottom:9px}
   .menu-btn{grid-column:span 1;display:flex;align-items:center;gap:8px;text-align:left;background:var(--green);color:#fff;border:none;border-radius:14px;padding:9px 10px;font-size:12px;font-weight:800;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 4px 0 #4a9e3f,0 6px 10px rgba(0,0,0,.2);transition:transform .1s;position:relative;min-height:56px}
   .menu-btn:active{transform:translateY(3px);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 1px 0 #4a9e3f,0 2px 4px rgba(0,0,0,.2)}
   .menu-btn-wide{grid-column:1 / -1}
@@ -407,6 +408,9 @@
   .settings-accordion-arrow.open{transform:rotate(180deg)}
   .settings-signout-row{margin-top:18px;padding-top:14px;border-top:2px solid var(--board-cell);text-align:center}
   .music-track-list{display:flex;flex-direction:column;gap:6px}
+  .music-volume-row{display:flex;align-items:center;gap:10px;padding:6px 10px 14px;font-size:13px;color:var(--ink)}
+  .music-volume-row input[type=range]{flex:1;accent-color:var(--green)}
+  .music-volume-row span:last-child{font-weight:800;font-size:11px;min-width:32px;text-align:right;flex-shrink:0}
   .music-track-row{display:flex;align-items:center;gap:8px;background:var(--panel);border-radius:8px;padding:8px 10px}
   .music-track-name{flex:1;text-align:left;font-size:12px;font-weight:700;color:var(--ink);min-width:0}
   .music-btn{background:var(--board);color:var(--ink-light);border:none;border-radius:7px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;white-space:nowrap}
@@ -427,7 +431,10 @@
   .wheel-wrap{position:relative;width:250px;height:250px;margin:16px auto 20px}
   .wheel-pointer{position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:30px;z-index:5;color:var(--red);text-shadow:0 2px 3px rgba(0,0,0,.4)}
   .wheel-disc{width:100%;height:100%;border-radius:50%;position:relative;transition:transform 4s cubic-bezier(.13,.75,.24,1);border:7px solid #5c4a3a;box-shadow:0 8px 24px rgba(0,0,0,.35);box-sizing:border-box}
-  .wheel-segment-label{position:absolute;top:50%;left:50%;width:0;height:0;font-size:12px;font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6);white-space:nowrap;text-align:center}
+  .wheel-segment-label{position:absolute;top:50%;left:50%;width:0;height:0;font-size:13px;font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6);white-space:nowrap;text-align:center}
+  .wheel-prize-reveal{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:10;opacity:0;transition:opacity .3s ease}
+  .wheel-prize-reveal.show{opacity:1}
+  .wheel-prize-reveal-inner{background:linear-gradient(160deg,#ffd76b,#f4c542);color:#5c4a1a;font-weight:900;font-size:15px;padding:12px 18px;border-radius:16px;box-shadow:0 6px 20px rgba(0,0,0,.4);text-align:center;animation:pop .4s cubic-bezier(.34,1.56,.64,1)}
   .wheel-segment-label span{display:block;transform:translate(-50%,-8px)}
   .wheel-free-hint{font-size:12px;color:#a99;font-weight:700;margin-bottom:10px}
   .wheel-spin-btn{background:var(--green);color:#fff;border:none;border-radius:12px;padding:14px 36px;font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 4px 0 #4a9e3f,0 6px 12px rgba(0,0,0,.2);margin-bottom:20px}
@@ -835,13 +842,14 @@
       </div>
     </div>
 
-    <button class="menu-play-btn" id="startBtn"><span class="mp-icon">▶</span><span class="mp-text">OYNA<small>Macərana başla</small></span></button>
+    <button class="menu-play-btn" id="startBtn"><span class="mp-icon">▶</span><span class="mp-text">OYNA<small>⭐ <span id="playBtnBestScore">0</span> xal<span id="playBtnRank"></span></small></span></button>
+
+    <button class="menu-btn arcade-btn menu-btn-full" id="arcadeBtn"><span class="menu-btn-icon">🕹️</span><span class="menu-btn-text"><b>Arkada</b><small>⭐ <span id="arcadeBtnStars">0</span> ulduz • <span id="arcadeBtnLevel">1</span>-ci səviyyə</small></span></button>
 
     <div class="menu-grid">
       <button class="menu-btn daily-btn" id="dailyBtn"><span class="menu-btn-icon">🎁</span><span class="menu-btn-text"><b>Gündəlik Mükafat</b><small>Hər gün bir hədiyyə</small></span><span class="menu-badge" id="dailyBtnDot" style="display:none"></span></button>
-      <button class="menu-btn arcade-btn" id="arcadeBtn"><span class="menu-btn-icon">🕹️</span><span class="menu-btn-text"><b>Arkada</b><small>Səviyyələri keç</small></span></button>
       <button class="menu-btn ranked-btn" id="rankedBtn"><span class="menu-btn-icon">👑</span><span class="menu-btn-text"><b>Reytinqli Oyun</b><small>Çevrimçi yarış</small></span><span class="ranked-btn-price">500 🪙</span></button>
-      <button class="menu-btn wheel-btn" id="wheelBtn"><span class="menu-btn-icon">🎡</span><span class="menu-btn-text"><b>Mükafat Çarxı</b><small>Açarla çevir</small></span></button>
+      <button class="menu-btn wheel-btn" id="wheelBtn" style="grid-column:1/-1"><span class="menu-btn-icon">🎡</span><span class="menu-btn-text"><b>Mükafat Çarxı</b><small>Açarla çevir</small></span></button>
     </div>
 
     <div class="menu-hint-card">
@@ -972,6 +980,7 @@
       <div class="wheel-wrap">
         <div class="wheel-pointer">▼</div>
         <div class="wheel-disc" id="wheelDisc"></div>
+        <div class="wheel-prize-reveal" id="wheelPrizeReveal"></div>
       </div>
       <div class="wheel-free-hint" id="wheelFreeHint"></div>
       <button class="wheel-spin-btn" id="wheelSpinBtn">Çevir</button>
@@ -1174,6 +1183,11 @@
         <span>🎵 Jenerik Musiqilər</span>
         <span class="settings-accordion-arrow" id="musicAccordionArrow">▾</span>
       </button>
+      <div class="music-volume-row">
+        <span>🔊</span>
+        <input type="range" min="0" max="100" value="100" id="musicVolumeSlider">
+        <span id="musicVolumeVal">100%</span>
+      </div>
       <div class="music-track-list" id="settingsMusicList" style="display:none"></div>
       <div class="settings-signout-row" id="settingsSignOutRow" style="display:none">
         <button class="friend-action-btn reject" id="googleSignOutBtn" style="padding:10px 24px;font-size:12px">🚪 Google Hesabdan çıxış et</button>
@@ -4639,6 +4653,9 @@
     document.getElementById("settingsMusicList").style.display = "none";
     document.getElementById("musicAccordionArrow").classList.remove("open");
     document.getElementById("settingsSignOutRow").style.display = cloudUserId ? "" : "none";
+    var volPct = Math.round((profile.musicVolume != null ? profile.musicVolume : 1) * 100);
+    document.getElementById("musicVolumeSlider").value = volPct;
+    document.getElementById("musicVolumeVal").textContent = volPct + "%";
     if(gameActive && !paused){
       pauseGame();
       pauseOverlay.classList.remove("show");
@@ -4684,9 +4701,12 @@
       Object.keys(profile.arcade.stars).forEach(function(k){ menuTotalStars += profile.arcade.stars[k] || 0; });
     }
     document.getElementById("menuStarsStat").textContent = menuTotalStars;
+    document.getElementById("arcadeBtnStars").textContent = menuTotalStars;
+    document.getElementById("arcadeBtnLevel").textContent = (profile.arcade && profile.arcade.unlockedLevel) || 1;
     shopGoldVal.textContent = profile.gold;
     updateXpBoostBadges();
     renderXpProgress();
+    updatePlayBtnStats();
     renderPhotoInto("menuPhoto", "sm");
     renderPhotoInto("gamePhoto", "sm");
     var menuDot = document.getElementById("menuPresenceDot");
@@ -4698,6 +4718,20 @@
         menuDot.style.display = "none";
       }
     }
+  }
+
+  var playBtnRankFetchedForScore = null;
+  function updatePlayBtnStats(){
+    var best = (profile.records && profile.records.length) ? profile.records[0].score : 0;
+    document.getElementById("playBtnBestScore").textContent = best;
+    var rankEl = document.getElementById("playBtnRank");
+    if(!supabaseClient || !cloudUserId){ rankEl.textContent = ""; playBtnRankFetchedForScore = null; return; }
+    if(playBtnRankFetchedForScore === best) return;
+    playBtnRankFetchedForScore = best;
+    supabaseClient.from("profiles").select("id", {count:"exact", head:true}).gt("best_score", best).then(function(res){
+      if(res.error) return;
+      rankEl.textContent = " • #" + ((res.count||0) + 1) + " yer";
+    });
   }
 
   function renderProfileScreen(){
@@ -6639,7 +6673,7 @@
       try{
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         musicGain = audioCtx.createGain();
-        musicGain.gain.value = profile.musicMuted ? 0 : 0.16;
+        musicGain.gain.value = currentMusicGainValue();
         musicGain.connect(audioCtx.destination);
         sfxGain = audioCtx.createGain();
         sfxGain.gain.value = profile.sfxMuted ? 0 : 0.35;
@@ -6790,12 +6824,22 @@
     if(musicIntervalId){ clearInterval(musicIntervalId); musicIntervalId = null; }
   }
 
+  function currentMusicGainValue(){
+    return profile.musicMuted ? 0 : 0.16 * (profile.musicVolume != null ? profile.musicVolume : 1);
+  }
+
+  function setMusicVolume(pct){
+    profile.musicVolume = Math.max(0, Math.min(100, pct)) / 100;
+    saveProfile();
+    if(musicGain) musicGain.gain.value = currentMusicGainValue();
+  }
+
   function toggleMusic(){
     ensureAudio();
     profile.musicMuted = !profile.musicMuted;
     saveProfile();
     updateSoundUI();
-    if(musicGain) musicGain.gain.value = profile.musicMuted ? 0 : 0.16;
+    if(musicGain) musicGain.gain.value = currentMusicGainValue();
   }
 
   function toggleSfx(){
@@ -7293,6 +7337,8 @@
   // (məs. çanta) səhvən açığa çıxarmır, çünki menuScreen-in özü heç vaxt gizlədilmir
   function openWheel(){
     wheelScreen.classList.add("show");
+    clearTimeout(showWheelPrizeReveal._t);
+    document.getElementById("wheelPrizeReveal").classList.remove("show");
     renderWheelScreen();
   }
   function closeWheel(){
@@ -7312,7 +7358,7 @@
     disc.style.background = "conic-gradient(" + stops + ")";
     disc.innerHTML = WHEEL_PRIZES.map(function(p, i){
       var angle = seg * i + seg/2;
-      return '<div class="wheel-segment-label" style="transform:rotate(' + angle + 'deg) translateY(-90px) rotate(' + (-angle) + 'deg)"><span>' + p.icon + ' ' + p.label + '</span></div>';
+      return '<div class="wheel-segment-label" style="transform:rotate(' + angle + 'deg) translateY(-65px) rotate(' + (-angle) + 'deg)"><span>' + p.icon + ' ' + p.label + '</span></div>';
     }).join("");
   }
 
@@ -7365,17 +7411,27 @@
   }
 
   function grantWheelPrize(prize){
+    var revealHtml;
     if(prize.type === "gold"){
       addGold(prize.amount);
-      showToast("🎉 Çarx: +" + prize.amount + " qızıl!");
+      revealHtml = "🪙<br>+" + prize.amount + " Qızıl";
     } else if(prize.type === "ulti"){
       var pick = ULTI_IDS[Math.floor(Math.random()*ULTI_IDS.length)];
       profile.inventory[pick] = (profile.inventory[pick]||0) + 1;
       saveProfile();
       renderPowerups();
-      showToast("🎉 Çarx: 1 " + ULTI_LABELS[pick] + "!");
+      revealHtml = "🎉<br>1 " + ULTI_LABELS[pick];
     }
+    showWheelPrizeReveal(revealHtml);
     playRewardSound();
+  }
+
+  function showWheelPrizeReveal(html){
+    var el = document.getElementById("wheelPrizeReveal");
+    el.innerHTML = '<div class="wheel-prize-reveal-inner">' + html + '</div>';
+    el.classList.add("show");
+    clearTimeout(showWheelPrizeReveal._t);
+    showWheelPrizeReveal._t = setTimeout(function(){ el.classList.remove("show"); }, 1800);
   }
 
   // Gündəlik mükafat artıq ayrıca "ekran" deyil, menyunun ÜZƏRİNDƏ popup pəncərə kimi açılır —
@@ -7583,6 +7639,10 @@
   document.getElementById("googleSignOutBtn").addEventListener("click", signOutGoogle);
   document.getElementById("settingsModalClose").addEventListener("click", closeSettingsModal);
   document.getElementById("musicAccordionToggle").addEventListener("click", toggleMusicAccordion);
+  document.getElementById("musicVolumeSlider").addEventListener("input", function(){
+    document.getElementById("musicVolumeVal").textContent = this.value + "%";
+    setMusicVolume(parseInt(this.value, 10));
+  });
   document.getElementById("settingsModalOverlay").addEventListener("click", function(e){
     if(e.target === this) closeSettingsModal();
   });
