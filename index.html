@@ -1805,6 +1805,52 @@
     return 60 + tier * 20;
   }
 
+  // 1-ci və 2-ci boss həmişə eyni (sabit) rəngdə olur (adlarına uyğun: Qırmızı Nəhəng/Dərya
+  // Kalmarı), digər bosslarda isə hər döyüşdə fərqli, bir neçə rəng qarışıq gəlir
+  var BOSS_FIXED_COLOR_ID = {1:"red", 2:"blue"};
+
+  // Bir rəngin quyruqdakı cəm sayını 2 fazaya bölür (məs. 10 -> 4-6, 3-7, 5-5 kimi qarışıq)
+  function splitIntoTwoPhases(total){
+    var min = 2;
+    var span = Math.max(1, total - min*2 + 1);
+    var first = min + Math.floor(Math.random() * span);
+    var second = total - first;
+    return [first, second];
+  }
+
+  // Bossun quyruğunda hansı rəng(lər)in neçə ədəd olacağını və hər rəngin 2 fazaya bölünmüş
+  // misya sırasını qurur. 1-2-ci bosslarda tək sabit rəng, digərlərində 2-3 təsadüfi rəng.
+  function buildBossColorPlan(hp, tier){
+    var colors;
+    if(BOSS_FIXED_COLOR_ID[tier]){
+      var fixedColor = ALL_COLORS.filter(function(c){ return c.id === BOSS_FIXED_COLOR_ID[tier]; })[0] || ALL_COLORS[0];
+      colors = [fixedColor];
+    } else {
+      var pool = ALL_COLORS.slice();
+      for(var i=pool.length-1; i>0; i--){
+        var j = Math.floor(Math.random()*(i+1));
+        var tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
+      }
+      var numColors = Math.min(3, Math.max(2, Math.floor(hp/20)), pool.length);
+      colors = pool.slice(0, numColors);
+    }
+    var counts = [];
+    var minPer = Math.max(4, Math.min(6, Math.floor(hp / colors.length)));
+    var remaining = hp;
+    colors.forEach(function(){ counts.push(minPer); remaining -= minPer; });
+    while(remaining > 0){
+      var idx = Math.floor(Math.random()*colors.length);
+      counts[idx]++; remaining--;
+    }
+    var phases = [];
+    colors.forEach(function(color, i){
+      var split = splitIntoTwoPhases(counts[i]);
+      phases.push({color:color, count:split[0]});
+      phases.push({color:color, count:split[1]});
+    });
+    return {colors:colors, counts:counts, phases:phases};
+  }
+
   function buildArcadeLevel(n){
     var isBoss = n % 10 === 0;
     var bossTier = isBoss ? Math.round(n / 10) : 0;
@@ -2523,8 +2569,6 @@
       if(res.error){
         console.error("Bulud saxlama xətası:", res.error);
         if(typeof showToast === "function") showToast("⚠️ Bulud saxlama xətası: " + res.error.message);
-      } else {
-        if(typeof showToast === "function") showToast("☁️ Bulud profili yaradıldı");
       }
     });
   }
@@ -5236,22 +5280,20 @@
     // bossFightActive dərhal (sinxron) qoyulur ki, geri çağırma animasiyası bitənə qədər olan
     // qısa pəncərədə belə spawnCube/spawnHammerCube heç bir yeni adi kubik yaratmasın
     bossFightActive = true;
-    // Misya quyruğa görə verilir: bütün bədən eyni (misya) rəngdədir və döyüş quyruqdakı
-    // kubiklər tamamilə bitənə qədər davam edir — say = quyruğun tam uzunluğu
-    var missionColor = ALL_COLORS[Math.floor(Math.random()*ALL_COLORS.length)];
-    mission = {color:missionColor, count:hp, filled:0, isBoss:true, bossTier:tier, bossName:boss.name, bossIcon:boss.icon};
+    // Döyüş quyruqdakı bütün kubiklər bitənə qədər davam edir — quyruq bir neçə rəngdən
+    // ibarət ola bilər (1-2-ci bossda sabit tək rəng), hər rəng 2 fazaya bölünüb ardıcıl verilir
+    var colorPlan = buildBossColorPlan(hp, tier);
+    mission = {color:null, count:0, filled:0, isBoss:true, bossTier:tier, bossName:boss.name, bossIcon:boss.icon, tailTotal:hp, tailRemaining:hp};
     // Boss girməzdən əvvəl ekrandakı adi kubiklər sürətlə geri çəkilir — boss döyüşü bitənə
     // qədər sahədə YALNIZ bossun öz bədən kubikləri olur.
     recallFieldCubes(function(){
-      applyThemedSwatch(missionSwatchEl, missionColor);
-      missionTextEl.textContent = hp + " " + missionColor.name + " kub";
       slotsEl.style.display = "none";
       slotsEl.innerHTML = "";
       bossHealthIconEl.textContent = boss.icon;
       bossHealthRowEl.style.display = "flex";
-      buildBossSnake(boss, hp, tier, missionColor);
+      buildBossSnake(boss, hp, tier, colorPlan);
       updateBossHealthUI();
-      showBossBanner(boss, hp + " kubu sındır, finişə çatmasın!");
+      advanceBossPhase(true);
     });
   }
 
@@ -5338,9 +5380,9 @@
 
   // Boss başını (üzünü) və arxasınca ilan kimi bitişik bədən kubiklərini qurur. Adi kubiklər
   // düşdüyü kimi başdan (ekranın üstündən) daxil olub davamlı finişə (sahənin altına) doğru
-  // sürüşür — hər çərçivədə bossTick() headProgress-i artırır. Bütün bədən eyni (misya) rəngdədir
-  // ki, döyüş quyruqdakı kubiklər tamamilə bitənə qədər davam etsin.
-  function buildBossSnake(boss, count, tier, missionColor){
+  // sürüşür — hər çərçivədə bossTick() headProgress-i artırır. Bədən colorPlan-a görə bir və ya
+  // bir neçə rəngin qarışığından ibarətdir; misya fazaları (colorPlan.phases) növbə kimi saxlanılır.
+  function buildBossSnake(boss, count, tier, colorPlan){
     var fh = field.clientHeight || 420;
     var totalMs = Math.max(9000, 16000 - tier * 400) * 3; // 3 dəfə yavaş
     var pathPts = buildBossPathTable();
@@ -5349,11 +5391,20 @@
     headEl.textContent = boss.icon;
     field.appendChild(headEl);
 
+    var segColorPool = [];
+    colorPlan.colors.forEach(function(color, i){
+      for(var k=0; k<colorPlan.counts[i]; k++) segColorPool.push(color);
+    });
+    for(var i=segColorPool.length-1; i>0; i--){
+      var j = Math.floor(Math.random()*(i+1));
+      var tmp = segColorPool[i]; segColorPool[i] = segColorPool[j]; segColorPool[j] = tmp;
+    }
+
     var segments = [];
     for(var i=0; i<count; i++){
       var el = document.createElement("div");
       el.className = "boss-segment";
-      var color = missionColor;
+      var color = segColorPool[i];
       applyThemedSwatch(el, color);
       field.appendChild(el);
       var seg = {el:el, color:color};
@@ -5361,9 +5412,12 @@
         function onTap(ev){
           ev.preventDefault();
           ev.stopPropagation();
-          onBossSegmentTap(seg);
+          onBossSegmentTap(seg, ev.type);
         }
-        el.addEventListener("click", onTap);
+        // "click" YOX — kubik hər çərçivədə yerini dəyişdiyi üçün mousedown/mouseup fərqli
+        // elementlərə düşə bilər və click heç işə düşməyə bilər (dəfələrlə basmaq lazım gəlirdi).
+        // mousedown toxunuşun məhz baş verdiyi anda, hədəfin hələ yerini dəyişmədiyi anda tetiklənir.
+        el.addEventListener("mousedown", onTap);
         el.addEventListener("touchstart", onTap, {passive:false});
       })(seg);
       segments.push(seg);
@@ -5380,7 +5434,8 @@
       lastFrame: performance.now(),
       rafId: null,
       pathPts: pathPts,
-      finishY: finishDist
+      finishY: finishDist,
+      phases: colorPlan.phases.slice()
     };
     relayoutBossSnake();
     bossSnake.rafId = requestAnimationFrame(bossTick);
@@ -5417,24 +5472,74 @@
     });
   }
 
-  function onBossSegmentTap(seg){
+  function onBossSegmentTap(seg, evType){
     if(!bossSnake || !mission || !mission.isBoss) return;
+    if(seg.broken) return; // eyni kubikə mousedown+touchstart ikisi də dəyə bilər — təkrar emal etmə
+    // Telefonda touchstart-dan sonra brauzer bəzən sintetik mousedown da göndərir — həmin
+    // sintetik hadisə kubik artıq yerini dəyişdiyi üçün fərqli (yeni) bir kubikə düşüb onu da
+    // sındıra bilər ("eyni anda 2 kubik" bug-u). Əsl toxunuş touchstart idisə, ardınca gələn
+    // mousedown-u qısa müddət ərzində (hansı kubikə düşməsindən asılı olmayaraq) diqqətə almırıq.
+    var now = performance.now();
+    if(evType === "mousedown" && bossSnake.lastTapWasTouch && now - bossSnake.lastTapTime < 500) return;
+    bossSnake.lastTapTime = now;
+    bossSnake.lastTapWasTouch = evType === "touchstart";
     var idx = bossSnake.segments.indexOf(seg);
     if(idx === -1) return;
+    seg.broken = true;
     bossSnake.segments.splice(idx, 1);
     var segRect = seg.el.getBoundingClientRect();
     var frect = field.getBoundingClientRect();
     spawnBreakEffect(segRect.left - frect.left + segRect.width/2, segRect.top - frect.top + segRect.height/2, seg.color.hex);
     if(seg.el.parentNode) seg.el.parentNode.removeChild(seg.el);
 
-    playCatchSound();
-    addXp(CUBE_XP);
-    addGold(CUBE_GOLD);
-    // Hər sındırılan kubikdən sonra boss geri çəkilir — 1 kubik boşluqsuz geri gedir
-    bossSnake.headProgress = Math.max(-40, bossSnake.headProgress - bossSnake.spacing);
+    // Yalnız cari fazanın rənginə uyğun kubik toxunulanda mükafat verilir və boss geri çəkilir —
+    // fərqli rəngə toxunmaq (əvvəlki kimi) can aparır, amma kubik yenə də sınıb quyruqdan gedir
+    var isCorrect = seg.color.id === mission.color.id;
+    if(isCorrect){
+      playCatchSound();
+      addXp(CUBE_XP);
+      addGold(CUBE_GOLD);
+      bossSnake.headProgress = Math.max(-40, bossSnake.headProgress - bossSnake.spacing);
+    } else {
+      playBreakSound();
+      loseLife();
+    }
     relayoutBossSnake();
     shakeBossHead();
-    fillBossHit();
+    mission.tailRemaining = bossSnake.segments.length;
+    updateBossHealthUI();
+
+    if(mission.tailRemaining <= 0){
+      completeBossMission();
+      return;
+    }
+    if(isCorrect){
+      mission.filled++;
+      if(mission.filled >= mission.count){
+        advanceBossPhase();
+      }
+    }
+  }
+
+  // Cari fazanı (rəng+say) növbədən çıxarıb aktivləşdirir; növbə boşdursa boss məğlub olur.
+  // isFirst=true olduqda döyüşün başlanğıc bannerini, əks halda "növbəti rəng" bannerini göstərir
+  function advanceBossPhase(isFirst){
+    if(!bossSnake || !bossSnake.phases.length){
+      completeBossMission();
+      return;
+    }
+    var phase = bossSnake.phases.shift();
+    mission.color = phase.color;
+    mission.count = phase.count;
+    mission.filled = 0;
+    applyThemedSwatch(missionSwatchEl, phase.color);
+    missionTextEl.textContent = phase.count + " " + phase.color.name + " kub";
+    var boss = bossForTier(mission.bossTier);
+    if(isFirst){
+      showBossBanner(boss, phase.count + " " + phase.color.name + " kubu tap, finişə çatmasın!");
+    } else {
+      showBossBanner(boss, "Növbəti: " + phase.count + " " + phase.color.name + " kub!");
+    }
   }
 
   // Hər kubik sındırıldıqda bossun başı titrəsin deyə qısa "shake" animasiyası
@@ -5455,19 +5560,14 @@
     bossFightActive = false;
   }
 
+  // Sağlamlıq zolağı cari fazadan asılı olmayaraq quyruğun ÜMUMİ (bütün rənglər) qalan
+  // miqdarını göstərir ki, faza dəyişəndə geriyə "sıçramasın"
   function updateBossHealthUI(){
-    var pct = Math.max(0, Math.min(100, 100 - (mission.filled / mission.count) * 100));
+    var remaining = mission.tailRemaining;
+    var total = mission.tailTotal;
+    var pct = Math.max(0, Math.min(100, 100 - (remaining / total) * 100));
     bossHealthFillEl.style.width = pct + "%";
-    bossHealthTextEl.textContent = Math.max(0, mission.count - mission.filled) + "/" + mission.count;
-  }
-
-  function fillBossHit(){
-    mission.filled++;
-    updateBossHealthUI();
-    if(mission.filled >= mission.count){
-      completeMission();
-    }
-    return null;
+    bossHealthTextEl.textContent = remaining + "/" + total;
   }
 
   function showBossBanner(boss, sub){
@@ -7397,7 +7497,7 @@
     if(won){
       statsEl.innerHTML = conf.name + "<br>Qalan can: <b>" + lives + "</b> · Qazanılan qızıl: <b>+" + conf.goldReward + "</b>";
     } else if(conf.isBoss && mission && mission.isBoss){
-      statsEl.innerHTML = conf.name + "<br>Tapılmamış kub: <b>" + Math.max(0, mission.count - mission.filled) + "/" + mission.count + "</b> qaldı";
+      statsEl.innerHTML = conf.name + "<br>Tapılmamış kub: <b>" + Math.max(0, mission.tailRemaining) + "/" + mission.tailTotal + "</b> qaldı";
     } else {
       statsEl.innerHTML = conf.name + "<br>Tələb olunan: <b>" + arcadeMissionsRequired + " misya</b> · Tamamlanan: <b>" + missionCount + "</b>";
     }
