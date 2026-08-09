@@ -76,6 +76,7 @@
   .shop-tab-btn{flex:1 1 auto;min-width:76px;text-align:center;background:var(--panel);color:var(--ink);border:2px solid transparent;border-radius:16px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
   .shop-tab-btn.active{background:var(--green);color:#fff;box-shadow:0 3px 0 #4a9e3f}
   .shop-header h2{margin:0;font-size:22px;color:var(--ink)}
+  #chatPeerName{cursor:pointer}
   .achievements-total-badge{font-size:13px;font-weight:800;color:var(--ink);background:var(--panel);border-radius:12px;padding:6px 12px;flex-shrink:0}
   .shop-gold{display:flex;align-items:center;gap:6px;font-size:18px;font-weight:800;color:var(--gold)}
   .shop-back{background:var(--board);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer}
@@ -5233,18 +5234,23 @@
     // bossFightActive dərhal (sinxron) qoyulur ki, geri çağırma animasiyası bitənə qədər olan
     // qısa pəncərədə belə spawnCube/spawnHammerCube heç bir yeni adi kubik yaratmasın
     bossFightActive = true;
-    mission = {count:hp, filled:0, isBoss:true, bossTier:tier, bossName:boss.name, bossIcon:boss.icon};
+    // Misya əvvəlki kimi rəng+say əsaslıdır: bossun bədənindəki qarışıq rəngli kubiklər arasından
+    // MƏHZ bu rəngdəkiləri tapıb sındırmaq lazımdır — səhv rəngə toxunmaq can aparır (adi kubik kimi)
+    var missionColor = ALL_COLORS[Math.floor(Math.random()*ALL_COLORS.length)];
+    var targetCount = Math.min(hp, 2 + Math.floor(Math.random()*4));
+    mission = {color:missionColor, count:targetCount, filled:0, isBoss:true, bossTier:tier, bossName:boss.name, bossIcon:boss.icon};
     // Boss girməzdən əvvəl ekrandakı adi kubiklər sürətlə geri çəkilir — boss döyüşü bitənə
     // qədər sahədə YALNIZ bossun öz bədən kubikləri olur.
     recallFieldCubes(function(){
-      missionTextEl.textContent = boss.icon + " BOSS: " + boss.name;
+      applyThemedSwatch(missionSwatchEl, missionColor);
+      missionTextEl.textContent = targetCount + " " + missionColor.name + " kub";
       slotsEl.style.display = "none";
       slotsEl.innerHTML = "";
       bossHealthIconEl.textContent = boss.icon;
       bossHealthRowEl.style.display = "flex";
-      buildBossSnake(boss, hp, tier);
+      buildBossSnake(boss, hp, tier, missionColor, targetCount);
       updateBossHealthUI();
-      showBossBanner(boss, hp + " kubu sındır, finişə çatmasın!");
+      showBossBanner(boss, targetCount + " " + missionColor.name + " kubu tap, finişə çatmasın!");
     });
   }
 
@@ -5268,33 +5274,97 @@
     }, 300);
   }
 
-  // Boss "ilan" yolunun ixtiyari məsafədəki nöqtəsini hesablayır — adi kubiklər kimi sadəcə
-  // aşağı deyil, sağa-sola dalğalanaraq (ilan kimi süzərək) finişə doğru hərəkət etsin deyə
-  var BOSS_WAVE_LEN = 170;
-  function bossPathPointAt(dist){
+  // Boss "ilan" yolunu düz seqmentlərdən (sağa, aşağı, sola, aşağı, ...) ibarət zigzaq cədvəli
+  // kimi qurur. Xətti seqmentlər üzərində məsafə həqiqi (arc-length) olduğu üçün eyni "spacing"
+  // məsafəsindəki ardıcıl kubiklər HƏMİŞƏ eyni real piksel məsafəsində olur — bucaqlarda da
+  // (əvvəlki sinus-əsaslı yolda bucaq sürəti dəyişdiyi üçün kubiklər arası boşluq yaranırdı)
+  function buildBossPathTable(){
     var fw = field.clientWidth || 300;
     var marginX = 34;
-    var halfW = Math.max(30, (fw - marginX*2) / 2);
-    var x = marginX + halfW + halfW * Math.sin((dist / BOSS_WAVE_LEN) * Math.PI * 2);
-    return {x:x, y:dist};
+    var usableW = Math.max(60, fw - marginX*2);
+    var rowH = 46;
+    var totalRows = 80;
+    var pts = [];
+    var dir = 1;
+    var x = marginX;
+    var y = -80;
+    pts.push({x:x, y:y});
+    for(var r=0; r<totalRows; r++){
+      x = marginX + (dir === 1 ? usableW : 0);
+      pts.push({x:x, y:y});
+      y += rowH;
+      pts.push({x:x, y:y});
+      dir *= -1;
+    }
+    return pts;
   }
 
-  // Boss başını (üzünü) və arxasınca ilan kimi bağlı bədən kubiklərini qurur. Adi kubiklər
+  function pathPointAtTable(pts, dist){
+    if(dist <= 0){
+      return {x: pts[0].x, y: pts[0].y + dist};
+    }
+    var acc = 0;
+    for(var i=1; i<pts.length; i++){
+      var a = pts[i-1], b = pts[i];
+      var segLen = Math.hypot(b.x-a.x, b.y-a.y);
+      if(segLen === 0) continue;
+      if(acc + segLen >= dist){
+        var t = (dist - acc) / segLen;
+        return {x: a.x + (b.x-a.x)*t, y: a.y + (b.y-a.y)*t};
+      }
+      acc += segLen;
+    }
+    var last = pts[pts.length-1];
+    return {x:last.x, y:last.y};
+  }
+
+  // Yol cədvəlindəki məsafəni gəzərək, y koordinatı sahənin dibinə (fh) ilk çatdığı "dist"
+  // dəyərini tapır — bu, finiş xəttinin path-distance qarşılığıdır
+  function findFinishDist(pts, fh){
+    var acc = 0;
+    for(var i=1; i<pts.length; i++){
+      var a = pts[i-1], b = pts[i];
+      var segLen = Math.hypot(b.x-a.x, b.y-a.y);
+      if(b.y >= fh){
+        if(a.y === b.y) return acc + segLen;
+        var t = (fh - a.y) / (b.y - a.y);
+        return acc + segLen * t;
+      }
+      acc += segLen;
+    }
+    return acc;
+  }
+
+  // Boss başını (üzünü) və arxasınca ilan kimi bitişik bədən kubiklərini qurur. Adi kubiklər
   // düşdüyü kimi başdan (ekranın üstündən) daxil olub davamlı finişə (sahənin altına) doğru
-  // sürüşür — hər çərçivədə bossTick() headProgress-i artırır.
-  function buildBossSnake(boss, count, tier){
+  // sürüşür — hər çərçivədə bossTick() headProgress-i artırır. Bədəndəki kubiklərin arasında
+  // targetCount ədəd missionColor rəngində, qalanları başqa (səhv) rənglərdə olur.
+  function buildBossSnake(boss, count, tier, missionColor, targetCount){
     var fh = field.clientHeight || 420;
     var totalMs = Math.max(9000, 16000 - tier * 400);
+    var pathPts = buildBossPathTable();
     var headEl = document.createElement("div");
     headEl.className = "boss-head";
     headEl.textContent = boss.icon;
     field.appendChild(headEl);
 
+    var colorPool = [];
+    for(var i=0; i<targetCount; i++) colorPool.push(missionColor);
+    var otherColors = ALL_COLORS.filter(function(c){ return c.id !== missionColor.id; });
+    if(!otherColors.length) otherColors = ALL_COLORS;
+    for(var i=targetCount; i<count; i++){
+      colorPool.push(otherColors[Math.floor(Math.random()*otherColors.length)]);
+    }
+    for(var i=colorPool.length-1; i>0; i--){
+      var j = Math.floor(Math.random()*(i+1));
+      var tmp = colorPool[i]; colorPool[i] = colorPool[j]; colorPool[j] = tmp;
+    }
+
     var segments = [];
     for(var i=0; i<count; i++){
       var el = document.createElement("div");
       el.className = "boss-segment";
-      var color = ALL_COLORS[Math.floor(Math.random()*ALL_COLORS.length)];
+      var color = colorPool[i];
       applyThemedSwatch(el, color);
       field.appendChild(el);
       var seg = {el:el, color:color};
@@ -5309,30 +5379,35 @@
       })(seg);
       segments.push(seg);
     }
+    // Zigzaq yol üfüqi seyahət daxil etdiyi üçün sahənin dibinə çatmaq üçün lazım olan HƏQİQİ
+    // path-məsafəsi sadəcə sahə hündürlüyündən (fh) qat-qat böyükdür — sürət bu əsl məsafəyə
+    // görə hesablanmalıdır ki, boss dəqiq totalMs müddətində finişə çatsın
+    var finishDist = findFinishDist(pathPts, fh);
     bossSnake = {
       segments: segments, headEl: headEl,
       headProgress: -40, // yuxarıdan bir az yuxarıda başlasın ki, adi kubik kimi "düşərək" girsin
       spacing: 30,
-      speed: fh / totalMs,
+      speed: finishDist / totalMs,
       lastFrame: performance.now(),
       rafId: null,
-      finishY: fh
+      pathPts: pathPts,
+      finishY: finishDist
     };
     relayoutBossSnake();
     bossSnake.rafId = requestAnimationFrame(bossTick);
   }
 
-  // Hər çərçivədə çağırılır: boss davamlı finişə doğru irəliləyir; finişə çatarsa can gedir
-  // və boss yenidən başdan başlayır (artıq sındırılmış kubiklər geri qayıtmır)
+  // Hər çərçivədə çağırılır: boss davamlı finişə doğru irəliləyir; finişə çatarsa oyunçu
+  // dərhal məğlub olur (neçə canı qalsa da) — bu, boss döyüşünə real risk gətirir
   function bossTick(now){
     if(!bossSnake || !gameActive || paused) return;
     var dt = now - bossSnake.lastFrame;
     bossSnake.lastFrame = now;
     bossSnake.headProgress += dt * bossSnake.speed;
     if(bossSnake.headProgress >= bossSnake.finishY){
-      bossSnake.headProgress = -40;
+      lives = 1;
       loseLife("Boss finişə çatdı!");
-      if(!bossSnake) return; // loseLife oyunu bitirə bilər (arcadeLevelEnd/gameOver) — təmizlənmiş ola bilər
+      return;
     }
     relayoutBossSnake();
     bossSnake.rafId = requestAnimationFrame(bossTick);
@@ -5342,12 +5417,12 @@
   // kubikdən sonra da çağırılır — qalan kubiklər başın arxasında boşluqsuz sırayla düzülür
   function relayoutBossSnake(){
     if(!bossSnake) return;
-    var headPt = bossPathPointAt(bossSnake.headProgress);
+    var headPt = pathPointAtTable(bossSnake.pathPts, bossSnake.headProgress);
     bossSnake.headEl.style.left = (headPt.x - 28) + "px";
     bossSnake.headEl.style.top = (headPt.y - 28) + "px";
     bossSnake.segments.forEach(function(seg, i){
       var dist = bossSnake.headProgress - (i + 1) * bossSnake.spacing;
-      var pt = bossPathPointAt(dist);
+      var pt = pathPointAtTable(bossSnake.pathPts, dist);
       seg.el.style.left = (pt.x - 23) + "px";
       seg.el.style.top = (pt.y - 23) + "px";
     });
@@ -5361,11 +5436,20 @@
     var segRect = seg.el.getBoundingClientRect();
     var frect = field.getBoundingClientRect();
     spawnBreakEffect(segRect.left - frect.left + segRect.width/2, segRect.top - frect.top + segRect.height/2, seg.color.hex);
-    playBreakSound();
     if(seg.el.parentNode) seg.el.parentNode.removeChild(seg.el);
+
+    if(seg.color.id !== mission.color.id){
+      // Səhv rəng: əvvəlki adi kubik məntiqi kimi — kubik sınır, misyaya təsir etmir, can gedir
+      playBreakSound();
+      relayoutBossSnake();
+      loseLife();
+      return;
+    }
+
+    playCatchSound();
     addXp(CUBE_XP);
     addGold(CUBE_GOLD);
-    // Hər sındırılan kubikdən sonra boss geri çəkilir — 1 kubik boşluqsuz geri gedir
+    // Düzgün rəng sındırılanda boss geri çəkilir — 1 kubik boşluqsuz geri gedir
     bossSnake.headProgress = Math.max(-40, bossSnake.headProgress - bossSnake.spacing);
     relayoutBossSnake();
     fillBossHit();
@@ -5384,15 +5468,6 @@
     var pct = Math.max(0, Math.min(100, 100 - (mission.filled / mission.count) * 100));
     bossHealthFillEl.style.width = pct + "%";
     bossHealthTextEl.textContent = Math.max(0, mission.count - mission.filled) + "/" + mission.count;
-    // Misya rəngi bossun öz bədənindəki (ən öndəki) kubikin rənginə görə göstərilir
-    if(bossSnake && bossSnake.segments.length){
-      applyThemedSwatch(missionSwatchEl, bossSnake.segments[0].color);
-    } else {
-      missionSwatchEl.style.background = "none";
-      missionSwatchEl.style.boxShadow = "none";
-      missionSwatchEl.classList.remove("themed-glow");
-      missionSwatchEl.textContent = mission.bossIcon || "";
-    }
   }
 
   function fillBossHit(){
@@ -7331,7 +7406,7 @@
     if(won){
       statsEl.innerHTML = conf.name + "<br>Qalan can: <b>" + lives + "</b> · Qazanılan qızıl: <b>+" + conf.goldReward + "</b>";
     } else if(conf.isBoss && mission && mission.isBoss){
-      statsEl.innerHTML = conf.name + "<br>Boss canı: <b>" + Math.max(0, mission.count - mission.filled) + "/" + mission.count + "</b> qaldı";
+      statsEl.innerHTML = conf.name + "<br>Tapılmamış kub: <b>" + Math.max(0, mission.count - mission.filled) + "/" + mission.count + "</b> qaldı";
     } else {
       statsEl.innerHTML = conf.name + "<br>Tələb olunan: <b>" + arcadeMissionsRequired + " misya</b> · Tamamlanan: <b>" + missionCount + "</b>";
     }
@@ -7808,6 +7883,9 @@
     if(e.target === this) closePlayerCard();
   });
   document.getElementById("chatBack").addEventListener("click", closeChat);
+  document.getElementById("chatPeerName").addEventListener("click", function(){
+    if(chatPeerId) openPlayerCard(chatPeerId);
+  });
   document.getElementById("chatSendBtn").addEventListener("click", sendChatMessage);
   document.getElementById("chatInput").addEventListener("keydown", function(e){
     if(e.key === "Enter") sendChatMessage();
