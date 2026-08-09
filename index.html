@@ -5341,7 +5341,7 @@
   // targetCount ədəd missionColor rəngində, qalanları başqa (səhv) rənglərdə olur.
   function buildBossSnake(boss, count, tier, missionColor, targetCount){
     var fh = field.clientHeight || 420;
-    var totalMs = Math.max(9000, 16000 - tier * 400);
+    var totalMs = Math.max(9000, 16000 - tier * 400) * 3; // 3 dəfə yavaş
     var pathPts = buildBossPathTable();
     var headEl = document.createElement("div");
     headEl.className = "boss-head";
