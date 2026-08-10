@@ -1792,11 +1792,16 @@
   function bossForTier(tier){
     return BOSS_ROSTER[(tier - 1) % BOSS_ROSTER.length];
   }
+  // 70-ci levelə (7-ci tier) qədər əvvəlki kimi məhdudlaşdırılmış artım, ondan sonra 2-başlı
+  // boss dövrü başladığı üçün ("sadəcə kubik saylarını artır, davamlı olaraq") artıq TAVAN yoxdur
   function bossHpForArcadeLevel(n){
-    return Math.min(80, 10 + n) + 15;
+    if(n <= 70) return Math.min(80, 10 + n) + 15;
+    var tier = Math.round(n / 10);
+    return bossHpForArcadeLevel(70) + (tier - 7) * 8;
   }
   function bossHpForTier(tier){
-    return Math.min(60, 10 + tier * 5) + 15;
+    if(tier <= 6) return Math.min(60, 10 + tier * 5) + 15;
+    return bossHpForTier(6) + (tier - 6) * 8;
   }
   function bossXpReward(tier){
     return 100 + tier * 25;
@@ -2361,6 +2366,10 @@
   var arcadeBossHp = 0;
   var bossFightActive = false;
   var bossSnake = null; // {segments:[{el,color}], headEl, path:[{x,y}...]}
+  var bossSnake2 = null; // 7-ci tier-dən 2-başlı bosslar üçün ikinci (sağdan gələn) bədən
+  var bossPhaseQueue = null; // rəng+say misya növbəsi — HƏR İKİ bədənin toplam quyruğuna aiddir
+  var bossLastTapWasTouch = false;
+  var bossLastTapTime = 0;
 
   var recentSpawnColors = [];
   var urgentColorId = null;
@@ -5285,7 +5294,11 @@
     // Döyüş quyruqdakı bütün kubiklər bitənə qədər davam edir — quyruq bir neçə rəngdən
     // ibarət ola bilər, hər rəng 2 fazaya bölünüb ardıcıl verilir (bax: bossColorCountForTier)
     var colorPlan = buildBossColorPlan(hp, tier);
-    mission = {color:null, count:0, filled:0, isBoss:true, bossTier:tier, bossName:boss.name, bossIcon:boss.icon, tailTotal:hp, tailRemaining:hp};
+    // tailTotal HƏQİQİ tikilmiş seqment sayına görə (colorPlan.counts cəmi) hesablanır, xam hp-yə
+    // görə YOX — rəng sayı çox, hp az olanda minPer-in aşağı sərhədi (bax buildBossColorPlan)
+    // faktiki cəmi hp-dən bir az artıq edə bilər, sağlamlıq zolağının həqiqətlə uyğun qalması üçün
+    var actualTail = colorPlan.counts.reduce(function(a,b){ return a+b; }, 0);
+    mission = {color:null, count:0, filled:0, isBoss:true, bossTier:tier, bossName:boss.name, bossIcon:boss.icon, tailTotal:actualTail, tailRemaining:actualTail};
     // Boss girməzdən əvvəl ekrandakı adi kubiklər sürətlə geri çəkilir — boss döyüşü bitənə
     // qədər sahədə YALNIZ bossun öz bədən kubikləri olur.
     recallFieldCubes(function(){
@@ -5293,7 +5306,7 @@
       slotsEl.innerHTML = "";
       bossHealthIconEl.textContent = boss.icon;
       bossHealthRowEl.style.display = "flex";
-      buildBossSnake(boss, hp, tier, colorPlan);
+      buildBossSnake(boss, tier, colorPlan);
       updateBossHealthUI();
       advanceBossPhase(true);
     });
@@ -5323,15 +5336,21 @@
   // kimi qurur. Xətti seqmentlər üzərində məsafə həqiqi (arc-length) olduğu üçün eyni "spacing"
   // məsafəsindəki ardıcıl kubiklər HƏMİŞƏ eyni real piksel məsafəsində olur — bucaqlarda da
   // (əvvəlki sinus-əsaslı yolda bucaq sürəti dəyişdiyi üçün kubiklər arası boşluq yaranırdı)
-  function buildBossPathTable(){
+  // startDir: 1 = soldan başlayıb sağa doğru ilk hərəkət, -1 = sağdan başlayıb sola doğru ilk hərəkət.
+  // turnEveryRows: neçə sıra düşdükdən sonra üfüqi istiqamət dönsün (1 = hər sırada, 2 = 2 sırada bir —
+  // 7-ci tier-dən 2-başlı bosslarda solun/sağın fərqli dönmə tempi olması üçün istifadə olunur ki,
+  // iki bədən eyni zigzaqda tam üst-üstə düşməsin).
+  function buildBossPathTable(startDir, turnEveryRows){
+    startDir = startDir || 1;
+    turnEveryRows = turnEveryRows || 1;
     var fw = field.clientWidth || 300;
     var marginX = 34;
     var usableW = Math.max(60, fw - marginX*2);
     var rowH = 46;
     var totalRows = 80;
     var pts = [];
-    var dir = 1;
-    var x = marginX;
+    var dir = startDir;
+    var x = dir === 1 ? marginX : (marginX + usableW);
     var y = -80;
     pts.push({x:x, y:y});
     // Giriş seqmenti: əvvəlcə düz aşağı (üfüqi YOX) enərək tez görünən sahəyə çatır. Bu olmasa
@@ -5339,12 +5358,14 @@
     // yolun uzunluğuna görə hesablandığından bu, boss görünənə qədər 2+ saniyəlik gecikmə yaradırdı.
     y = 60;
     pts.push({x:x, y:y});
+    var rowsSinceFlip = 0;
     for(var r=0; r<totalRows; r++){
-      x = marginX + (dir === 1 ? usableW : 0);
+      x = dir === 1 ? (marginX + usableW) : marginX;
       pts.push({x:x, y:y});
       y += rowH;
       pts.push({x:x, y:y});
-      dir *= -1;
+      rowsSinceFlip++;
+      if(rowsSinceFlip >= turnEveryRows){ dir *= -1; rowsSinceFlip = 0; }
     }
     return pts;
   }
@@ -5395,37 +5416,32 @@
     return acc;
   }
 
-  // Boss başını (üzünü) və arxasınca ilan kimi bitişik bədən kubiklərini qurur. Adi kubiklər
-  // düşdüyü kimi başdan (ekranın üstündən) daxil olub davamlı finişə (sahənin altına) doğru
-  // sürüşür — hər çərçivədə bossTick() headProgress-i artırır. Bədən colorPlan-a görə bir və ya
-  // bir neçə rəngin qarışığından ibarətdir; misya fazaları (colorPlan.phases) növbə kimi saxlanılır.
-  function buildBossSnake(boss, count, tier, colorPlan){
-    var fh = field.clientHeight || 420;
-    // 3 dəfə yavaş (əvvəlki azaltma) + əlavə 60% azaltma (sürəti ×0.4 etmək üçün müddəti ×2.5 artırırıq)
-    var totalMs = Math.max(9000, 16000 - tier * 400) * 3 * 2.5;
-    var pathPts = buildBossPathTable();
+  // Bir bədən (baş+quyruq) qurur və hazır snake obyekti qaytarır — tək-başlı bosslarda (tier<7)
+  // yalnız bir dəfə, 2-başlı bosslarda (tier>=7) HƏR bədən üçün ayrıca çağırılır.
+  function buildOneBossSnake(boss, colorList, totalMs, startDir, turnEveryRows, fh){
+    var pathPts = buildBossPathTable(startDir, turnEveryRows);
     var headEl = document.createElement("div");
     headEl.className = "boss-head";
     headEl.textContent = boss.icon;
     field.appendChild(headEl);
 
-    var segColorPool = [];
-    colorPlan.colors.forEach(function(color, i){
-      for(var k=0; k<colorPlan.counts[i]; k++) segColorPool.push(color);
-    });
-    for(var i=segColorPool.length-1; i>0; i--){
-      var j = Math.floor(Math.random()*(i+1));
-      var tmp = segColorPool[i]; segColorPool[i] = segColorPool[j]; segColorPool[j] = tmp;
-    }
+    var snake = {
+      headEl: headEl,
+      headProgress: -40, // yuxarıdan bir az yuxarıda başlasın ki, adi kubik kimi "düşərək" girsin
+      spacing: 30,
+      lastFrame: performance.now(),
+      rafId: null,
+      pathPts: pathPts
+    };
 
     var segments = [];
-    for(var i=0; i<count; i++){
+    for(var i=0; i<colorList.length; i++){
       var el = document.createElement("div");
       el.className = "boss-segment";
-      var color = segColorPool[i];
+      var color = colorList[i];
       applyThemedSwatch(el, color);
       field.appendChild(el);
-      var seg = {el:el, color:color};
+      var seg = {el:el, color:color, snake:snake};
       (function(seg){
         function onTap(ev){
           ev.preventDefault();
@@ -5440,6 +5456,8 @@
       })(seg);
       segments.push(seg);
     }
+    snake.segments = segments;
+
     // Zigzaq yol üfüqi seyahət daxil etdiyi üçün sahənin dibinə çatmaq üçün lazım olan HƏQİQİ
     // path-məsafəsi sadəcə sahə hündürlüyündən (fh) qat-qat böyükdür — sürət bu əsl məsafəyə
     // görə hesablanmalıdır ki, boss dəqiq totalMs müddətində finişə çatsın
@@ -5448,54 +5466,93 @@
     // "sürətlə" fazası dəqiq bu azaltmadan ƏVVƏLKİ tempə bərabərdir (normalSpeed / 0.4)
     var normalSpeed = finishDist / totalMs;
     var fastSpeed = normalSpeed / 0.4;
-    var fastPhaseEndDist = pathDistAtPointIndex(pathPts, 5); // giriş seqmenti + 2 tam sıra
-    bossSnake = {
-      segments: segments, headEl: headEl,
-      headProgress: -40, // yuxarıdan bir az yuxarıda başlasın ki, adi kubik kimi "düşərək" girsin
-      spacing: 30,
-      normalSpeed: normalSpeed,
-      fastSpeed: fastSpeed,
-      fastPhaseEndDist: fastPhaseEndDist,
-      lastFrame: performance.now(),
-      rafId: null,
-      pathPts: pathPts,
-      finishY: finishDist,
-      phases: colorPlan.phases.slice()
-    };
+    snake.normalSpeed = normalSpeed;
+    snake.fastSpeed = fastSpeed;
+    snake.fastPhaseEndDist = pathDistAtPointIndex(pathPts, 5); // giriş seqmenti + 2 tam sıra
+    snake.finishY = finishDist;
+    return snake;
+  }
+
+  // Boss başını (üzünü) və arxasınca ilan kimi bitişik bədən kubiklərini qurur. Adi kubiklər
+  // düşdüyü kimi başdan (ekranın üstündən) daxil olub davamlı finişə (sahənin altına) doğru
+  // sürüşür — hər çərçivədə bossTick() headProgress-i artırır. Bədən colorPlan-a görə bir və ya
+  // bir neçə rəngin qarışığından ibarətdir; misya fazaları (bossPhaseQueue) növbə kimi saxlanılır.
+  // 7-ci tier-dən etibarən İKİ bədən (sağdan və soldan) eyni anda qurulur — quyruq təsadüfi
+  // qarışdırılıb ikiyə bölünür, misya fazaları isə İKİSİNƏ BİRDƏN aiddir (hansı bədəndən
+  // sındırılmasından asılı olmayaraq eyni rəng sayılır).
+  function buildBossSnake(boss, tier, colorPlan){
+    var fh = field.clientHeight || 420;
+    // 3 dəfə yavaş (əvvəlki azaltma) + əlavə 60% azaltma (sürəti ×0.4 etmək üçün müddəti ×2.5 artırırıq)
+    var totalMs = Math.max(9000, 16000 - tier * 400) * 3 * 2.5;
+
+    var segColorPool = [];
+    colorPlan.colors.forEach(function(color, i){
+      for(var k=0; k<colorPlan.counts[i]; k++) segColorPool.push(color);
+    });
+    for(var i=segColorPool.length-1; i>0; i--){
+      var j = Math.floor(Math.random()*(i+1));
+      var tmp = segColorPool[i]; segColorPool[i] = segColorPool[j]; segColorPool[j] = tmp;
+    }
+
+    bossPhaseQueue = colorPlan.phases.slice();
+
+    var dual = tier >= 7;
+    if(dual){
+      var half = Math.ceil(segColorPool.length / 2);
+      // Sol bədən: hər sırada dönür (əvvəlki tək-boss davranışı). Sağ bədən: 2 sırada bir dönür —
+      // fərqli tempdə zigzaq etdikləri üçün iki bədən eyni yerə tam üst-üstə düşmür.
+      bossSnake = buildOneBossSnake(boss, segColorPool.slice(0, half), totalMs, 1, 1, fh);
+      bossSnake2 = buildOneBossSnake(boss, segColorPool.slice(half), totalMs, -1, 2, fh);
+    } else {
+      bossSnake = buildOneBossSnake(boss, segColorPool, totalMs, 1, 1, fh);
+      bossSnake2 = null;
+    }
     relayoutBossSnake();
-    bossSnake.rafId = requestAnimationFrame(bossTick);
+    scheduleBossTick(bossSnake);
+    if(bossSnake2) scheduleBossTick(bossSnake2);
+  }
+
+  function scheduleBossTick(snake){
+    snake.rafId = requestAnimationFrame(function(now){ bossTick(now, snake); });
   }
 
   // Hər çərçivədə çağırılır: boss davamlı finişə doğru irəliləyir; finişə çatarsa oyunçu
-  // dərhal məğlub olur (neçə canı qalsa da) — bu, boss döyüşünə real risk gətirir
-  function bossTick(now){
-    if(!bossSnake || !gameActive || paused) return;
-    var dt = now - bossSnake.lastFrame;
-    bossSnake.lastFrame = now;
-    var curSpeed = bossSnake.headProgress < bossSnake.fastPhaseEndDist ? bossSnake.fastSpeed : bossSnake.normalSpeed;
-    bossSnake.headProgress += dt * curSpeed;
-    if(bossSnake.headProgress >= bossSnake.finishY){
+  // dərhal məğlub olur (neçə canı qalsa da) — bu, boss döyüşünə real risk gətirir. 2-başlı bosslarda
+  // HƏR bədən öz müstəqil tick dövrəsinə malikdir — hansı bədən əvvəl finişə çatsa məğlubiyyət odur.
+  function bossTick(now, snake){
+    if(!snake || !bossSnake || !gameActive || paused) return;
+    var dt = now - snake.lastFrame;
+    snake.lastFrame = now;
+    var curSpeed = snake.headProgress < snake.fastPhaseEndDist ? snake.fastSpeed : snake.normalSpeed;
+    snake.headProgress += dt * curSpeed;
+    if(snake.headProgress >= snake.finishY){
       lives = 1;
       loseLife("Boss finişə çatdı!");
       return;
     }
-    relayoutBossSnake();
-    bossSnake.rafId = requestAnimationFrame(bossTick);
+    relayoutOneBossSnake(snake);
+    scheduleBossTick(snake);
   }
 
   // Baş + qalan bədən kubiklərinin cari yol məsafəsinə görə mövqeyini yeniləyir. Sındırılan
   // kubikdən sonra da çağırılır — qalan kubiklər başın arxasında boşluqsuz sırayla düzülür
-  function relayoutBossSnake(){
-    if(!bossSnake) return;
-    var headPt = pathPointAtTable(bossSnake.pathPts, bossSnake.headProgress);
-    bossSnake.headEl.style.left = (headPt.x - 28) + "px";
-    bossSnake.headEl.style.top = (headPt.y - 28) + "px";
-    bossSnake.segments.forEach(function(seg, i){
-      var dist = bossSnake.headProgress - (i + 1) * bossSnake.spacing;
-      var pt = pathPointAtTable(bossSnake.pathPts, dist);
+  function relayoutOneBossSnake(snake){
+    if(!snake) return;
+    var headPt = pathPointAtTable(snake.pathPts, snake.headProgress);
+    snake.headEl.style.left = (headPt.x - 28) + "px";
+    snake.headEl.style.top = (headPt.y - 28) + "px";
+    snake.segments.forEach(function(seg, i){
+      var dist = snake.headProgress - (i + 1) * snake.spacing;
+      var pt = pathPointAtTable(snake.pathPts, dist);
       seg.el.style.left = (pt.x - 23) + "px";
       seg.el.style.top = (pt.y - 23) + "px";
     });
+  }
+
+  // Aktiv olan bütün bədənləri (tək və ya 2-başlı boss) yenidən yerləşdirir
+  function relayoutBossSnake(){
+    relayoutOneBossSnake(bossSnake);
+    relayoutOneBossSnake(bossSnake2);
   }
 
   function onBossSegmentTap(seg, evType){
@@ -5505,34 +5562,36 @@
     // sintetik hadisə kubik artıq yerini dəyişdiyi üçün fərqli (yeni) bir kubikə düşüb onu da
     // sındıra bilər ("eyni anda 2 kubik" bug-u). Əsl toxunuş touchstart idisə, ardınca gələn
     // mousedown-u qısa müddət ərzində (hansı kubikə düşməsindən asılı olmayaraq) diqqətə almırıq.
+    // Bu vəziyyət HƏR İKİ bədən üçün ortaqdır (hansı bədəndən olmasından asılı olmayaraq).
     var now = performance.now();
-    if(evType === "mousedown" && bossSnake.lastTapWasTouch && now - bossSnake.lastTapTime < 500) return;
-    bossSnake.lastTapTime = now;
-    bossSnake.lastTapWasTouch = evType === "touchstart";
-    var idx = bossSnake.segments.indexOf(seg);
+    if(evType === "mousedown" && bossLastTapWasTouch && now - bossLastTapTime < 500) return;
+    bossLastTapTime = now;
+    bossLastTapWasTouch = evType === "touchstart";
+    var snake = seg.snake;
+    var idx = snake.segments.indexOf(seg);
     if(idx === -1) return;
     seg.broken = true;
-    bossSnake.segments.splice(idx, 1);
+    snake.segments.splice(idx, 1);
     var segRect = seg.el.getBoundingClientRect();
     var frect = field.getBoundingClientRect();
     spawnBreakEffect(segRect.left - frect.left + segRect.width/2, segRect.top - frect.top + segRect.height/2, seg.color.hex);
     if(seg.el.parentNode) seg.el.parentNode.removeChild(seg.el);
 
-    // Yalnız cari fazanın rənginə uyğun kubik toxunulanda mükafat verilir və boss geri çəkilir —
-    // fərqli rəngə toxunmaq (əvvəlki kimi) can aparır, amma kubik yenə də sınıb quyruqdan gedir
+    // Yalnız cari fazanın rənginə uyğun kubik toxunulanda mükafat verilir və toxunulan bədən geri
+    // çəkilir — fərqli rəngə toxunmaq (əvvəlki kimi) can aparır, amma kubik yenə də sınıb quyruqdan gedir
     var isCorrect = seg.color.id === mission.color.id;
     if(isCorrect){
       playCatchSound();
       addXp(CUBE_XP);
       addGold(CUBE_GOLD);
-      bossSnake.headProgress = Math.max(-40, bossSnake.headProgress - bossSnake.spacing);
+      snake.headProgress = Math.max(-40, snake.headProgress - snake.spacing);
     } else {
       playBreakSound();
       loseLife();
     }
-    relayoutBossSnake();
-    shakeBossHead();
-    mission.tailRemaining = bossSnake.segments.length;
+    relayoutOneBossSnake(snake);
+    shakeBossHead(snake);
+    mission.tailRemaining = (bossSnake ? bossSnake.segments.length : 0) + (bossSnake2 ? bossSnake2.segments.length : 0);
     updateBossHealthUI();
 
     if(mission.tailRemaining <= 0){
@@ -5548,13 +5607,14 @@
   }
 
   // Cari fazanı (rəng+say) növbədən çıxarıb aktivləşdirir; növbə boşdursa boss məğlub olur.
-  // isFirst=true olduqda döyüşün başlanğıc bannerini, əks halda "növbəti rəng" bannerini göstərir
+  // Növbə HƏR İKİ bədənin toplam quyruğuna aiddir (bax: bossPhaseQueue). isFirst=true olduqda
+  // döyüşün başlanğıc bannerini, əks halda "növbəti rəng" bannerini göstərir
   function advanceBossPhase(isFirst){
-    if(!bossSnake || !bossSnake.phases.length){
+    if(!bossSnake || !bossPhaseQueue || !bossPhaseQueue.length){
       completeBossMission();
       return;
     }
-    var phase = bossSnake.phases.shift();
+    var phase = bossPhaseQueue.shift();
     mission.color = phase.color;
     mission.count = phase.count;
     mission.filled = 0;
@@ -5568,21 +5628,25 @@
     }
   }
 
-  // Hər kubik sındırıldıqda bossun başı titrəsin deyə qısa "shake" animasiyası
-  function shakeBossHead(){
-    if(!bossSnake || !bossSnake.headEl) return;
-    var el = bossSnake.headEl;
+  // Hər kubik sındırıldıqda toxunulan bədənin başı titrəsin deyə qısa "shake" animasiyası
+  function shakeBossHead(snake){
+    if(!snake || !snake.headEl) return;
+    var el = snake.headEl;
     el.classList.remove("boss-head-shake");
     void el.offsetWidth; // reflow məcburi — animasiya hər dəfə təzədən başlasın
     el.classList.add("boss-head-shake");
   }
 
   function clearBossSnake(){
-    if(!bossSnake) return;
-    if(bossSnake.rafId) cancelAnimationFrame(bossSnake.rafId);
-    if(bossSnake.headEl && bossSnake.headEl.parentNode) bossSnake.headEl.parentNode.removeChild(bossSnake.headEl);
-    bossSnake.segments.forEach(function(seg){ if(seg.el.parentNode) seg.el.parentNode.removeChild(seg.el); });
+    [bossSnake, bossSnake2].forEach(function(s){
+      if(!s) return;
+      if(s.rafId) cancelAnimationFrame(s.rafId);
+      if(s.headEl && s.headEl.parentNode) s.headEl.parentNode.removeChild(s.headEl);
+      s.segments.forEach(function(seg){ if(seg.el.parentNode) seg.el.parentNode.removeChild(seg.el); });
+    });
     bossSnake = null;
+    bossSnake2 = null;
+    bossPhaseQueue = null;
     bossFightActive = false;
   }
 
@@ -6431,7 +6495,7 @@
     fieldCubes.forEach(function(c){
       if(c.rafId){ cancelAnimationFrame(c.rafId); c.rafId = null; }
     });
-    if(bossSnake && bossSnake.rafId){ cancelAnimationFrame(bossSnake.rafId); bossSnake.rafId = null; }
+    [bossSnake, bossSnake2].forEach(function(s){ if(s && s.rafId){ cancelAnimationFrame(s.rafId); s.rafId = null; } });
     pauseBtn.textContent = "▶️";
     pauseMainPanel.style.display = "";
     pauseConfirmPanel.style.display = "none";
@@ -6460,10 +6524,11 @@
       c.lastFrame = performance.now();
       if(c.animate) c.rafId = requestAnimationFrame(c.animate);
     });
-    if(bossSnake){
-      bossSnake.lastFrame = performance.now();
-      bossSnake.rafId = requestAnimationFrame(bossTick);
-    }
+    [bossSnake, bossSnake2].forEach(function(s){
+      if(!s) return;
+      s.lastFrame = performance.now();
+      scheduleBossTick(s);
+    });
     waveEndsAt += pausedFor;
     hammerEndsAt += pausedFor;
     if(slowMode){
