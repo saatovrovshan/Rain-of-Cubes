@@ -5368,6 +5368,16 @@
     return {x:last.x, y:last.y};
   }
 
+  // pts[0]-dan pts[idx]-ə qədər olan path-məsafəsini hesablayır (məs. "ilk 2 döngə" hara qədərdir?)
+  function pathDistAtPointIndex(pts, idx){
+    var acc = 0;
+    for(var i=1; i<=idx && i<pts.length; i++){
+      var a = pts[i-1], b = pts[i];
+      acc += Math.hypot(b.x-a.x, b.y-a.y);
+    }
+    return acc;
+  }
+
   // Yol cədvəlindəki məsafəni gəzərək, y koordinatı sahənin dibinə (fh) ilk çatdığı "dist"
   // dəyərini tapır — bu, finiş xəttinin path-distance qarşılığıdır
   function findFinishDist(pts, fh){
@@ -5391,7 +5401,8 @@
   // bir neçə rəngin qarışığından ibarətdir; misya fazaları (colorPlan.phases) növbə kimi saxlanılır.
   function buildBossSnake(boss, count, tier, colorPlan){
     var fh = field.clientHeight || 420;
-    var totalMs = Math.max(9000, 16000 - tier * 400) * 3; // 3 dəfə yavaş
+    // 3 dəfə yavaş (əvvəlki azaltma) + əlavə 60% azaltma (sürəti ×0.4 etmək üçün müddəti ×2.5 artırırıq)
+    var totalMs = Math.max(9000, 16000 - tier * 400) * 3 * 2.5;
     var pathPts = buildBossPathTable();
     var headEl = document.createElement("div");
     headEl.className = "boss-head";
@@ -5433,11 +5444,18 @@
     // path-məsafəsi sadəcə sahə hündürlüyündən (fh) qat-qat böyükdür — sürət bu əsl məsafəyə
     // görə hesablanmalıdır ki, boss dəqiq totalMs müddətində finişə çatsın
     var finishDist = findFinishDist(pathPts, fh);
+    // Boss ilk 2 döngəyə (sıraya) qədər sürətlə girib sonra normal (60% azaldılmış) sürətinə düşür —
+    // "sürətlə" fazası dəqiq bu azaltmadan ƏVVƏLKİ tempə bərabərdir (normalSpeed / 0.4)
+    var normalSpeed = finishDist / totalMs;
+    var fastSpeed = normalSpeed / 0.4;
+    var fastPhaseEndDist = pathDistAtPointIndex(pathPts, 5); // giriş seqmenti + 2 tam sıra
     bossSnake = {
       segments: segments, headEl: headEl,
       headProgress: -40, // yuxarıdan bir az yuxarıda başlasın ki, adi kubik kimi "düşərək" girsin
       spacing: 30,
-      speed: finishDist / totalMs,
+      normalSpeed: normalSpeed,
+      fastSpeed: fastSpeed,
+      fastPhaseEndDist: fastPhaseEndDist,
       lastFrame: performance.now(),
       rafId: null,
       pathPts: pathPts,
@@ -5454,7 +5472,8 @@
     if(!bossSnake || !gameActive || paused) return;
     var dt = now - bossSnake.lastFrame;
     bossSnake.lastFrame = now;
-    bossSnake.headProgress += dt * bossSnake.speed;
+    var curSpeed = bossSnake.headProgress < bossSnake.fastPhaseEndDist ? bossSnake.fastSpeed : bossSnake.normalSpeed;
+    bossSnake.headProgress += dt * curSpeed;
     if(bossSnake.headProgress >= bossSnake.finishY){
       lives = 1;
       loseLife("Boss finişə çatdı!");
@@ -5586,7 +5605,6 @@
     clearTimeout(showBossBanner._t);
     showBossBanner._t = setTimeout(function(){ bossBannerEl.classList.remove("show"); }, 2200);
   }
-
 
   // Yeni misya gələndə oyunçu aşağı baxmadan rəngi dərhal görsün deyə ekranın ortasında qısa parıltı göstərir
   function flashMissionColor(color){
