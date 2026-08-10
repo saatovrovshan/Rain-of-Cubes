@@ -438,6 +438,9 @@
   .bag-row-name{font-size:13px;font-weight:800;color:var(--ink)}
   .bag-row-desc{font-size:10px;color:#a99;font-weight:600}
   .bag-row-count{font-size:14px;font-weight:800;color:var(--ink);background:rgba(0,0,0,.06);padding:5px 12px;border-radius:8px;flex-shrink:0}
+  .bag-activate-btn{flex-shrink:0;background:var(--gold);color:#5a3d00;border:none;border-radius:8px;padding:8px 12px;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit}
+  .bag-boost-active{border:2px solid var(--gold);background:#fff6db}
+  .bag-boost-active .bag-row-count{background:var(--gold);color:#5a3d00;font-variant-numeric:tabular-nums}
 
   .wheel-keys-row{font-size:15px;font-weight:800;color:var(--ink);margin:14px 0 4px}
   .wheel-wrap{position:relative;width:250px;height:250px;margin:16px auto 20px}
@@ -4905,13 +4908,18 @@
     return !!profile.xpBoostUntil && Date.now() < profile.xpBoostUntil;
   }
 
+  // Real geri sayım: 1 saatlıq üçün "59:59" (MM:SS), 24 saatlıq üçün "23:59:59" (HH:MM:SS) formatı
   function formatBoostRemaining(ms){
-    var totalMin = Math.max(0, Math.ceil(ms / 60000));
-    var h = Math.floor(totalMin / 60);
-    var m = totalMin % 60;
-    if(h > 0) return h + "s " + m + "dəq";
-    return m + "dəq";
+    var totalSec = Math.max(0, Math.ceil(ms / 1000));
+    var h = Math.floor(totalSec / 3600);
+    var m = Math.floor((totalSec % 3600) / 60);
+    var s = totalSec % 60;
+    function pad(n){ return n < 10 ? "0" + n : "" + n; }
+    if(h > 0) return pad(h) + ":" + pad(m) + ":" + pad(s);
+    return pad(m) + ":" + pad(s);
   }
+
+  var xpBoostTimerInterval = null;
 
   function updateXpBoostBadges(){
     var active = isXpBoostActive();
@@ -4923,6 +4931,42 @@
     }
     var gameBadge = document.getElementById("xpBoostGameBadge");
     if(gameBadge) gameBadge.style.display = active ? "" : "none";
+    // Real vaxtda saniyəbəsaniyə geri sayım — bax formatBoostRemaining. Aktiv olduqca özünü hər
+    // saniyə yeniləyir, bitdikdə (və ya artıq aktiv deyilsə) intervalı təmizləyir
+    if(active && !xpBoostTimerInterval){
+      xpBoostTimerInterval = setInterval(function(){
+        if(!isXpBoostActive()){
+          clearInterval(xpBoostTimerInterval);
+          xpBoostTimerInterval = null;
+          updateXpBoostBadges();
+          return;
+        }
+        var timeLeftEl = document.getElementById("xpBoostTimeLeft");
+        if(timeLeftEl) timeLeftEl.textContent = formatBoostRemaining(profile.xpBoostUntil - Date.now());
+        if(bagScreen.style.display === "flex") renderBagScreen();
+      }, 1000);
+    } else if(!active && xpBoostTimerInterval){
+      clearInterval(xpBoostTimerInterval);
+      xpBoostTimerInterval = null;
+    }
+  }
+
+  // Çantadan 2x XP sürətləndiricisini aktivləşdirir — artıq aktiv olan varsa qalan vaxtın
+  // üstünə əlavə edir (itmir), yoxdursa indidən başlayır (bax əvvəlki mağaza-daxili davranış)
+  function activateXpBoost(id){
+    if(!profile.inventory[id] || profile.inventory[id] <= 0) return;
+    var item = null;
+    SHOP_CATEGORIES.forEach(function(c){ c.items.forEach(function(i){ if(i.id === id) item = i; }); });
+    if(!item) return;
+    profile.inventory[id]--;
+    var now = Date.now();
+    var base = (profile.xpBoostUntil && profile.xpBoostUntil > now) ? profile.xpBoostUntil : now;
+    profile.xpBoostUntil = base + item.durationMs;
+    saveProfile();
+    renderProfile();
+    updateXpBoostBadges();
+    renderBagScreen();
+    showToast("⚡ " + item.name + " aktivləşdi!");
   }
 
   function renderXpProgress(){
@@ -7288,11 +7332,9 @@
     var disabled = locked || (owned && item.type === "sticker") || (!owned && profile.gold < item.price) ? "disabled" : "";
     var lockBadgeHtml = locked ? '<div class="shop-item-lock-badge">🔒 Sv.' + item.requiredLevel + '</div>' : "";
     var ownedCountHtml = "";
-    if(item.type === "consumable"){
+    if(item.type === "consumable" || item.type === "xpboost"){
       var ownedCount = profile.inventory[item.id] || 0;
-      if(ownedCount > 0) ownedCountHtml = '<div class="shop-item-owned">Sahibsiniz: ' + ownedCount + '</div>';
-    } else if(item.type === "xpboost" && isXpBoostActive()){
-      ownedCountHtml = '<div class="shop-item-owned">⚡ Aktiv: ' + formatBoostRemaining(profile.xpBoostUntil - Date.now()) + ' qalıb</div>';
+      if(ownedCount > 0) ownedCountHtml = '<div class="shop-item-owned">🎒 Çantada: ' + ownedCount + '</div>';
     }
     div.innerHTML = lockBadgeHtml +
       '<div class="shop-item-icon">' + item.icon + '</div>' +
@@ -7403,15 +7445,12 @@
       profile.shopPurchaseCount = (profile.shopPurchaseCount||0) + 1;
       addDailyProgress("shopAnyCount", 1);
       addDailyProgress("goldSpent", item.price);
-      // Artıq aktiv sürətləndirici varsa qalan vaxtın üstünə əlavə edir (itmir), yoxdursa indidən başlayır
-      var now = Date.now();
-      var base = (profile.xpBoostUntil && profile.xpBoostUntil > now) ? profile.xpBoostUntil : now;
-      profile.xpBoostUntil = base + item.durationMs;
+      // Alındıqda dərhal aktivləşmir — çantaya düşür, oyunçu istədiyi vaxt oradan aktiv edir
+      profile.inventory[id] = (profile.inventory[id] || 0) + 1;
       saveProfile();
       renderProfile();
       renderShop();
-      updateXpBoostBadges();
-      showToast("⚡ " + item.name + " aktivləşdi!");
+      showToast("🛒 " + item.name + " çantaya əlavə olundu!");
       return;
     }
 
@@ -8331,19 +8370,42 @@
   function renderBagScreen(){
     var el = document.getElementById("bagList");
     var consumables = [];
+    var boosts = [];
     SHOP_CATEGORIES.forEach(function(cat){
-      cat.items.forEach(function(i){ if(i.type === "consumable" && !consumables.some(function(x){ return x.id === i.id; })) consumables.push(i); });
+      cat.items.forEach(function(i){
+        if(i.type === "consumable" && !consumables.some(function(x){ return x.id === i.id; })) consumables.push(i);
+        if(i.type === "xpboost" && !boosts.some(function(x){ return x.id === i.id; })) boosts.push(i);
+      });
     });
-    var owned = consumables.filter(function(i){ return (profile.inventory[i.id]||0) > 0; });
-    if(!owned.length){
+    var ownedConsumables = consumables.filter(function(i){ return (profile.inventory[i.id]||0) > 0; });
+    var ownedBoosts = boosts.filter(function(i){ return (profile.inventory[i.id]||0) > 0; });
+    if(!ownedConsumables.length && !ownedBoosts.length && !isXpBoostActive()){
       el.innerHTML = '<div class="empty-hint">Hələ heç bir əşyan yoxdur — 🛒 Mağazadan ulti al</div>';
       return;
     }
-    el.innerHTML = owned.map(function(i){
+    var activeBannerHtml = isXpBoostActive()
+      ? '<div class="bag-row bag-boost-active"><div class="bag-row-icon">⚡</div>' +
+        '<div class="bag-row-info"><div class="bag-row-name">2x XP aktivdir</div></div>' +
+        '<div class="bag-row-count">' + formatBoostRemaining(profile.xpBoostUntil - Date.now()) + '</div></div>'
+      : "";
+    // Aktivləşdirmə düyməli sürətləndiricilər əvvəldə, adi ultilər sonra göstərilir
+    var boostRowsHtml = ownedBoosts.map(function(i){
+      return '<div class="bag-row"><div class="bag-row-icon">' + i.icon + '</div>' +
+        '<div class="bag-row-info"><div class="bag-row-name">' + escapeHtml(i.name) + '</div><div class="bag-row-desc">' + escapeHtml(i.desc) + '</div></div>' +
+        '<div class="bag-row-count">x' + (profile.inventory[i.id]||0) + '</div>' +
+        '<button class="bag-activate-btn" data-boost-id="' + i.id + '">Aktivləşdir</button></div>';
+    }).join("");
+    var consumableRowsHtml = ownedConsumables.map(function(i){
       return '<div class="bag-row"><div class="bag-row-icon">' + i.icon + '</div>' +
         '<div class="bag-row-info"><div class="bag-row-name">' + escapeHtml(i.name) + '</div><div class="bag-row-desc">' + escapeHtml(i.desc) + '</div></div>' +
         '<div class="bag-row-count">x' + (profile.inventory[i.id]||0) + '</div></div>';
     }).join("");
+    el.innerHTML = activeBannerHtml + boostRowsHtml + consumableRowsHtml;
+    el.querySelectorAll("[data-boost-id]").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        activateXpBoost(this.getAttribute("data-boost-id"));
+      });
+    });
   }
 
   // ===== Mükafat Çarxı (açarla çevrilir) =====
