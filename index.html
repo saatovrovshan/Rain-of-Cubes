@@ -1904,6 +1904,7 @@
   var NAME_CHANGE_MILESTONES = [1,3,5,10,15,20,25];
   var BOSS_DEFEAT_MILESTONES = [1,3,5,10,25,50,100,250,500,1000,2000,3000,4000,5000,7500,10000];
   var ULTIS_IN_GAME_MILESTONES = [3,5,7,9,12,15,18,21];
+  var COLOR_MISSION_MILESTONES = [1,3,5,10,20,30,50,75,100,200,250,500,750,1000,2000,3000,4000,5000,7500,10000,15000,20000];
   var ACHIEVEMENT_GOLD_REWARD = 50;
 
   function formatMinutesLabel(min){
@@ -2053,6 +2054,21 @@
       icon: n >= 21 ? "🌟" : "⚡",
       category: "general",
       check: function(p){ return (p.maxUltisInOneGame||0) >= n; }
+    });
+  });
+
+  // Hər əsas rəng üçün ayrıca "N misya bu rəngdə tamamla" naliyyət toplusu (bax completeMission-da
+  // profile.missionsByColor izlənməsi) — yalnız normal (boss olmayan) misyaları sayır
+  BASE_COLORS.forEach(function(color){
+    COLOR_MISSION_MILESTONES.forEach(function(n){
+      ACHIEVEMENTS.push({
+        id: "colormission_" + color.id + "_" + n,
+        name: n + " " + color.name.charAt(0).toUpperCase() + color.name.slice(1) + " Misya",
+        desc: n + " " + color.name + " rəngli misya tamamla",
+        icon: n >= 10000 ? "🎨" : "🖌️",
+        category: "colormissions",
+        check: function(p){ return (p.missionsByColor && p.missionsByColor[color.id] || 0) >= n; }
+      });
     });
   });
 
@@ -2227,6 +2243,7 @@
   var ACHIEVEMENT_CATEGORIES = [
     {id:"level", title:"Səviyyə", icon:"⭐"},
     {id:"missions", title:"Misyalar", icon:"📦"},
+    {id:"colormissions", title:"Rəng Misyaları", icon:"🎨"},
     {id:"gold", title:"Qızıl", icon:"🪙"},
     {id:"score", title:"Ən yüksək xal", icon:"🎯"},
     {id:"arcade", title:"Arkada", icon:"🕹️"},
@@ -5781,6 +5798,8 @@
     addXp(MISSION_XP);
     addGold(MISSION_GOLD);
     profile.missionsDone = (profile.missionsDone||0) + 1;
+    if(!profile.missionsByColor) profile.missionsByColor = {};
+    profile.missionsByColor[mission.color.id] = (profile.missionsByColor[mission.color.id]||0) + 1;
     saveProfile();
     renderProfile();
     playMissionSound();
