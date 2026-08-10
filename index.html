@@ -577,7 +577,10 @@
   .lb-row{display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:12px;padding:8px 12px;cursor:pointer;border:2px solid transparent;box-shadow:0 2px 0 rgba(0,0,0,.06);transition:border-color .15s,transform .1s}
   .lb-row:hover{border-color:var(--gold)}
   .lb-row:active{transform:translateY(1px)}
-  .lb-rank{width:26px;flex-shrink:0;font-size:13px;font-weight:800;color:var(--ink);text-align:center}
+  .lb-rank{width:30px;flex-shrink:0;font-size:13px;font-weight:800;color:var(--ink);text-align:center;display:flex;flex-direction:column;align-items:center;gap:1px}
+  .lb-rank-change{font-size:9px;font-weight:800;line-height:1}
+  .lb-rank-change.up{color:var(--green)}
+  .lb-rank-change.down{color:var(--red)}
   .lb-row.top1 .lb-rank{color:#c98a00;font-size:16px}
   .lb-row.top2 .lb-rank{color:#8a8f98;font-size:15px}
   .lb-row.top3 .lb-rank{color:#b56a34;font-size:15px}
@@ -4431,6 +4434,47 @@
     });
   }
 
+  // Gördüyü oyunçular üçün bugünkü sıranı əvvəl saxlanılmış sıra ilə müqayisə edib +/- fərqini
+  // qaytarır. Müqayisə hər (kateqoriya, oyunçu) üçün gündə YALNIZ BİR DƏFƏ aparılır (computed_date
+  // bugünlə eyni olmayanda) — beləliklə göstərilən fərq həmin gün ərzində sabit qalır. Server-side
+  // cron olmadığı üçün bu, liderbordu açan HƏR HANSI oyunçunun kliyenti tərəfindən tətbiq olunur.
+  function computeRankChanges(catId, rankedRows){
+    var today = getTodayStr();
+    var ids = rankedRows.map(function(r){ return r.id; });
+    if(!ids.length) return Promise.resolve({});
+    return supabaseClient.from("leaderboard_rank_changes")
+      .select("player_id,current_rank,rank_change,computed_date")
+      .eq("category", catId)
+      .in("player_id", ids)
+      .then(function(res){
+        if(res.error){ console.error("Liderbord sıra tarixçəsi oxunmadı:", res.error); return {}; }
+        var existingById = {};
+        (res.data || []).forEach(function(r){ existingById[r.player_id] = r; });
+        var toUpsert = [];
+        var displayMap = {};
+        rankedRows.forEach(function(r){
+          var ex = existingById[r.id];
+          if(!ex){
+            // İlk dəfə görünür — indi baza sırası kimi saxlanılır, göstəriləcək fərq yoxdur
+            toUpsert.push({category:catId, player_id:r.id, current_rank:r.rank, rank_change:0, computed_date:today});
+          } else if(ex.computed_date !== today){
+            var delta = ex.current_rank - r.rank; // müsbət = yuxarı (rəqəm kiçilib), mənfi = aşağı
+            toUpsert.push({category:catId, player_id:r.id, current_rank:r.rank, rank_change:delta, computed_date:today});
+            if(delta !== 0) displayMap[r.id] = delta;
+          } else if(ex.rank_change){
+            displayMap[r.id] = ex.rank_change;
+          }
+        });
+        if(toUpsert.length){
+          supabaseClient.from("leaderboard_rank_changes").upsert(toUpsert, {onConflict:"category,player_id"}).then(function(upRes){
+            if(upRes.error) console.error("Liderbord sıra dəyişikliyi saxlanmadı:", upRes.error);
+          });
+        }
+        return displayMap;
+      })
+      .catch(function(err){ console.error("Liderbord sıra dəyişikliyi hesablanmadı:", err); return {}; });
+  }
+
   function loadLeaderboard(){
     var cat = LEADERBOARD_CATEGORIES.find(function(c){ return c.id === leaderboardActiveTab; });
     if(!cat) return;
@@ -4445,23 +4489,28 @@
         if(res.error){ listEl.innerHTML = '<div class="empty-hint">⚠️ Yüklənmə xətası: ' + escapeHtml(res.error.message) + '</div>'; return; }
         var rows = res.data || [];
         if(!rows.length){ listEl.innerHTML = '<div class="empty-hint">Hələ məlumat yoxdur</div>'; return; }
-        listEl.innerHTML = rows.map(function(p, i){
-          var rank = i + 1;
-          var rankClass = rank <= 3 ? " top" + rank : "";
-          var val = p[cat.column] || 0;
-          var valueHtml = cat.format === "duration" ? formatDuration(val)
-            : cat.format === "level" ? ("🏅 Lv. " + val)
-            : (cat.icon + " " + val + (cat.suffix || ""));
-          var subHtml = cat.extraColumn ? '<span class="lb-value-sub">' + (p[cat.extraColumn] || 0) + (cat.extraSuffix || "") + '</span>' : "";
-          return '<div class="lb-row' + rankClass + '" data-id="' + escapeHtml(p.id) + '">' +
-            '<div class="lb-rank">' + rank + '</div>' +
-            buildAvatarHtml({avatarUrl:p.avatar_url, countryFlag:p.country_flag, level:p.level, activeFrame:p.active_frame, presence:{lastSeen:p.last_seen, corner:true}}) +
-            '<div class="lb-info"><div class="lb-name">' + buildNameHtml(p.name || "Oyunçu", p.active_name_color, p.active_name_anim) + '</div></div>' +
-            '<div class="lb-value">' + valueHtml + subHtml + '</div>' +
-            '</div>';
-        }).join("");
-        listEl.querySelectorAll(".lb-row").forEach(function(row){
-          row.addEventListener("click", function(){ openPlayerCard(this.getAttribute("data-id")); });
+        var rankedRows = rows.map(function(p, i){ return {id:p.id, rank:i+1}; });
+        computeRankChanges(cat.id, rankedRows).then(function(deltaMap){
+          listEl.innerHTML = rows.map(function(p, i){
+            var rank = i + 1;
+            var rankClass = rank <= 3 ? " top" + rank : "";
+            var val = p[cat.column] || 0;
+            var valueHtml = cat.format === "duration" ? formatDuration(val)
+              : cat.format === "level" ? ("🏅 Lv. " + val)
+              : (cat.icon + " " + val + (cat.suffix || ""));
+            var subHtml = cat.extraColumn ? '<span class="lb-value-sub">' + (p[cat.extraColumn] || 0) + (cat.extraSuffix || "") + '</span>' : "";
+            var delta = deltaMap[p.id];
+            var deltaHtml = delta ? ('<span class="lb-rank-change ' + (delta > 0 ? "up" : "down") + '">' + (delta > 0 ? "+" : "") + delta + '</span>') : "";
+            return '<div class="lb-row' + rankClass + '" data-id="' + escapeHtml(p.id) + '">' +
+              '<div class="lb-rank">' + rank + deltaHtml + '</div>' +
+              buildAvatarHtml({avatarUrl:p.avatar_url, countryFlag:p.country_flag, level:p.level, activeFrame:p.active_frame, presence:{lastSeen:p.last_seen, corner:true}}) +
+              '<div class="lb-info"><div class="lb-name">' + buildNameHtml(p.name || "Oyunçu", p.active_name_color, p.active_name_anim) + '</div></div>' +
+              '<div class="lb-value">' + valueHtml + subHtml + '</div>' +
+              '</div>';
+          }).join("");
+          listEl.querySelectorAll(".lb-row").forEach(function(row){
+            row.addEventListener("click", function(){ openPlayerCard(this.getAttribute("data-id")); });
+          });
         });
       });
   }
