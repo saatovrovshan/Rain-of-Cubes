@@ -1129,7 +1129,7 @@
     <div class="badges">
       <div class="badge" id="levelBadge" style="display:none"><div class="lbl">LEVEL</div><div class="val" id="levelBadgeVal">1</div></div>
       <div class="badge"><div class="lbl">MİSYA</div><div class="val" id="missionVal">0</div></div>
-      <div class="badge"><div class="lbl">XAL</div><div class="val" id="xpVal">0</div><span class="xp-boost-inline" id="xpBoostGameBadge" style="display:none">⚡2x</span></div>
+      <div class="badge"><div class="lbl">XP</div><div class="val" id="xpVal">0</div><span class="xp-boost-inline" id="xpBoostGameBadge" style="display:none">⚡2x</span></div>
       <div class="badge"><div class="lbl">CAN</div><div class="val hearts" id="livesVal"></div></div>
       <div class="badge" id="battleTimerBadge" style="display:none"><div class="lbl">VAXT</div><div class="val" id="battleTimerVal">60</div></div>
       <div class="badge" id="battleOpponentBadge" style="display:none"><div class="lbl" id="battleOpponentLbl">RƏQİB</div><div class="val" id="battleOpponentScoreVal">0</div></div>
@@ -1182,7 +1182,7 @@
         <div class="gameover-avatar-wrap"><div id="gameoverAvatar"></div></div>
         <div class="gameover-title">🏁 OYUN BİTDİ</div>
         <div class="gameover-score" id="gameoverScoreVal">0</div>
-        <div class="gameover-score-label">XAL</div>
+        <div class="gameover-score-label">XP</div>
         <div class="gameover-stats" id="overlayStats"></div>
         <div class="gameover-bonus-list" id="gameoverBonusList" style="display:none"></div>
         <button id="restartBtn">🔄 Yenidən başla</button>
@@ -1853,8 +1853,9 @@
     if(tier <= 6) return Math.min(60, 10 + tier * 5) + 15;
     return bossHpForTier(6) + (tier - 6) * 8;
   }
+  // Hər növbəti boss əvvəlkindən düz 111 XP daha çox bonus verir (tier artdıqca xətti artım)
   function bossXpReward(tier){
-    return 100 + tier * 25;
+    return 100 + tier * 111;
   }
   function bossGoldReward(tier){
     return 60 + tier * 20;
@@ -6415,6 +6416,10 @@
     var bossBonus = sessionBossesDefeated * 222;
     var bonus = timeBonus + missionBonus + goldBonus + bossBonus;
     var finalScore = rawScore + bonus;
+    // Bonuslarla birlikdə toplanmış yekun nəticənin (finalScore) hər 1000-inə görə 15 XP
+    // bonusu — bu, digər bonuslardan fərqli olaraq YALNIZ oyunçunun səviyyəsi üçün XP-dir,
+    // "xal" ekranındakı yekun ədədə (finalScore) təsir etmir
+    var xpBonus = Math.floor(finalScore / 1000) * 15;
 
     profile.records = profile.records || [];
     profile.records.push({score: finalScore, gold: sessionGoldEarned, level: profile.level||1, missions: missionCount});
@@ -6432,21 +6437,25 @@
       xpHtml += '<span class="gameover-xp-boost">⚡ 2x sürətləndirici ilə: <b>' + (sessionLevelXpEarned * 2) + '</b></span>';
     }
     overlayStatsEl.innerHTML = xpHtml;
+    // xpBonus xpHtml-dəki "Qazanılan XP" statistikasından SONRA əlavə olunur ki, o statistika
+    // yalnız oyun İÇİNDƏ qazanılan XP-ni əks etdirsin, bu son bonusu YOX
+    if(xpBonus > 0) addXp(xpBonus);
     renderPhotoInto("gameoverAvatar", "md");
     var scoreEl = document.getElementById("gameoverScoreVal");
     scoreEl.textContent = rawScore;
     document.getElementById("gameoverBonusList").style.display = "none";
     overlayEl.classList.add("show");
-    // Əvvəlcə xam (bonussuz) xal göstərilir, 1 saniyə sonra qızıl/vaxt/misya/boss bonusları
+    // Əvvəlcə xam (bonussuz) xal göstərilir, 1 saniyə sonra qızıl/vaxt/misya/boss/xp bonusları
     // bir-bir sayğac kimi açılır, onlar bitdikdən SONRA üstdəki xal əvvəlki kimi yekun
     // (bonuslu) xala doğru speedometer kimi (ease-out) sayaraq artır
-    if(bonus > 0){
+    if(bonus > 0 || xpBonus > 0){
       setTimeout(function(){
         revealGameOverBonusBreakdown([
           {icon:"🪙", label:"Qızılı: " + sessionGoldEarned, value:goldBonus},
           {icon:"⏱️", label:"Vaxtı: " + formatBonusTime(bonusSeconds), value:timeBonus},
           {icon:"✅", label:"Misyaları: " + missionCount, value:missionBonus},
-          {icon:"👹", label:"Bossları: " + sessionBossesDefeated, value:bossBonus}
+          {icon:"👹", label:"Bossları: " + sessionBossesDefeated, value:bossBonus},
+          {icon:"✨", label:"XP bonusu", value:xpBonus}
         ], function(){
           animateCountUp(scoreEl, rawScore, finalScore, 1400, "");
         });
