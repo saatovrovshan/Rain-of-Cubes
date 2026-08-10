@@ -1877,12 +1877,16 @@
   // Bossun quyruğunda hansı rəng(lər)in neçə ədəd olacağını və hər rəngin 2 fazaya bölünmüş
   // misya sırasını qurur. Rəng sayı tier-ə görə (1-ci boss 1 rəng, 2-ci 2 rəng və s.), rənglər
   // hər döyüşdə təsadüfi seçilir (heç bir tier artıq sabit rəngə bağlı deyil).
-  function buildBossColorPlan(hp, tier){
-    var pool = ALL_COLORS.slice();
-    for(var i=pool.length-1; i>0; i--){
+  function shuffleArray(arr){
+    for(var i=arr.length-1; i>0; i--){
       var j = Math.floor(Math.random()*(i+1));
-      var tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
+      var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
     }
+    return arr;
+  }
+
+  function buildBossColorPlan(hp, tier){
+    var pool = shuffleArray(ALL_COLORS.slice());
     var numColors = Math.min(bossColorCountForTier(tier), pool.length);
     var colors = pool.slice(0, numColors);
     var counts = [];
@@ -1893,12 +1897,24 @@
       var idx = Math.floor(Math.random()*colors.length);
       counts[idx]++; remaining--;
     }
-    var phases = [];
+    // Hər rəngin 2 fazası "tur" halında bölünür — 1-ci turda hər rəng bir dəfə (təbii olaraq
+    // ardıcıl təkrar yoxdur, çünki hər rəng turda YALNIZ bir dəfə keçir), sonra 2-ci tur eyni
+    // qaydada. İki turun sərhəddində (1-ci turun sonu / 2-ci turun əvvəli) təsadüfən eyni rəng
+    // düşərsə, 2-ci turdan başqa bir elementlə yerini dəyişib ardıcıl təkrarın qarşısını alırıq.
+    var firstPhases = [];
+    var secondPhases = [];
     colors.forEach(function(color, i){
       var split = splitIntoTwoPhases(counts[i]);
-      phases.push({color:color, count:split[0]});
-      phases.push({color:color, count:split[1]});
+      firstPhases.push({color:color, count:split[0]});
+      secondPhases.push({color:color, count:split[1]});
     });
+    shuffleArray(firstPhases);
+    shuffleArray(secondPhases);
+    if(secondPhases.length > 1 && secondPhases[0].color.id === firstPhases[firstPhases.length-1].color.id){
+      var swapWith = 1 + Math.floor(Math.random() * (secondPhases.length - 1));
+      var tmp = secondPhases[0]; secondPhases[0] = secondPhases[swapWith]; secondPhases[swapWith] = tmp;
+    }
+    var phases = firstPhases.concat(secondPhases);
     return {colors:colors, counts:counts, phases:phases};
   }
 
@@ -4936,6 +4952,14 @@
     return s + " san";
   }
 
+  // Oyun bitdi bonus sətrində istifadə olunur — "1 dəq 35san" formatında, saniyə kimi çılpaq yazmır
+  function formatBonusTime(totalSec){
+    var m = Math.floor(totalSec / 60);
+    var s = totalSec % 60;
+    if(m > 0) return m + " dəq " + s + "san";
+    return s + " san";
+  }
+
   // Bütün XP qazanma buradan keçir: level yenilənməsini və sürəti də idarə edir
   function addXp(amount){
     // Oyun xalı (sessionXpEarned — döyüşlərdə, misyalarda, "Ən yüksək xal" nəticəsində görünən)
@@ -5876,7 +5900,7 @@
 
   // Bir bədən (baş+quyruq) qurur və hazır snake obyekti qaytarır — tək-başlı bosslarda (tier<7)
   // yalnız bir dəfə, 2-başlı bosslarda (tier>=7) HƏR bədən üçün ayrıca çağırılır.
-  function buildOneBossSnake(boss, colorList, totalMs, startDir, turnEveryRows, fh){
+  function buildOneBossSnake(boss, colorList, totalMs, startDir, turnEveryRows, fh, tier){
     var pathPts = buildBossPathTable(startDir, turnEveryRows);
     var headEl = document.createElement("div");
     headEl.className = "boss-head";
@@ -5920,14 +5944,15 @@
     // path-məsafəsi sadəcə sahə hündürlüyündən (fh) qat-qat böyükdür — sürət bu əsl məsafəyə
     // görə hesablanmalıdır ki, boss dəqiq totalMs müddətində finişə çatsın
     var finishDist = findFinishDist(pathPts, fh);
-    // Boss ilk 2 saniyə ərzində sürətlə girib sonra normal (60% azaldılmış) sürətinə düşür —
-    // "sürətlə" fazası dəqiq bu azaltmadan ƏVVƏLKİ tempə bərabərdir (normalSpeed / 0.4). Məsafə
-    // yox, REAL VAXT (2000ms) əsas götürülür ki, tier-dən asılı olmayaraq keçid həmişə eyni sürətdə hiss olunsun
+    // Boss ilk 1 saniyə (ilk boss üçün 1.5 saniyə — daha irəliyə qədər getsin) ərzində sürətlə
+    // girib sonra normal (60% azaldılmış) sürətinə düşür — "sürətlə" fazası dəqiq bu azaltmadan
+    // ƏVVƏLKİ tempə bərabərdir (normalSpeed / 0.4). Məsafə yox, REAL VAXT əsas götürülür ki,
+    // tier-dən asılı olmayaraq keçid həmişə eyni sürətdə hiss olunsun
     var normalSpeed = finishDist / totalMs;
     var fastSpeed = normalSpeed / 0.4;
     snake.normalSpeed = normalSpeed;
     snake.fastSpeed = fastSpeed;
-    snake.fastPhaseEndAt = snake.lastFrame + 2000;
+    snake.fastPhaseEndAt = snake.lastFrame + (tier === 1 ? 1500 : 1000);
     snake.finishY = finishDist;
     return snake;
   }
@@ -5960,10 +5985,10 @@
       var half = Math.ceil(segColorPool.length / 2);
       // Sol bədən: hər sırada dönür (əvvəlki tək-boss davranışı). Sağ bədən: 2 sırada bir dönür —
       // fərqli tempdə zigzaq etdikləri üçün iki bədən eyni yerə tam üst-üstə düşmür.
-      bossSnake = buildOneBossSnake(boss, segColorPool.slice(0, half), totalMs, 1, 1, fh);
-      bossSnake2 = buildOneBossSnake(boss, segColorPool.slice(half), totalMs, -1, 2, fh);
+      bossSnake = buildOneBossSnake(boss, segColorPool.slice(0, half), totalMs, 1, 1, fh, tier);
+      bossSnake2 = buildOneBossSnake(boss, segColorPool.slice(half), totalMs, -1, 2, fh, tier);
     } else {
-      bossSnake = buildOneBossSnake(boss, segColorPool, totalMs, 1, 1, fh);
+      bossSnake = buildOneBossSnake(boss, segColorPool, totalMs, 1, 1, fh, tier);
       bossSnake2 = null;
     }
     relayoutBossSnake();
@@ -6358,7 +6383,7 @@
       setTimeout(function(){
         revealGameOverBonusBreakdown([
           {icon:"🪙", label:"Qızılı: " + sessionGoldEarned, value:goldBonus},
-          {icon:"⏱️", label:"Vaxtı: " + bonusSeconds + " san", value:timeBonus},
+          {icon:"⏱️", label:"Vaxtı: " + formatBonusTime(bonusSeconds), value:timeBonus},
           {icon:"✅", label:"Misyaları: " + missionCount, value:missionBonus},
           {icon:"👹", label:"Bossları: " + sessionBossesDefeated, value:bossBonus}
         ], function(){
