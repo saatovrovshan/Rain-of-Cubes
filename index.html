@@ -1905,6 +1905,7 @@
   var BOSS_DEFEAT_MILESTONES = [1,3,5,10,25,50,100,250,500,1000,2000,3000,4000,5000,7500,10000];
   var ULTIS_IN_GAME_MILESTONES = [3,5,7,9,12,15,18,21];
   var COLOR_MISSION_MILESTONES = [1,3,5,10,20,30,50,75,100,200,250,500,750,1000,2000,3000,4000,5000,7500,10000,15000,20000];
+  var WHEEL_SPIN_MILESTONES = [1,3,5,10,15,20,25,30,40,50,75,100,200,300,400,500,750,1000,1500,2000];
   var ACHIEVEMENT_GOLD_REWARD = 50;
 
   function formatMinutesLabel(min){
@@ -2069,6 +2070,17 @@
         category: "colormissions",
         check: function(p){ return (p.missionsByColor && p.missionsByColor[color.id] || 0) >= n; }
       });
+    });
+  });
+
+  WHEEL_SPIN_MILESTONES.forEach(function(n){
+    ACHIEVEMENTS.push({
+      id: "wheelspin_" + n,
+      name: n + " Çarx Çevirmə",
+      desc: "Mükafat çarxını " + n + " dəfə çevir",
+      icon: n >= 500 ? "🎰" : "🎡",
+      category: "wheel",
+      check: function(p){ return (p.totalWheelSpins||0) >= n; }
     });
   });
 
@@ -2244,6 +2256,7 @@
     {id:"level", title:"Səviyyə", icon:"⭐"},
     {id:"missions", title:"Misyalar", icon:"📦"},
     {id:"colormissions", title:"Rəng Misyaları", icon:"🎨"},
+    {id:"wheel", title:"Mükafat Çarxı", icon:"🎡"},
     {id:"gold", title:"Qızıl", icon:"🪙"},
     {id:"score", title:"Ən yüksək xal", icon:"🎯"},
     {id:"arcade", title:"Arkada", icon:"🕹️"},
@@ -5733,7 +5746,8 @@
       return a.check(mockProfile);
     },
     listIds: function(cat){ return ACHIEVEMENTS.filter(function(a){ return a.category === cat; }).map(function(a){ return a.id; }); },
-    categories: function(){ return ACHIEVEMENT_CATEGORIES.map(function(c){ return c.id; }); }
+    categories: function(){ return ACHIEVEMENT_CATEGORIES.map(function(c){ return c.id; }); },
+    readProfileField: function(key){ return profile[key]; }
   };
 
   // Sağlamlıq zolağı cari fazadan asılı olmayaraq quyruğun ÜMUMİ (bütün rənglər) qalan
@@ -8078,6 +8092,7 @@
     } else {
       profile.keys = (profile.keys||0) - 1;
     }
+    profile.totalWheelSpins = (profile.totalWheelSpins||0) + 1;
     saveProfile();
     renderProfile();
     var prizeIndex = Math.floor(Math.random() * WHEEL_PRIZES.length);
