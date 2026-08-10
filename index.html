@@ -5845,16 +5845,6 @@
     return {x:last.x, y:last.y};
   }
 
-  // pts[0]-dan pts[idx]-ə qədər olan path-məsafəsini hesablayır (məs. "ilk 2 döngə" hara qədərdir?)
-  function pathDistAtPointIndex(pts, idx){
-    var acc = 0;
-    for(var i=1; i<=idx && i<pts.length; i++){
-      var a = pts[i-1], b = pts[i];
-      acc += Math.hypot(b.x-a.x, b.y-a.y);
-    }
-    return acc;
-  }
-
   // Yol cədvəlindəki məsafəni gəzərək, y koordinatı sahənin dibinə (fh) ilk çatdığı "dist"
   // dəyərini tapır — bu, finiş xəttinin path-distance qarşılığıdır
   function findFinishDist(pts, fh){
@@ -5918,13 +5908,14 @@
     // path-məsafəsi sadəcə sahə hündürlüyündən (fh) qat-qat böyükdür — sürət bu əsl məsafəyə
     // görə hesablanmalıdır ki, boss dəqiq totalMs müddətində finişə çatsın
     var finishDist = findFinishDist(pathPts, fh);
-    // Boss ilk 2 döngəyə (sıraya) qədər sürətlə girib sonra normal (60% azaldılmış) sürətinə düşür —
-    // "sürətlə" fazası dəqiq bu azaltmadan ƏVVƏLKİ tempə bərabərdir (normalSpeed / 0.4)
+    // Boss ilk 2 saniyə ərzində sürətlə girib sonra normal (60% azaldılmış) sürətinə düşür —
+    // "sürətlə" fazası dəqiq bu azaltmadan ƏVVƏLKİ tempə bərabərdir (normalSpeed / 0.4). Məsafə
+    // yox, REAL VAXT (2000ms) əsas götürülür ki, tier-dən asılı olmayaraq keçid həmişə eyni sürətdə hiss olunsun
     var normalSpeed = finishDist / totalMs;
     var fastSpeed = normalSpeed / 0.4;
     snake.normalSpeed = normalSpeed;
     snake.fastSpeed = fastSpeed;
-    snake.fastPhaseEndDist = pathDistAtPointIndex(pathPts, 5); // giriş seqmenti + 2 tam sıra
+    snake.fastPhaseEndAt = snake.lastFrame + 2000;
     snake.finishY = finishDist;
     return snake;
   }
@@ -5979,7 +5970,7 @@
     if(!snake || !bossSnake || !gameActive || paused) return;
     var dt = now - snake.lastFrame;
     snake.lastFrame = now;
-    var curSpeed = snake.headProgress < snake.fastPhaseEndDist ? snake.fastSpeed : snake.normalSpeed;
+    var curSpeed = now < snake.fastPhaseEndAt ? snake.fastSpeed : snake.normalSpeed;
     snake.headProgress += dt * curSpeed;
     if(snake.headProgress >= snake.finishY){
       lives = 1;
@@ -6073,22 +6064,40 @@
   // Cari fazanı (rəng+say) növbədən çıxarıb aktivləşdirir; növbə boşdursa boss məğlub olur.
   // Növbə HƏR İKİ bədənin toplam quyruğuna aiddir (bax: bossPhaseQueue). isFirst=true olduqda
   // döyüşün başlanğıc bannerini, əks halda "növbəti rəng" bannerini göstərir
+  // Bu rəngdən boss quyruğunda (hər iki bədəndə) faktiki neçə kubik qaldığını sayır. Səhv
+  // toxunuşlar (fərqli rəng tələb olunanda) tapılan kubiki YENƏ DƏ sındırır — bu, gələcək
+  // fazanın rənginə aid kubikləri həmin faza gəlməzdən ƏVVƏL tükəndirə bilər
+  function countBossSegmentsOfColor(colorId){
+    var count = 0;
+    if(bossSnake) bossSnake.segments.forEach(function(seg){ if(seg.color.id === colorId) count++; });
+    if(bossSnake2) bossSnake2.segments.forEach(function(seg){ if(seg.color.id === colorId) count++; });
+    return count;
+  }
+
   function advanceBossPhase(isFirst){
     if(!bossSnake || !bossPhaseQueue || !bossPhaseQueue.length){
       completeBossMission();
       return;
     }
     var phase = bossPhaseQueue.shift();
+    // Səhv toxunuşlar bu rəngi fazası gəlməzdən əvvəl qismən (və ya tamamilə) tükəndirə bilər —
+    // misya heç vaxt faktiki qalandan ARTIQ tələb etməsin, əks halda mövcud olmayan kubik
+    // tələb olunur (bax istifadəçi hesabatı: "misyada rəng var amma bosda o rəng yoxdur")
+    var actualCount = countBossSegmentsOfColor(phase.color.id);
+    if(actualCount <= 0){
+      advanceBossPhase(isFirst); // bu rəngdən heç nə qalmayıb — birbaşa növbəti fazaya keç
+      return;
+    }
     mission.color = phase.color;
-    mission.count = phase.count;
+    mission.count = Math.min(phase.count, actualCount);
     mission.filled = 0;
     applyThemedSwatch(missionSwatchEl, phase.color);
-    missionTextEl.textContent = phase.count + " " + phase.color.name + " kub";
+    missionTextEl.textContent = mission.count + " " + phase.color.name + " kub";
     var boss = bossForTier(mission.bossTier);
     if(isFirst){
-      showBossBanner(boss, phase.count + " " + phase.color.name + " kubu tap, finişə çatmasın!");
+      showBossBanner(boss, mission.count + " " + phase.color.name + " kubu tap, finişə çatmasın!");
     } else {
-      showBossBanner(boss, "Növbəti: " + phase.count + " " + phase.color.name + " kub!");
+      showBossBanner(boss, "Növbəti: " + mission.count + " " + phase.color.name + " kub!");
     }
   }
 
@@ -7038,6 +7047,7 @@
     [bossSnake, bossSnake2].forEach(function(s){
       if(!s) return;
       s.lastFrame = performance.now();
+      s.fastPhaseEndAt += pausedFor; // pauza müddəti 2 saniyəlik sürətli fazanın əleyhinə işləməsin
       scheduleBossTick(s);
     });
     waveEndsAt += pausedFor;
