@@ -1805,9 +1805,11 @@
     return 60 + tier * 20;
   }
 
-  // 1-ci və 2-ci boss həmişə eyni (sabit) rəngdə olur (adlarına uyğun: Qırmızı Nəhəng/Dərya
-  // Kalmarı), digər bosslarda isə hər döyüşdə fərqli, bir neçə rəng qarışıq gəlir
-  var BOSS_FIXED_COLOR_ID = {1:"red", 2:"blue"};
+  // Boss tier-i rəng sayını birbaşa müəyyən edir: 1-ci boss 1 rəng, 2-ci 2 rəng ... 6-cı 6 rəng
+  // (bütün əsas rənglər). 6-dan yuxarı tier-lər (2-başlı boss dövrü) 6-da sabit qalır.
+  function bossColorCountForTier(tier){
+    return Math.min(6, Math.max(1, tier));
+  }
 
   // Bir rəngin quyruqdakı cəm sayını 2 fazaya bölür (məs. 10 -> 4-6, 3-7, 5-5 kimi qarışıq)
   function splitIntoTwoPhases(total){
@@ -1819,21 +1821,16 @@
   }
 
   // Bossun quyruğunda hansı rəng(lər)in neçə ədəd olacağını və hər rəngin 2 fazaya bölünmüş
-  // misya sırasını qurur. 1-2-ci bosslarda tək sabit rəng, digərlərində 2-3 təsadüfi rəng.
+  // misya sırasını qurur. Rəng sayı tier-ə görə (1-ci boss 1 rəng, 2-ci 2 rəng və s.), rənglər
+  // hər döyüşdə təsadüfi seçilir (heç bir tier artıq sabit rəngə bağlı deyil).
   function buildBossColorPlan(hp, tier){
-    var colors;
-    if(BOSS_FIXED_COLOR_ID[tier]){
-      var fixedColor = ALL_COLORS.filter(function(c){ return c.id === BOSS_FIXED_COLOR_ID[tier]; })[0] || ALL_COLORS[0];
-      colors = [fixedColor];
-    } else {
-      var pool = ALL_COLORS.slice();
-      for(var i=pool.length-1; i>0; i--){
-        var j = Math.floor(Math.random()*(i+1));
-        var tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
-      }
-      var numColors = Math.min(3, Math.max(2, Math.floor(hp/20)), pool.length);
-      colors = pool.slice(0, numColors);
+    var pool = ALL_COLORS.slice();
+    for(var i=pool.length-1; i>0; i--){
+      var j = Math.floor(Math.random()*(i+1));
+      var tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
     }
+    var numColors = Math.min(bossColorCountForTier(tier), pool.length);
+    var colors = pool.slice(0, numColors);
     var counts = [];
     var minPer = Math.max(4, Math.min(6, Math.floor(hp / colors.length)));
     var remaining = hp;
@@ -5278,12 +5275,15 @@
 
   function startBossMission(tier, hp){
     var boss = bossForTier(tier);
+    // İlk boss (tier 1) həmişə 10-15 aralığında təsadüfi quyruq uzunluğu ilə gəlir — mode-dan
+    // (arkada/sonsuz) asılı olmayaraq eyni davranışı təmin etmək üçün burada, mərkəzi yerdə tətbiq olunur
+    if(tier === 1) hp = 10 + Math.floor(Math.random() * 6);
     // bossFightActive dərhal (sinxron) qoyulur ki, geri çağırma animasiyası bitənə qədər olan
     // qısa pəncərədə belə spawnCube/spawnHammerCube heç bir yeni adi kubik yaratmasın
     bossFightActive = true;
     renderPowerups();
     // Döyüş quyruqdakı bütün kubiklər bitənə qədər davam edir — quyruq bir neçə rəngdən
-    // ibarət ola bilər (1-2-ci bossda sabit tək rəng), hər rəng 2 fazaya bölünüb ardıcıl verilir
+    // ibarət ola bilər, hər rəng 2 fazaya bölünüb ardıcıl verilir (bax: bossColorCountForTier)
     var colorPlan = buildBossColorPlan(hp, tier);
     mission = {color:null, count:0, filled:0, isBoss:true, bossTier:tier, bossName:boss.name, bossIcon:boss.icon, tailTotal:hp, tailRemaining:hp};
     // Boss girməzdən əvvəl ekrandakı adi kubiklər sürətlə geri çəkilir — boss döyüşü bitənə
