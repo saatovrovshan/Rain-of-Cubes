@@ -813,6 +813,12 @@
   .gameover-score.counting{color:var(--gold);text-shadow:0 0 14px rgba(224,165,44,.6)}
   .gameover-score-label{font-size:11px;font-weight:800;color:#a99;letter-spacing:3px;margin-bottom:18px}
   .gameover-stats{background:rgba(0,0,0,.05);border-radius:14px;padding:12px 16px;margin:4px 0 6px;font-size:13px;color:var(--ink);text-align:left;line-height:1.7}
+  .gameover-bonus-list{flex-direction:column;gap:7px;background:rgba(224,165,44,.1);border:1px solid rgba(224,165,44,.3);border-radius:14px;padding:10px 14px;margin:2px 0 6px}
+  .gameover-bonus-row{display:flex;align-items:center;gap:8px}
+  .gameover-bonus-icon{font-size:15px;flex-shrink:0}
+  .gameover-bonus-label{flex:1;text-align:left;font-size:12px;font-weight:700;color:var(--ink)}
+  .gameover-bonus-val{font-size:13px;font-weight:900;color:var(--green);font-variant-numeric:tabular-nums}
+  .gameover-bonus-val.counting{text-shadow:0 0 8px rgba(107,191,89,.5)}
   #restartBtn{margin-top:14px;background:var(--green);color:#fff;border:none;border-radius:12px;padding:13px 28px;font-size:15px;font-weight:800;cursor:pointer;width:100%;box-sizing:border-box;box-shadow:0 4px 0 #4a9e3f}
   #menuReturnBtn{margin-top:8px;background:var(--blue);color:#fff;border:none;border-radius:12px;padding:11px 28px;font-size:13px;font-weight:800;cursor:pointer;width:100%;box-sizing:border-box}
 
@@ -1174,6 +1180,7 @@
         <div class="gameover-score" id="gameoverScoreVal">0</div>
         <div class="gameover-score-label">XAL</div>
         <div class="gameover-stats" id="overlayStats"></div>
+        <div class="gameover-bonus-list" id="gameoverBonusList" style="display:none"></div>
         <button id="restartBtn">🔄 Yenidən başla</button>
         <button class="menu-return" id="menuReturnBtn">🏠 Menyu</button>
       </div>
@@ -6311,7 +6318,11 @@
     // olunur ki, liderbord/naliyyətlər də bunu əks etdirsin — sadəcə vizual effekt deyil.
     var rawScore = sessionXpEarned;
     var bonusSeconds = Math.floor(sessionDurationMs / 1000);
-    var bonus = bonusSeconds * 33 + missionCount * 21 + sessionGoldEarned * 55 + sessionBossesDefeated * 222;
+    var timeBonus = bonusSeconds * 33;
+    var missionBonus = missionCount * 21;
+    var goldBonus = sessionGoldEarned * 55;
+    var bossBonus = sessionBossesDefeated * 222;
+    var bonus = timeBonus + missionBonus + goldBonus + bossBonus;
     var finalScore = rawScore + bonus;
 
     profile.records = profile.records || [];
@@ -6323,31 +6334,63 @@
     overlayStatsEl.innerHTML = "Qızıl: <b>" + sessionGoldEarned + "</b> · Vaxt: <b>" + formatDuration(sessionDurationMs) + "</b><br>Tamamlanan misyalar: <b>" + missionCount + "</b>";
     var scoreEl = document.getElementById("gameoverScoreVal");
     scoreEl.textContent = rawScore;
+    document.getElementById("gameoverBonusList").style.display = "none";
     overlayEl.classList.add("show");
-    // Əvvəlcə xam (bonussuz) xal göstərilir, 1 saniyə sonra bonuslu yekun xala doğru
-    // speedometer kimi (ease-out) sayaraq artır
+    // Əvvəlcə xam (bonussuz) xal göstərilir, 1 saniyə sonra qızıl/vaxt/misya/boss bonusları
+    // bir-bir sayğac kimi açılır, onlar bitdikdən SONRA üstdəki xal əvvəlki kimi yekun
+    // (bonuslu) xala doğru speedometer kimi (ease-out) sayaraq artır
     if(bonus > 0){
       setTimeout(function(){
-        animateScoreCountUp(scoreEl, rawScore, finalScore, 1400);
+        revealGameOverBonusBreakdown([
+          {icon:"🪙", label:"Qızıl bonusu", value:goldBonus},
+          {icon:"⏱️", label:"Vaxt bonusu", value:timeBonus},
+          {icon:"✅", label:"Misya bonusu", value:missionBonus},
+          {icon:"👹", label:"Boss bonusu", value:bossBonus}
+        ], function(){
+          animateCountUp(scoreEl, rawScore, finalScore, 1400, "");
+        });
       }, 1000);
     }
   }
 
-  // Rəqəmi `from`-dan `to`-ya (ease-out) sayaraq artırır — oyun bitdi ekranındakı bonus
-  // xal animasiyası üçün istifadə olunur
-  function animateScoreCountUp(el, from, to, durationMs){
+  // Qızıl/vaxt/misya/boss bonuslarını bir-bir (hər biri öz sayğacı ilə) açır, hamısı
+  // bitdikdən sonra `onDone` çağırılır (bax gameOver — bundan sonra yekun xal sayılır)
+  function revealGameOverBonusBreakdown(items, onDone){
+    var listEl = document.getElementById("gameoverBonusList");
+    listEl.style.display = "flex";
+    listEl.innerHTML = items.map(function(item, i){
+      return '<div class="gameover-bonus-row"><span class="gameover-bonus-icon">' + item.icon + '</span>' +
+        '<span class="gameover-bonus-label">' + item.label + '</span>' +
+        '<span class="gameover-bonus-val" id="gameoverBonusVal' + i + '">+0</span></div>';
+    }).join("");
+    var i = 0;
+    function next(){
+      if(i >= items.length){ if(onDone) onDone(); return; }
+      var el = document.getElementById("gameoverBonusVal" + i);
+      animateCountUp(el, 0, items[i].value, 500, "+", function(){
+        i++;
+        setTimeout(next, 150);
+      });
+    }
+    next();
+  }
+
+  // Rəqəmi `from`-dan `to`-ya (ease-out) sayaraq artırır — oyun bitdi ekranındakı yekun xal
+  // və bonus sətirlərinin sayğac animasiyası üçün ortaq istifadə olunur
+  function animateCountUp(el, from, to, durationMs, prefix, onComplete){
     var startTs = null;
     el.classList.add("counting");
     function step(ts){
       if(startTs === null) startTs = ts;
       var progress = Math.min(1, (ts - startTs) / durationMs);
       var eased = 1 - Math.pow(1 - progress, 3);
-      el.textContent = Math.round(from + (to - from) * eased);
+      el.textContent = prefix + Math.round(from + (to - from) * eased);
       if(progress < 1){
         requestAnimationFrame(step);
       } else {
-        el.textContent = to;
+        el.textContent = prefix + to;
         el.classList.remove("counting");
+        if(onComplete) onComplete();
       }
     }
     requestAnimationFrame(step);
