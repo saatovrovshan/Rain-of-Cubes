@@ -5010,7 +5010,22 @@
       var unlockedCount = items.filter(function(a){ return a.check(profile); }).length;
       var hasClaimable = categoryHasClaimable(cat.id);
       var isOpen = !!achievementCategoryOpen[cat.id];
-      var rowsHtml = items.map(function(a){
+      // Mükafatı gözləyən (claimable) naliyyətlər əvvəl, sonra digər açılmışlar, sonra kilidli —
+      // oyunçu mükafatı axtarmaq üçün aşağı sürüşmək məcburiyyətində qalmasın. Hər qrupun daxili
+      // sırası (milestone artımı) qorunur — .sort stabil olduğu üçün yalnız qrup önceliyi dəyişir.
+      var sortedItems = items.slice().map(function(a, origIdx){ return {a:a, origIdx:origIdx}; }).sort(function(x, y){
+        function rank(a){
+          var unlocked = a.check(profile);
+          var claimed = !!profile.claimedAchievements[a.id];
+          if(unlocked && !claimed) return 0; // claimable — ən üstdə
+          if(unlocked) return 1; // artıq götürülüb, amma yenə açılmış
+          return 2; // kilidli
+        }
+        var rx = rank(x.a), ry = rank(y.a);
+        if(rx !== ry) return rx - ry;
+        return x.origIdx - y.origIdx;
+      }).map(function(w){ return w.a; });
+      var rowsHtml = sortedItems.map(function(a){
         var unlocked = a.check(profile);
         var claimed = !!profile.claimedAchievements[a.id];
         var claimable = unlocked && !claimed;
@@ -5028,7 +5043,7 @@
           (hasClaimable ? '<span class="achievement-category-dot"></span>' : '') +
           '<span class="settings-accordion-arrow' + (isOpen ? " open" : "") + '">▾</span>' +
         '</button>' +
-        '<div class="achievement-category-body" style="display:' + (isOpen ? "flex" : "none") + '">' + rowsHtml + '</div>' +
+        '<div class="achievement-category-body" data-cat="' + cat.id + '" style="display:' + (isOpen ? "flex" : "none") + '">' + rowsHtml + '</div>' +
         '</div>';
     }).join("");
     achListEl.querySelectorAll(".achievement-category-toggle").forEach(function(btn){
@@ -5042,6 +5057,16 @@
       btn.addEventListener("click", function(e){
         e.stopPropagation();
         claimAchievement(this.getAttribute("data-id"));
+      });
+    });
+    // Açılmış bölmənin içərsindəki boş sahəyə (sətirlərin arasındakı kənar boşluğa) toxunduqda
+    // bölmə bağlansın — oyunçu geri başlığa qədər sürüşmək məcburiyyətində qalmasın
+    achListEl.querySelectorAll(".achievement-category-body").forEach(function(body){
+      body.addEventListener("click", function(e){
+        if(e.target !== body) return; // konkret sətrə/düyməyə toxunulubsa toxunma
+        var catId = body.getAttribute("data-cat");
+        achievementCategoryOpen[catId] = false;
+        renderAchievementsScreen();
       });
     });
   }
