@@ -808,11 +808,13 @@
 
   .gameover-card{background:linear-gradient(160deg,#fffaf0,#f3e9d2);color:var(--ink);border-radius:26px;padding:30px 26px 24px;width:100%;max-width:320px;box-sizing:border-box;box-shadow:0 24px 60px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.6);animation:gameoverPopIn .35s cubic-bezier(.34,1.56,.64,1)}
   @keyframes gameoverPopIn{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
+  .gameover-avatar-wrap{display:flex;justify-content:center;margin-bottom:8px}
   .gameover-title{font-size:14px;font-weight:900;letter-spacing:3px;color:#9c8a6e;text-transform:uppercase;margin-bottom:10px}
   .gameover-score{font-size:52px;font-weight:900;color:#d9922e;line-height:1;font-variant-numeric:tabular-nums}
   .gameover-score.counting{color:var(--gold);text-shadow:0 0 14px rgba(224,165,44,.6)}
   .gameover-score-label{font-size:11px;font-weight:800;color:#a99;letter-spacing:3px;margin-bottom:18px}
   .gameover-stats{background:rgba(0,0,0,.05);border-radius:14px;padding:12px 16px;margin:4px 0 6px;font-size:13px;color:var(--ink);text-align:left;line-height:1.7}
+  .gameover-xp-boost{display:block;color:#d9922e;font-weight:800}
   .gameover-bonus-list{flex-direction:column;gap:7px;background:rgba(224,165,44,.1);border:1px solid rgba(224,165,44,.3);border-radius:14px;padding:10px 14px;margin:2px 0 6px}
   .gameover-bonus-row{display:flex;align-items:center;gap:8px}
   .gameover-bonus-icon{font-size:15px;flex-shrink:0}
@@ -1176,6 +1178,7 @@
     <div class="toast" id="toast"></div>
     <div class="overlay" id="overlay">
       <div class="gameover-card">
+        <div class="gameover-avatar-wrap"><div id="gameoverAvatar"></div></div>
         <div class="gameover-title">🏁 OYUN BİTDİ</div>
         <div class="gameover-score" id="gameoverScoreVal">0</div>
         <div class="gameover-score-label">XAL</div>
@@ -2733,6 +2736,7 @@
   var sessionXpEarned = 0;
   var sessionGoldEarned = 0;
   var sessionBossesDefeated = 0; // oyun bitdi bonusunda (222/boss) istifadə olunur
+  var sessionLevelXpEarned = 0; // sürətləndiricidən ƏVVƏLKİ (xam) məbləğ — oyun bitdi ekranında göstərilir
 
   // Combo
   var comboCount = 0;
@@ -4937,6 +4941,7 @@
     // Oyun xalı (sessionXpEarned — döyüşlərdə, misyalarda, "Ən yüksək xal" nəticəsində görünən)
     // sürətləndiricidən TƏSİRLƏNMİR — yalnız səviyyə üçün toplanan ümumi XP 2 qat olur
     sessionXpEarned += amount;
+    sessionLevelXpEarned += amount;
     addDailyProgress("score", amount);
     var levelAmount = isXpBoostActive() ? amount * 2 : amount;
     profile.xp += levelAmount;
@@ -6331,7 +6336,17 @@
     profile.records = profile.records.slice(0, 10);
     saveProfile();
 
-    overlayStatsEl.innerHTML = "Qızıl: <b>" + sessionGoldEarned + "</b> · Vaxt: <b>" + formatDuration(sessionDurationMs) + "</b><br>Tamamlanan misyalar: <b>" + missionCount + "</b>";
+    // Oyun içindəki "xal" (sessionXpEarned) ilə profil səviyyəsi üçün toplanan XP tam ayrı
+    // anlayışlardır — xalın XP-yə heç bir aidiyyəti yoxdur, hər qazanılan XP YALNIZ səviyyənin
+    // artmasına təsir edir. Ona görə bura xamı (sürətləndiricidən əvvəlki) yazılır, sürətləndirici
+    // hazırda aktivdirsə ondan sonra 2 qat hesablanmış dəyər DƏ göstərilir.
+    var xpBoostActive = isXpBoostActive();
+    var xpHtml = "Qazanılan XP: <b>" + sessionLevelXpEarned + "</b>";
+    if(xpBoostActive){
+      xpHtml += '<span class="gameover-xp-boost">⚡ 2x sürətləndirici ilə: <b>' + (sessionLevelXpEarned * 2) + '</b></span>';
+    }
+    overlayStatsEl.innerHTML = xpHtml;
+    renderPhotoInto("gameoverAvatar", "md");
     var scoreEl = document.getElementById("gameoverScoreVal");
     scoreEl.textContent = rawScore;
     document.getElementById("gameoverBonusList").style.display = "none";
@@ -6342,10 +6357,10 @@
     if(bonus > 0){
       setTimeout(function(){
         revealGameOverBonusBreakdown([
-          {icon:"🪙", label:"Qızıl bonusu", value:goldBonus},
-          {icon:"⏱️", label:"Vaxt bonusu", value:timeBonus},
-          {icon:"✅", label:"Misya bonusu", value:missionBonus},
-          {icon:"👹", label:"Boss bonusu", value:bossBonus}
+          {icon:"🪙", label:"Qızılı: " + sessionGoldEarned, value:goldBonus},
+          {icon:"⏱️", label:"Vaxtı: " + bonusSeconds + " san", value:timeBonus},
+          {icon:"✅", label:"Misyaları: " + missionCount, value:missionBonus},
+          {icon:"👹", label:"Bossları: " + sessionBossesDefeated, value:bossBonus}
         ], function(){
           animateCountUp(scoreEl, rawScore, finalScore, 1400, "");
         });
@@ -8285,6 +8300,7 @@
     sessionXpEarned = 0;
     sessionGoldEarned = 0;
     sessionBossesDefeated = 0;
+    sessionLevelXpEarned = 0;
     resetCombo();
     renderProfile();
     applySpeedFromMissions();
