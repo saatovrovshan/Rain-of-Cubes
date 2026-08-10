@@ -5332,6 +5332,11 @@
     var x = marginX;
     var y = -80;
     pts.push({x:x, y:y});
+    // Giriş seqmenti: əvvəlcə düz aşağı (üfüqi YOX) enərək tez görünən sahəyə çatır. Bu olmasa
+    // ilk "sıra" bütöv usableW məsafəsini hələ görünməzkən üfüqi qət etməli olurdu — sürət bütün
+    // yolun uzunluğuna görə hesablandığından bu, boss görünənə qədər 2+ saniyəlik gecikmə yaradırdı.
+    y = 60;
+    pts.push({x:x, y:y});
     for(var r=0; r<totalRows; r++){
       x = marginX + (dir === 1 ? usableW : 0);
       pts.push({x:x, y:y});
