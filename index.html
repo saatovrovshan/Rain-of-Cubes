@@ -5187,11 +5187,11 @@
     document.getElementById("puHammerCount").textContent = inv.hammer || 0;
     document.getElementById("puShuffleCount").textContent = inv.shuffle || 0;
     document.getElementById("puRewindCount").textContent = inv.rewind || 0;
-    document.getElementById("puShield").disabled = !inv.shield || inv.shield <= 0 || shieldActive || !canUseThisGame("shield");
+    document.getElementById("puShield").disabled = !inv.shield || inv.shield <= 0 || shieldActive || !canUseThisGame("shield") || bossFightActive;
     document.getElementById("puSlow").disabled = !inv.slow || inv.slow <= 0 || slowMode || fastMode || !canUseThisGame("slow");
     document.getElementById("puFast").disabled = !inv.fast || inv.fast <= 0 || fastMode || slowMode || !canUseThisGame("fast");
-    document.getElementById("puBomb").disabled = !inv.bomb || inv.bomb <= 0 || !canUseThisGame("bomb");
-    document.getElementById("puHammer").disabled = !inv.hammer || inv.hammer <= 0 || smashModeActive || !canUseThisGame("hammer");
+    document.getElementById("puBomb").disabled = !inv.bomb || inv.bomb <= 0 || !canUseThisGame("bomb") || bossFightActive;
+    document.getElementById("puHammer").disabled = !inv.hammer || inv.hammer <= 0 || smashModeActive || !canUseThisGame("hammer") || bossFightActive;
     document.getElementById("puShuffle").disabled = !inv.shuffle || inv.shuffle <= 0 || !canUseThisGame("shuffle");
     document.getElementById("puRewind").disabled = !inv.rewind || inv.rewind <= 0 || !canUseThisGame("rewind");
   }
@@ -5281,6 +5281,7 @@
     // bossFightActive dərhal (sinxron) qoyulur ki, geri çağırma animasiyası bitənə qədər olan
     // qısa pəncərədə belə spawnCube/spawnHammerCube heç bir yeni adi kubik yaratmasın
     bossFightActive = true;
+    renderPowerups();
     // Döyüş quyruqdakı bütün kubiklər bitənə qədər davam edir — quyruq bir neçə rəngdən
     // ibarət ola bilər (1-2-ci bossda sabit tək rəng), hər rəng 2 fazaya bölünüb ardıcıl verilir
     var colorPlan = buildBossColorPlan(hp, tier);
@@ -5586,6 +5587,7 @@
     showBossBanner._t = setTimeout(function(){ bossBannerEl.classList.remove("show"); }, 2200);
   }
 
+
   // Yeni misya gələndə oyunçu aşağı baxmadan rəngi dərhal görsün deyə ekranın ortasında qısa parıltı göstərir
   function flashMissionColor(color){
     var flash = document.createElement("div");
@@ -5651,6 +5653,7 @@
     var bossName = mission.bossName;
     var bossIcon = mission.bossIcon;
     clearBossSnake();
+    renderPowerups();
     addXp(xp);
     addGold(gold);
     profile.missionsDone = (profile.missionsDone||0) + 1;
@@ -6514,6 +6517,7 @@
 
   function useShield(){
     if(paused) return;
+    if(bossFightActive){ showToast("🛡️ Boss döyüşündə istifadə edilə bilməz"); return; }
     if(!profile.inventory.shield || profile.inventory.shield <= 0) return;
     if(shieldActive) return;
     if(!canUseThisGame("shield")){ showToast("🛡️ Bu oyunda limit doldu (maks. " + USE_LIMIT_PER_GAME + ")"); return; }
@@ -6668,6 +6672,7 @@
 
   function useBomb(){
     if(paused) return;
+    if(bossFightActive){ showToast("💣 Boss döyüşündə istifadə edilə bilməz"); return; }
     if(!profile.inventory.bomb || profile.inventory.bomb <= 0) return;
     if(!canUseThisGame("bomb")){ showToast("💣 Bu oyunda limit doldu (maks. " + USE_LIMIT_PER_GAME + ")"); return; }
     profile.inventory.bomb--;
@@ -6703,6 +6708,7 @@
 
   function useHammer(){
     if(paused) return;
+    if(bossFightActive){ showToast("🔨 Boss döyüşündə istifadə edilə bilməz"); return; }
     if(!profile.inventory.hammer || profile.inventory.hammer <= 0) return;
     if(smashModeActive) return;
     if(!canUseThisGame("hammer")){ showToast("🔨 Bu oyunda limit doldu (maks. " + USE_LIMIT_PER_GAME + ")"); return; }
