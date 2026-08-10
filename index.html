@@ -1902,6 +1902,7 @@
   var LIKES_MILESTONES = [1,5,10,25,50,75,100,150,200,250,300,400,500,600,700,800,900,1000,1250,1500,1750,2000,2250,2500,3000,3500,4000,4500,5000,6000,7000,8000,9000,9500,10000];
   var SHOP_PURCHASE_MILESTONES = [1,5,10,15,25,50,75,100,150,200,250,300,400,500,600,750,900,1000,1250,1500,1750,2000,2250,2500,2750,3000,3250,3500,3750,4000,4250,4500,4750,4900,5000];
   var NAME_CHANGE_MILESTONES = [1,3,5,10,15,20,25];
+  var BOSS_DEFEAT_MILESTONES = [1,3,5,10,25,50,100,250,500,1000,2000,3000,4000,5000,7500,10000];
   var ACHIEVEMENT_GOLD_REWARD = 50;
 
   function formatMinutesLabel(min){
@@ -2029,6 +2030,17 @@
       icon: n >= 1000 ? "🏅" : "🕹️",
       category: "arcade",
       check: function(p){ return (p.arcadeGamesPlayed||0) >= n; }
+    });
+  });
+
+  BOSS_DEFEAT_MILESTONES.forEach(function(n){
+    ACHIEVEMENTS.push({
+      id: "bossdefeat_" + n,
+      name: n + " Boss Qələbəsi",
+      desc: n + " boss məğlub et",
+      icon: n >= 1000 ? "💀" : "👹",
+      category: "boss",
+      check: function(p){ return (p.bossesDefeated||0) >= n; }
     });
   });
 
@@ -2206,6 +2218,7 @@
     {id:"gold", title:"Qızıl", icon:"🪙"},
     {id:"score", title:"Ən yüksək xal", icon:"🎯"},
     {id:"arcade", title:"Arkada", icon:"🕹️"},
+    {id:"boss", title:"Boss Döyüşləri", icon:"👹"},
     {id:"social", title:"Dostlar", icon:"👥"},
     {id:"gifts", title:"Hədiyyələr", icon:"🎁"},
     {id:"time", title:"Oyun vaxtı", icon:"⏳"},
@@ -5657,6 +5670,17 @@
     bossPhaseQueue = null;
     bossFightActive = false;
   }
+
+  window.__debugAch = {
+    countByCat: function(cat){ return ACHIEVEMENTS.filter(function(a){ return a.category === cat; }).length; },
+    checkWithProfile: function(id, mockProfile){
+      var a = ACHIEVEMENTS.find(function(x){ return x.id === id; });
+      if(!a) return "not-found";
+      return a.check(mockProfile);
+    },
+    listIds: function(cat){ return ACHIEVEMENTS.filter(function(a){ return a.category === cat; }).map(function(a){ return a.id; }); },
+    categories: function(){ return ACHIEVEMENT_CATEGORIES.map(function(c){ return c.id; }); }
+  };
 
   // Sağlamlıq zolağı cari fazadan asılı olmayaraq quyruğun ÜMUMİ (bütün rənglər) qalan
   // miqdarını göstərir ki, faza dəyişəndə geriyə "sıçramasın"
