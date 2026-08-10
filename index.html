@@ -5585,6 +5585,10 @@
       addXp(CUBE_XP);
       addGold(CUBE_GOLD);
       snake.headProgress = Math.max(-40, snake.headProgress - snake.spacing);
+      // Adi kubik toxunuşundakı eyni "N qaldı" effekti — cari fazada neçə qaldığını göstərir
+      var remainingInPhase = (mission.count - mission.filled) - 1;
+      showFloatingText(segRect.left - frect.left + segRect.width/2, segRect.top - frect.top,
+        remainingInPhase > 0 ? (remainingInPhase + " qaldı") : "Tamamlandı! 🎉");
     } else {
       playBreakSound();
       loseLife();
@@ -5602,6 +5606,10 @@
       mission.filled++;
       if(mission.filled >= mission.count){
         advanceBossPhase();
+      } else {
+        // Boss döyüşündə "slots" göstəricisi gizlidir (bax startBossMission) — misya yerindəki
+        // yazı bu döyüşdə TƏK proqres göstəricisi olduğu üçün hər toxunuşda qalan sayı əks etdirsin
+        missionTextEl.textContent = (mission.count - mission.filled) + " " + mission.color.name + " kub qaldı";
       }
     }
   }
