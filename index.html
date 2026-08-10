@@ -2376,6 +2376,7 @@
   var paused = false;
   var pauseStart = 0;
   var sessionStartTime = 0;
+  var gameOverHandled = false; // eyni anda bir neçə kubik canı 0-a endirərsə gameOver() təkrar işə düşməsin
   var sessionXpEarned = 0;
   var sessionGoldEarned = 0;
 
@@ -5712,6 +5713,11 @@
   }
 
   function gameOver(){
+    // Eyni anda bir neçə kubik canı 0-dan aşağı endirə bilər (hər biri öz loseLife() çağırışı
+    // ilə növbəti setTimeout(gameOver,400) planlaşdırır) — təkrarını sakitcə görməzdən gəl,
+    // əks halda ikinci çağırış artıq sıfırlanmış sessionStartTime-a görə "Vaxt: 0s" yazırdı
+    if(gameOverHandled) return;
+    gameOverHandled = true;
     spawning = false;
     gameActive = false;
     clearTimeout(spawnTimer);
@@ -7627,6 +7633,7 @@
     renderPowerups();
     gameActive = true;
     spawning = true;
+    gameOverHandled = false;
     profile.gamesPlayed = (profile.gamesPlayed||0) + 1;
     if(gameMode === "arcade") profile.arcadeGamesPlayed = (profile.arcadeGamesPlayed||0) + 1;
     sessionStartTime = performance.now();
