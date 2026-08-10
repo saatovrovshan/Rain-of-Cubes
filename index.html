@@ -800,6 +800,16 @@
   .overlay .sound-toggles{margin-top:6px}
   .overlay .sound-toggle{background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.3)}
 
+  .gameover-card{background:linear-gradient(160deg,#fffaf0,#f3e9d2);color:var(--ink);border-radius:26px;padding:30px 26px 24px;width:100%;max-width:320px;box-sizing:border-box;box-shadow:0 24px 60px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.6);animation:gameoverPopIn .35s cubic-bezier(.34,1.56,.64,1)}
+  @keyframes gameoverPopIn{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
+  .gameover-title{font-size:14px;font-weight:900;letter-spacing:3px;color:#9c8a6e;text-transform:uppercase;margin-bottom:10px}
+  .gameover-score{font-size:52px;font-weight:900;color:#d9922e;line-height:1;font-variant-numeric:tabular-nums}
+  .gameover-score.counting{color:var(--gold);text-shadow:0 0 14px rgba(224,165,44,.6)}
+  .gameover-score-label{font-size:11px;font-weight:800;color:#a99;letter-spacing:3px;margin-bottom:18px}
+  .gameover-stats{background:rgba(0,0,0,.05);border-radius:14px;padding:12px 16px;margin:4px 0 6px;font-size:13px;color:var(--ink);text-align:left;line-height:1.7}
+  #restartBtn{margin-top:14px;background:var(--green);color:#fff;border:none;border-radius:12px;padding:13px 28px;font-size:15px;font-weight:800;cursor:pointer;width:100%;box-sizing:border-box;box-shadow:0 4px 0 #4a9e3f}
+  #menuReturnBtn{margin-top:8px;background:var(--blue);color:#fff;border:none;border-radius:12px;padding:11px 28px;font-size:13px;font-weight:800;cursor:pointer;width:100%;box-sizing:border-box}
+
   .slow-overlay{position:absolute;inset:0;background:rgba(100,200,255,.08);pointer-events:none;z-index:3;opacity:0;transition:opacity .3s}
   .slow-overlay.active{opacity:1}
 
@@ -1153,10 +1163,14 @@
     <div class="boss-banner" id="bossBanner"></div>
     <div class="toast" id="toast"></div>
     <div class="overlay" id="overlay">
-      <h2>Oyun bitdi</h2>
-      <p id="overlayStats"></p>
-      <button id="restartBtn">Yenidən başla</button>
-      <button class="menu-return" id="menuReturnBtn">Menyu</button>
+      <div class="gameover-card">
+        <div class="gameover-title">🏁 OYUN BİTDİ</div>
+        <div class="gameover-score" id="gameoverScoreVal">0</div>
+        <div class="gameover-score-label">XAL</div>
+        <div class="gameover-stats" id="overlayStats"></div>
+        <button id="restartBtn">🔄 Yenidən başla</button>
+        <button class="menu-return" id="menuReturnBtn">🏠 Menyu</button>
+      </div>
     </div>
     <div class="overlay" id="pauseOverlay">
       <div id="pauseMainPanel">
@@ -2705,6 +2719,7 @@
   var gameOverHandled = false; // eyni anda bir neçə kubik canı 0-a endirərsə gameOver() təkrar işə düşməsin
   var sessionXpEarned = 0;
   var sessionGoldEarned = 0;
+  var sessionBossesDefeated = 0; // oyun bitdi bonusunda (222/boss) istifadə olunur
 
   // Combo
   var comboCount = 0;
@@ -6100,6 +6115,7 @@
     addGold(gold);
     profile.missionsDone = (profile.missionsDone||0) + 1;
     profile.bossesDefeated = (profile.bossesDefeated||0) + 1;
+    sessionBossesDefeated++;
     addDailyProgress("missionsCompleted", 1);
     addDailyProgress("bossKills", 1);
     saveProfile();
@@ -6188,14 +6204,51 @@
       return;
     }
 
+    // Oyun bitdikdən SONRA hesablanan bonus xal — vaxt (san.), tamamlanmış misya, qazanılan
+    // qızıl və öldürülən boss sayına görə. Bu bonus oyunçunun HƏQİQİ (saxlanılan) xalına əlavə
+    // olunur ki, liderbord/naliyyətlər də bunu əks etdirsin — sadəcə vizual effekt deyil.
+    var rawScore = sessionXpEarned;
+    var bonusSeconds = Math.floor(sessionDurationMs / 1000);
+    var bonus = bonusSeconds * 33 + missionCount * 21 + sessionGoldEarned * 55 + sessionBossesDefeated * 222;
+    var finalScore = rawScore + bonus;
+
     profile.records = profile.records || [];
-    profile.records.push({score: sessionXpEarned, gold: sessionGoldEarned, level: profile.level||1, missions: missionCount});
+    profile.records.push({score: finalScore, gold: sessionGoldEarned, level: profile.level||1, missions: missionCount});
     profile.records.sort(function(a,b){ return b.score - a.score; });
     profile.records = profile.records.slice(0, 10);
     saveProfile();
 
-    overlayStatsEl.innerHTML = "Bu oyunda: <b>" + sessionXpEarned + " xal</b><br>Qızıl: <b>" + sessionGoldEarned + "</b> · Vaxt: <b>" + formatDuration(sessionDurationMs) + "</b><br>Tamamlanan misyalar: <b>" + missionCount + "</b>";
+    overlayStatsEl.innerHTML = "Qızıl: <b>" + sessionGoldEarned + "</b> · Vaxt: <b>" + formatDuration(sessionDurationMs) + "</b><br>Tamamlanan misyalar: <b>" + missionCount + "</b>";
+    var scoreEl = document.getElementById("gameoverScoreVal");
+    scoreEl.textContent = rawScore;
     overlayEl.classList.add("show");
+    // Əvvəlcə xam (bonussuz) xal göstərilir, 1 saniyə sonra bonuslu yekun xala doğru
+    // speedometer kimi (ease-out) sayaraq artır
+    if(bonus > 0){
+      setTimeout(function(){
+        animateScoreCountUp(scoreEl, rawScore, finalScore, 1400);
+      }, 1000);
+    }
+  }
+
+  // Rəqəmi `from`-dan `to`-ya (ease-out) sayaraq artırır — oyun bitdi ekranındakı bonus
+  // xal animasiyası üçün istifadə olunur
+  function animateScoreCountUp(el, from, to, durationMs){
+    var startTs = null;
+    el.classList.add("counting");
+    function step(ts){
+      if(startTs === null) startTs = ts;
+      var progress = Math.min(1, (ts - startTs) / durationMs);
+      var eased = 1 - Math.pow(1 - progress, 3);
+      el.textContent = Math.round(from + (to - from) * eased);
+      if(progress < 1){
+        requestAnimationFrame(step);
+      } else {
+        el.textContent = to;
+        el.classList.remove("counting");
+      }
+    }
+    requestAnimationFrame(step);
   }
 
   // Battle-də can bitəndə: rəqib artıq elimin olubsa VƏ YA mən öndə deyiləmsə — matç dərhal bitir.
@@ -8090,6 +8143,7 @@
     lastSpawnTime = {};
     sessionXpEarned = 0;
     sessionGoldEarned = 0;
+    sessionBossesDefeated = 0;
     resetCombo();
     renderProfile();
     applySpeedFromMissions();
