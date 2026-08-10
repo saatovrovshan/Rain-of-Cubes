@@ -5900,7 +5900,7 @@
 
   // Bir bədən (baş+quyruq) qurur və hazır snake obyekti qaytarır — tək-başlı bosslarda (tier<7)
   // yalnız bir dəfə, 2-başlı bosslarda (tier>=7) HƏR bədən üçün ayrıca çağırılır.
-  function buildOneBossSnake(boss, colorList, totalMs, startDir, turnEveryRows, fh, tier){
+  function buildOneBossSnake(boss, colorList, totalMs, startDir, turnEveryRows, fh){
     var pathPts = buildBossPathTable(startDir, turnEveryRows);
     var headEl = document.createElement("div");
     headEl.className = "boss-head";
@@ -5944,15 +5944,16 @@
     // path-məsafəsi sadəcə sahə hündürlüyündən (fh) qat-qat böyükdür — sürət bu əsl məsafəyə
     // görə hesablanmalıdır ki, boss dəqiq totalMs müddətində finişə çatsın
     var finishDist = findFinishDist(pathPts, fh);
-    // Boss ilk 1 saniyə (ilk boss üçün 1.5 saniyə — daha irəliyə qədər getsin) ərzində sürətlə
-    // girib sonra normal (60% azaldılmış) sürətinə düşür — "sürətlə" fazası dəqiq bu azaltmadan
-    // ƏVVƏLKİ tempə bərabərdir (normalSpeed / 0.4). Məsafə yox, REAL VAXT əsas götürülür ki,
-    // tier-dən asılı olmayaraq keçid həmişə eyni sürətdə hiss olunsun
+    // Boss sahənin YARISINA qədər sürətlə girib sonra normal (60% azaldılmış) sürətinə düşür —
+    // adi kubiklərin oyun başlanğıcındakı "fastStart" davranışı ilə eyni məntiq (bax spawnCube-da
+    // fastFrac=0.5). normalSpeed artıq çox yavaşdır (3x + 60% azaldılıb), ona görə "sürətli" faza
+    // normalSpeed-dən TÖREMİR — yarım sahəni HƏMİŞƏ təxminən 3 saniyəyə qət edəcək sabit templə
+    // hesablanır ki, tier-dən asılı olmayaraq giriş həqiqətən "sürətli" hiss olunsun
     var normalSpeed = finishDist / totalMs;
-    var fastSpeed = normalSpeed / 0.4;
+    var fastSpeed = (finishDist * 0.5) / 3000;
     snake.normalSpeed = normalSpeed;
     snake.fastSpeed = fastSpeed;
-    snake.fastPhaseEndAt = snake.lastFrame + (tier === 1 ? 1500 : 1000);
+    snake.fastPhaseEndDist = finishDist * 0.5;
     snake.finishY = finishDist;
     return snake;
   }
@@ -5985,10 +5986,10 @@
       var half = Math.ceil(segColorPool.length / 2);
       // Sol bədən: hər sırada dönür (əvvəlki tək-boss davranışı). Sağ bədən: 2 sırada bir dönür —
       // fərqli tempdə zigzaq etdikləri üçün iki bədən eyni yerə tam üst-üstə düşmür.
-      bossSnake = buildOneBossSnake(boss, segColorPool.slice(0, half), totalMs, 1, 1, fh, tier);
-      bossSnake2 = buildOneBossSnake(boss, segColorPool.slice(half), totalMs, -1, 2, fh, tier);
+      bossSnake = buildOneBossSnake(boss, segColorPool.slice(0, half), totalMs, 1, 1, fh);
+      bossSnake2 = buildOneBossSnake(boss, segColorPool.slice(half), totalMs, -1, 2, fh);
     } else {
-      bossSnake = buildOneBossSnake(boss, segColorPool, totalMs, 1, 1, fh, tier);
+      bossSnake = buildOneBossSnake(boss, segColorPool, totalMs, 1, 1, fh);
       bossSnake2 = null;
     }
     relayoutBossSnake();
@@ -6007,7 +6008,7 @@
     if(!snake || !bossSnake || !gameActive || paused) return;
     var dt = now - snake.lastFrame;
     snake.lastFrame = now;
-    var curSpeed = now < snake.fastPhaseEndAt ? snake.fastSpeed : snake.normalSpeed;
+    var curSpeed = snake.headProgress < snake.fastPhaseEndDist ? snake.fastSpeed : snake.normalSpeed;
     snake.headProgress += dt * curSpeed;
     if(snake.headProgress >= snake.finishY){
       lives = 1;
@@ -6270,6 +6271,11 @@
       return;
     }
     newMission();
+    // Boss döyüşü bitəndə sahə boşdur (recallFieldCubes onu boşaltmışdı, bossFightActive
+    // spawn-u dayandırmışdı) — oyunun əvvəlindəki kimi kubiklər yenidən sürətlə "burst" halında
+    // girsin. newMission() əgər NÖVBƏTİ boss dərhal başladıbsa (bossFightActive=true), spawnCube
+    // öz qorumasına görə bunu sakitcə görməzdən gələcək
+    spawnStartBurst();
   }
 
   function fillNextSlot(){
@@ -7130,7 +7136,6 @@
     [bossSnake, bossSnake2].forEach(function(s){
       if(!s) return;
       s.lastFrame = performance.now();
-      s.fastPhaseEndAt += pausedFor; // pauza müddəti 2 saniyəlik sürətli fazanın əleyhinə işləməsin
       scheduleBossTick(s);
     });
     waveEndsAt += pausedFor;
