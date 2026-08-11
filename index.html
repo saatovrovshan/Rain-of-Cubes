@@ -441,6 +441,12 @@
   .bag-activate-btn{flex-shrink:0;background:var(--gold);color:#5a3d00;border:none;border-radius:8px;padding:8px 12px;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit}
   .bag-boost-active{border:2px solid var(--gold);background:#fff6db}
   .bag-boost-active .bag-row-count{background:var(--gold);color:#5a3d00;font-variant-numeric:tabular-nums}
+  .bag-cubes-section{background:var(--panel);border-radius:12px;padding:12px 14px;text-align:left}
+  .bag-cubes-title{font-size:12px;font-weight:800;color:var(--ink);margin-bottom:10px}
+  .bag-cubes-list{display:flex;flex-wrap:wrap;gap:12px}
+  .bag-cube-item{display:flex;flex-direction:column;align-items:center;gap:4px}
+  .bag-cube-swatch{width:36px;height:36px;border-radius:9px;box-shadow:0 3px 8px rgba(0,0,0,.2)}
+  .bag-cube-count{font-size:12px;font-weight:800;color:var(--ink)}
 
   .wheel-keys-row{font-size:15px;font-weight:800;color:var(--ink);margin:14px 0 4px}
   .wheel-wrap{position:relative;width:250px;height:250px;margin:16px auto 20px}
@@ -8639,7 +8645,8 @@
     });
     var ownedConsumables = consumables.filter(function(i){ return (profile.inventory[i.id]||0) > 0; });
     var ownedBoosts = boosts.filter(function(i){ return (profile.inventory[i.id]||0) > 0; });
-    if(!ownedConsumables.length && !ownedBoosts.length && !isXpBoostActive()){
+    var ownedCubeColors = ALL_COLORS.filter(function(c){ return (profile.cubeInventory[c.id]||0) > 0; });
+    if(!ownedConsumables.length && !ownedBoosts.length && !ownedCubeColors.length && !isXpBoostActive()){
       el.innerHTML = '<div class="empty-hint">Hələ heç bir əşyan yoxdur — 🛒 Mağazadan ulti al</div>';
       return;
     }
@@ -8660,12 +8667,33 @@
         '<div class="bag-row-info"><div class="bag-row-name">' + escapeHtml(i.name) + '</div><div class="bag-row-desc">' + escapeHtml(i.desc) + '</div></div>' +
         '<div class="bag-row-count">x' + (profile.inventory[i.id]||0) + '</div></div>';
     }).join("");
-    el.innerHTML = activeBannerHtml + boostRowsHtml + consumableRowsHtml;
+    // Oyun sonunda hər 8 misyaya görə qazanılan rəngli kubiklər — gələcək kubik-əsaslı
+    // funksiyalar üçün çantada saxlanılır (bax gameOver -> profile.cubeInventory)
+    var cubesSectionHtml = ownedCubeColors.length
+      ? '<div class="bag-cubes-section"><div class="bag-cubes-title">🎨 Kubiklər</div><div class="bag-cubes-list" id="bagCubesList"></div></div>'
+      : "";
+    el.innerHTML = activeBannerHtml + boostRowsHtml + consumableRowsHtml + cubesSectionHtml;
     el.querySelectorAll("[data-boost-id]").forEach(function(btn){
       btn.addEventListener("click", function(){
         activateXpBoost(this.getAttribute("data-boost-id"));
       });
     });
+    if(ownedCubeColors.length){
+      var cubesListEl = document.getElementById("bagCubesList");
+      ownedCubeColors.forEach(function(color){
+        var item = document.createElement("div");
+        item.className = "bag-cube-item";
+        var swatch = document.createElement("div");
+        swatch.className = "bag-cube-swatch";
+        applyThemedSwatch(swatch, color);
+        var count = document.createElement("div");
+        count.className = "bag-cube-count";
+        count.textContent = "x" + profile.cubeInventory[color.id];
+        item.appendChild(swatch);
+        item.appendChild(count);
+        cubesListEl.appendChild(item);
+      });
+    }
   }
 
   // ===== Mükafat Çarxı (açarla çevrilir) =====
