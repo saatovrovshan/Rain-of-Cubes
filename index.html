@@ -4503,10 +4503,13 @@
     });
   }
 
-  // Gördüyü oyunçular üçün bugünkü sıranı əvvəl saxlanılmış sıra ilə müqayisə edib +/- fərqini
-  // qaytarır. Müqayisə hər (kateqoriya, oyunçu) üçün gündə YALNIZ BİR DƏFƏ aparılır (computed_date
-  // bugünlə eyni olmayanda) — beləliklə göstərilən fərq həmin gün ərzində sabit qalır. Server-side
-  // cron olmadığı üçün bu, liderbordu açan HƏR HANSI oyunçunun kliyenti tərəfindən tətbiq olunur.
+  // Gördüyü oyunçular üçün bugünkü sıranı GÜNÜN BAŞLANĞICINDAKI baza sırası ilə müqayisə edib
+  // +/- fərqini qaytarır. Baza sırası (current_rank) gün ərzində DƏYİŞMİR — YALNIZ gün dəyişəndə
+  // (computed_date bugünlə üst-üstə düşməyəndə) bugünkü sıra yeni baza kimi sıfırlanır (fərq
+  // görsənmir). Amma göstərilən FƏRQ özü hər baxışda bazaya görə ANLIQ yenidən hesablanır — yəni
+  // eyni gün içində sıra hərəkət etdikcə göstərici dərhal yenilənir, əvvəlki kimi ilk hesablamada
+  // donub qalmır. Server-side cron olmadığı üçün bu, liderbordu açan HƏR HANSI oyunçunun
+  // kliyenti tərəfindən tətbiq olunur.
   function computeRankChanges(catId, rankedRows){
     var today = getTodayStr();
     var ids = rankedRows.map(function(r){ return r.id; });
@@ -4523,15 +4526,18 @@
         var displayMap = {};
         rankedRows.forEach(function(r){
           var ex = existingById[r.id];
-          if(!ex){
-            // İlk dəfə görünür — indi baza sırası kimi saxlanılır, göstəriləcək fərq yoxdur
+          if(!ex || ex.computed_date !== today){
+            // İlk dəfə görünür VƏ YA yeni gün başlayıb — bugünkü sıra TƏZƏ baza kimi saxlanılır,
+            // fərq göstərilmir (növbəti gün köhnə hərəkət göstəricisi "sönür")
             toUpsert.push({category:catId, player_id:r.id, current_rank:r.rank, rank_change:0, computed_date:today});
-          } else if(ex.computed_date !== today){
+          } else {
+            // Eyni gün — baza sırası (ex.current_rank) SABİT qalır, fərq HƏR baxışda canlı
+            // yenidən hesablanır ki, günün İÇİNDƏ baş verən hər hərəkət dərhal əks olunsun
             var delta = ex.current_rank - r.rank; // müsbət = yuxarı (rəqəm kiçilib), mənfi = aşağı
-            toUpsert.push({category:catId, player_id:r.id, current_rank:r.rank, rank_change:delta, computed_date:today});
+            if(delta !== ex.rank_change){
+              toUpsert.push({category:catId, player_id:r.id, current_rank:ex.current_rank, rank_change:delta, computed_date:today});
+            }
             if(delta !== 0) displayMap[r.id] = delta;
-          } else if(ex.rank_change){
-            displayMap[r.id] = ex.rank_change;
           }
         });
         if(toUpsert.length){
