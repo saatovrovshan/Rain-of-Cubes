@@ -6711,33 +6711,29 @@
     return "";
   }
 
-  // Kubiklər tam üst-üstə düşməsin: EKRANDAKI bütün kubiklərdən (təkcə yuxarıdakılardan yox)
-  // minimum məsafədə olan mövqe axtarılır, minimum məsafə də bir kub eninə qədər artırılıb ki,
-  // keçən kub qonşu kubu qismən belə örtməsin
+  // Kubiklər tam üst-üstə düşməsin: yuxarı zonadakı kubiklərdən minimum məsafədə olan mövqe axtarılır
   function pickSpawnX(fw, cubeSize){
     var margin = 6;
     var usableWidth = Math.max(cubeSize, fw - margin*2);
     var maxX = margin + usableWidth - cubeSize;
-    var minSeparation = cubeSize * 1.1;
+    var minSeparation = cubeSize * 0.85;
 
     // Kubiklərin sürəti dəyişkəndir (misya rəngi, az kub, yavaşlatma, sürətləndirmə) — sürətli kub
-    // aşağıdakı yavaş kubu "tuta" bilər, ona görə YALNIZ yuxarı zona yox, demək olar bütün sahə
-    // yoxlanılır (aşağıda, tutulmaq/buraxılmaq üzrə olan kubiklər istisna olunur)
-    var bottomCutoff = (field.clientHeight || 400) - 30;
-    var onScreenXs = [];
+    // aşağıdakı yavaş kubu "tuta" bilər, ona görə yalnız ən yuxarını deyil, yuxarı zonanın hamısını yoxla
+    var nearTopXs = [];
     fieldCubes.forEach(function(c){
       if(c.caught) return;
-      if((c.y || 0) < bottomCutoff){
-        onScreenXs.push(parseFloat(c.el.style.left) || margin);
+      if((c.y || 0) < 160){
+        nearTopXs.push(parseFloat(c.el.style.left) || margin);
       }
     });
 
     var bestX = margin, bestDist = -1;
     for(var attempt=0; attempt<25; attempt++){
       var candidateX = margin + Math.random() * Math.max(0, usableWidth - cubeSize);
-      var minDist = onScreenXs.length ? Infinity : minSeparation;
-      for(var k=0;k<onScreenXs.length;k++){
-        var d = Math.abs(candidateX - onScreenXs[k]);
+      var minDist = nearTopXs.length ? Infinity : minSeparation;
+      for(var k=0;k<nearTopXs.length;k++){
+        var d = Math.abs(candidateX - nearTopXs[k]);
         if(d < minDist) minDist = d;
       }
       if(minDist >= minSeparation) return candidateX;
@@ -6859,7 +6855,7 @@
 
     var duration = getFallDuration();
 
-    var record = {el:el, color:color, caught:false, y:0, rafId:null, lastFrame:performance.now(), animate:null, accumTime:0, smileyGlyphEl:smileyGlyphEl, baseX:x, driftX:0};
+    var record = {el:el, color:color, caught:false, y:0, rafId:null, lastFrame:performance.now(), animate:null, accumTime:0, smileyGlyphEl:smileyGlyphEl};
     fieldCubes.push(record);
 
     var targetTop = field.clientHeight + 20;
@@ -6934,28 +6930,7 @@
       }
 
       record.y = posY;
-      // Fərqli fazalarda (fastStart/mission-boost) fərqli sürətlə düşən kublar bir-birini "tuta"
-      // bilər — spawn-vaxtı ayrılıq bunu tək başına qarşılaya bilmir, ona görə hər freymdə yaxın
-      // Y-dəki kublarla toqquşma yoxlanılıb yüngül üfüqi itələmə (driftX) tətbiq olunur
-      var myX = record.baseX + record.driftX;
-      var pushDir = 0;
-      for(var pi=0; pi<fieldCubes.length; pi++){
-        var other = fieldCubes[pi];
-        if(other === record || other.caught) continue;
-        if(Math.abs((other.y || 0) - posY) > cubeSize * 0.75) continue;
-        var otherX = other.baseX + other.driftX;
-        var dx = myX - otherX;
-        if(Math.abs(dx) < cubeSize){
-          pushDir += dx !== 0 ? (dx > 0 ? 1 : -1) : (fieldCubes.indexOf(record) > pi ? 1 : -1);
-        }
-      }
-      if(pushDir !== 0){
-        record.driftX += (pushDir > 0 ? 1 : -1) * Math.min(3, Math.abs(pushDir)) * (dt / 16.67);
-        var driftMargin = 6;
-        var driftMaxX = driftMargin + Math.max(0, (field.clientWidth - driftMargin*2) - cubeSize);
-        record.driftX = Math.max(driftMargin - record.baseX, Math.min(driftMaxX - record.baseX, record.driftX));
-      }
-      el.style.transform = "translate(" + record.driftX + "px," + posY + "px)";
+      el.style.transform = "translateY(" + posY + "px)";
       record.rafId = requestAnimationFrame(animate);
     }
     record.animate = animate;
@@ -7069,7 +7044,6 @@
   function shakeAndRemove(record){
     var el = record.el;
     var baseY = record.y || 0;
-    var baseX = record.driftX || 0;
     var start = performance.now();
     function step(now){
       var t = now - start;
@@ -7078,7 +7052,7 @@
         return;
       }
       var offset = Math.sin((t/320) * Math.PI * 5) * 6;
-      el.style.transform = "translate(" + (baseX + offset) + "px," + baseY + "px)";
+      el.style.transform = "translate(" + offset + "px," + baseY + "px)";
       requestAnimationFrame(step);
     }
     requestAnimationFrame(step);
