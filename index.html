@@ -169,7 +169,10 @@
   .menu-btn.daily-missions-toggle{width:100%;background:#2f9e6f;box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 4px 0 #1f6f4d,0 6px 10px rgba(0,0,0,.2)}
   .menu-btn.daily-missions-toggle:active{box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 1px 0 #1f6f4d,0 2px 4px rgba(0,0,0,.2)}
   .daily-missions-arrow{margin-left:auto;flex-shrink:0;color:#fff}
-  .daily-missions-body{background:var(--panel);border-radius:0 0 14px 14px;padding:8px;margin-top:-4px}
+  .daily-missions-body.achievement-category-body{background:var(--panel);border-radius:0 0 14px 14px;padding:14px 8px 8px;margin-top:-4px}
+  /* Naliyyət sətirlərinin defolt opacity:.45 (kilidli görünüş) günlük tapşırıqlar üçün uyğun deyil —
+     tapşırıq hələ tamamlanmayıb/iddia edilməyib deyə HAMISI solğun görsənirdi, mətn oxunaqsız olurdu */
+  .daily-missions-body .achievement-row{opacity:1}
   .daily-missions-meta-row{border:2px solid var(--gold)}
   .daily-missions-progress{font-size:10px;font-weight:700;color:#a99;margin-top:1px}
   .daily-missions-red-dot{width:9px;height:9px;border-radius:50%;background:var(--red);flex-shrink:0;animation:dailyDotPulse 1s ease-in-out infinite alternate}
