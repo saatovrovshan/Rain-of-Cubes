@@ -447,6 +447,13 @@
   .bag-cube-item{display:flex;flex-direction:column;align-items:center;gap:4px}
   .bag-cube-swatch{width:36px;height:36px;border-radius:9px;box-shadow:0 3px 8px rgba(0,0,0,.2)}
   .bag-cube-count{font-size:12px;font-weight:800;color:var(--ink)}
+  .bag-section{background:var(--panel);border-radius:12px;padding:12px 14px;text-align:left}
+  .bag-section-title{font-size:12px;font-weight:800;color:var(--ink);margin-bottom:10px}
+  .bag-tiles{display:flex;flex-wrap:wrap;gap:12px}
+  .bag-tile{position:relative;width:52px;height:52px;border-radius:12px;background:var(--bg);border:none;box-shadow:0 3px 8px rgba(0,0,0,.18);font-size:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;font-family:inherit}
+  .bag-tile-count{position:absolute;right:-5px;bottom:-5px;background:var(--gold);color:#5a3d00;font-size:10px;font-weight:900;border-radius:8px;padding:2px 5px;box-shadow:0 2px 4px rgba(0,0,0,.3);font-variant-numeric:tabular-nums}
+  .item-info-icon{font-size:46px;text-align:center;margin:4px 0}
+  .item-info-count{font-size:12px;font-weight:800;color:#a99;text-align:center}
 
   .wheel-keys-row{font-size:15px;font-weight:800;color:var(--ink);margin:14px 0 4px}
   .wheel-wrap{position:relative;width:250px;height:250px;margin:16px auto 20px}
@@ -1457,6 +1464,19 @@
       <p style="font-size:13px;color:var(--ink);margin-bottom:16px" id="confirmModalText"></p>
       <button class="friend-action-btn reject" id="confirmModalYes" style="width:100%;padding:12px;font-size:13px;margin-bottom:8px">Bəli, sil</button>
       <button class="menu-return" id="confirmModalNo">Ləğv et</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="itemInfoModal">
+    <div class="modal-panel" style="text-align:center">
+      <div class="modal-header">
+        <h3 id="itemInfoTitle">Əşya</h3>
+        <button class="modal-close" id="itemInfoClose">✕</button>
+      </div>
+      <div class="item-info-icon" id="itemInfoIcon"></div>
+      <p style="font-size:13px;color:var(--ink);margin:8px 0" id="itemInfoDesc"></p>
+      <div class="item-info-count" id="itemInfoCount"></div>
+      <button id="itemInfoActivateBtn" class="bag-activate-btn" style="display:none;width:100%;margin-top:12px;padding:10px">Aktivləşdir</button>
     </div>
   </div>
 
@@ -8633,6 +8653,17 @@
     menuScreen.style.display = "";
     startMenuBgAnim();
   }
+  // Əşya kubikləri üçün başlıqlı bölmə HTML-i qurur — hər əşya kiçik "kub" düyməsi kimi,
+  // sayı kubun küncündə göstərilir; basıldıqda openItemInfo popup-u açır (bax renderBagScreen)
+  function bagTileSection(title, items, isBoostSection){
+    if(!items.length) return "";
+    var tiles = items.map(function(i){
+      return '<button type="button" class="bag-tile" data-item-id="' + i.id + '" data-item-boost="' + (isBoostSection ? "1" : "0") + '">' +
+        i.icon + '<span class="bag-tile-count">x' + (profile.inventory[i.id] || 0) + '</span></button>';
+    }).join("");
+    return '<div class="bag-section"><div class="bag-section-title">' + title + '</div><div class="bag-tiles">' + tiles + '</div></div>';
+  }
+
   function renderBagScreen(){
     var el = document.getElementById("bagList");
     var consumables = [];
@@ -8643,10 +8674,13 @@
         if(i.type === "xpboost" && !boosts.some(function(x){ return x.id === i.id; })) boosts.push(i);
       });
     });
-    var ownedConsumables = consumables.filter(function(i){ return (profile.inventory[i.id]||0) > 0; });
+    // Oyun-daxili ultilər (ULTI_IDS) "digər" istehlak edilə bilən əşyalardan (məs. ad dəyişmə
+    // bileti) ayrı bölmədə göstərilir
+    var ownedUltis = consumables.filter(function(i){ return ULTI_IDS.indexOf(i.id) !== -1 && (profile.inventory[i.id]||0) > 0; });
+    var ownedOther = consumables.filter(function(i){ return ULTI_IDS.indexOf(i.id) === -1 && (profile.inventory[i.id]||0) > 0; });
     var ownedBoosts = boosts.filter(function(i){ return (profile.inventory[i.id]||0) > 0; });
     var ownedCubeColors = ALL_COLORS.filter(function(c){ return (profile.cubeInventory[c.id]||0) > 0; });
-    if(!ownedConsumables.length && !ownedBoosts.length && !ownedCubeColors.length && !isXpBoostActive()){
+    if(!ownedUltis.length && !ownedOther.length && !ownedBoosts.length && !ownedCubeColors.length && !isXpBoostActive()){
       el.innerHTML = '<div class="empty-hint">Hələ heç bir əşyan yoxdur — 🛒 Mağazadan ulti al</div>';
       return;
     }
@@ -8655,27 +8689,21 @@
         '<div class="bag-row-info"><div class="bag-row-name">2x XP aktivdir</div></div>' +
         '<div class="bag-row-count">' + formatBoostRemaining(profile.xpBoostUntil - Date.now()) + '</div></div>'
       : "";
-    // Aktivləşdirmə düyməli sürətləndiricilər əvvəldə, adi ultilər sonra göstərilir
-    var boostRowsHtml = ownedBoosts.map(function(i){
-      return '<div class="bag-row"><div class="bag-row-icon">' + i.icon + '</div>' +
-        '<div class="bag-row-info"><div class="bag-row-name">' + escapeHtml(i.name) + '</div><div class="bag-row-desc">' + escapeHtml(i.desc) + '</div></div>' +
-        '<div class="bag-row-count">x' + (profile.inventory[i.id]||0) + '</div>' +
-        '<button class="bag-activate-btn" data-boost-id="' + i.id + '">Aktivləşdir</button></div>';
-    }).join("");
-    var consumableRowsHtml = ownedConsumables.map(function(i){
-      return '<div class="bag-row"><div class="bag-row-icon">' + i.icon + '</div>' +
-        '<div class="bag-row-info"><div class="bag-row-name">' + escapeHtml(i.name) + '</div><div class="bag-row-desc">' + escapeHtml(i.desc) + '</div></div>' +
-        '<div class="bag-row-count">x' + (profile.inventory[i.id]||0) + '</div></div>';
-    }).join("");
+    var ultiSectionHtml = bagTileSection("🎲 Ultilər", ownedUltis, false);
+    var boostSectionHtml = bagTileSection("⚡ Gücləndirmələr", ownedBoosts, true);
+    var otherSectionHtml = bagTileSection("🎫 Digər", ownedOther, false);
     // Oyun sonunda hər 8 misyaya görə qazanılan rəngli kubiklər — gələcək kubik-əsaslı
     // funksiyalar üçün çantada saxlanılır (bax gameOver -> profile.cubeInventory)
     var cubesSectionHtml = ownedCubeColors.length
-      ? '<div class="bag-cubes-section"><div class="bag-cubes-title">🎨 Kubiklər</div><div class="bag-cubes-list" id="bagCubesList"></div></div>'
+      ? '<div class="bag-section"><div class="bag-section-title">🎨 Kubiklər</div><div class="bag-cubes-list" id="bagCubesList"></div></div>'
       : "";
-    el.innerHTML = activeBannerHtml + boostRowsHtml + consumableRowsHtml + cubesSectionHtml;
-    el.querySelectorAll("[data-boost-id]").forEach(function(btn){
+    el.innerHTML = activeBannerHtml + ultiSectionHtml + boostSectionHtml + otherSectionHtml + cubesSectionHtml;
+    el.querySelectorAll(".bag-tile").forEach(function(btn){
       btn.addEventListener("click", function(){
-        activateXpBoost(this.getAttribute("data-boost-id"));
+        var id = this.getAttribute("data-item-id");
+        var isBoost = this.getAttribute("data-item-boost") === "1";
+        var item = (isBoost ? boosts : consumables).find(function(x){ return x.id === id; });
+        if(item) openItemInfo(item, isBoost);
       });
     });
     if(ownedCubeColors.length){
@@ -8694,6 +8722,27 @@
         cubesListEl.appendChild(item);
       });
     }
+  }
+
+  // Çantadakı bir əşyaya (ulti/gücləndirmə/digər) basdıqda ad+açıqlama+say göstərən popup —
+  // yalnız gücləndirmələrdə "Aktivləşdir" düyməsi görünür
+  function openItemInfo(item, isBoost){
+    document.getElementById("itemInfoTitle").textContent = item.name;
+    document.getElementById("itemInfoIcon").textContent = item.icon;
+    document.getElementById("itemInfoDesc").textContent = item.desc;
+    document.getElementById("itemInfoCount").textContent = "Sahib olduğun: x" + (profile.inventory[item.id] || 0);
+    var actBtn = document.getElementById("itemInfoActivateBtn");
+    if(isBoost){
+      actBtn.style.display = "";
+      actBtn.onclick = function(){
+        activateXpBoost(item.id);
+        document.getElementById("itemInfoModal").classList.remove("show");
+      };
+    } else {
+      actBtn.style.display = "none";
+      actBtn.onclick = null;
+    }
+    document.getElementById("itemInfoModal").classList.add("show");
   }
 
   // ===== Mükafat Çarxı (açarla çevrilir) =====
@@ -8934,6 +8983,12 @@
     document.getElementById("giftModalOverlay").classList.remove("show");
   });
   document.getElementById("giftModalOverlay").addEventListener("click", function(e){
+    if(e.target === this) this.classList.remove("show");
+  });
+  document.getElementById("itemInfoClose").addEventListener("click", function(){
+    document.getElementById("itemInfoModal").classList.remove("show");
+  });
+  document.getElementById("itemInfoModal").addEventListener("click", function(e){
     if(e.target === this) this.classList.remove("show");
   });
   document.getElementById("giftHistoryClose").addEventListener("click", function(){
