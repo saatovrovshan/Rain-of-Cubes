@@ -822,6 +822,12 @@
   .gameover-bonus-label{flex:1;text-align:left;font-size:12px;font-weight:700;color:var(--ink)}
   .gameover-bonus-val{font-size:13px;font-weight:900;color:var(--green);font-variant-numeric:tabular-nums}
   .gameover-bonus-val.counting{text-shadow:0 0 8px rgba(107,191,89,.5)}
+  .gameover-cubes-wrap{background:rgba(107,191,89,.1);border:1px solid rgba(107,191,89,.3);border-radius:14px;padding:10px 14px;margin:2px 0 6px}
+  .gameover-cubes-title{font-size:11px;font-weight:800;color:#7a9c6e;letter-spacing:.5px;text-align:left;margin-bottom:8px}
+  .gameover-cubes-list{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+  .gameover-cube-item{display:flex;flex-direction:column;align-items:center;gap:3px}
+  .gameover-cube-swatch{width:34px;height:34px;border-radius:9px;box-shadow:0 3px 8px rgba(0,0,0,.25)}
+  .gameover-cube-count{font-size:12px;font-weight:900;color:var(--ink)}
   #restartBtn{margin-top:14px;background:var(--green);color:#fff;border:none;border-radius:12px;padding:13px 28px;font-size:15px;font-weight:800;cursor:pointer;width:100%;box-sizing:border-box;box-shadow:0 4px 0 #4a9e3f}
   #menuReturnBtn{margin-top:8px;background:var(--blue);color:#fff;border:none;border-radius:12px;padding:11px 28px;font-size:13px;font-weight:800;cursor:pointer;width:100%;box-sizing:border-box}
 
@@ -1185,6 +1191,10 @@
         <div class="gameover-score-label">XP</div>
         <div class="gameover-stats" id="overlayStats"></div>
         <div class="gameover-bonus-list" id="gameoverBonusList" style="display:none"></div>
+        <div class="gameover-cubes-wrap" id="gameoverCubesWrap" style="display:none">
+          <div class="gameover-cubes-title">🎁 Qazanılan kubiklər</div>
+          <div class="gameover-cubes-list" id="gameoverCubesList"></div>
+        </div>
         <button id="restartBtn">🔄 Yenidən başla</button>
         <button class="menu-return" id="menuReturnBtn">🏠 Menyu</button>
       </div>
@@ -2797,6 +2807,7 @@
     if(typeof p.gold !== "number") p.gold = 0;
     if(typeof p.missionsDone !== "number") p.missionsDone = 0;
     if(!p.inventory) p.inventory = {};
+    if(!p.cubeInventory) p.cubeInventory = {}; // gələcək kubik-əsaslı funksiyalar üçün çantada toplanan rəngli kubiklər
     if(!p.unlocks) p.unlocks = {};
     if(!p.activeEffect) p.activeEffect = "none";
     if(!p.activeTheme) p.activeTheme = "color";
@@ -6420,6 +6431,15 @@
     // bonusu — bu, digər bonuslardan fərqli olaraq YALNIZ oyunçunun səviyyəsi üçün XP-dir,
     // "xal" ekranındakı yekun ədədə (finalScore) təsir etmir
     var xpBonus = Math.floor(finalScore / 1000) * 15;
+    // Hər tamamlanmış 8 misyaya görə 1 rastgələ (bərabər şansla) rəngli kubik qazanılır —
+    // gələcək kubik-əsaslı funksiyalar üçün çantada (profile.cubeInventory) toplanır
+    var cubesEarned = Math.floor(missionCount / 8);
+    var earnedCubesByColor = {};
+    for(var ci = 0; ci < cubesEarned; ci++){
+      var cubeColor = ALL_COLORS[Math.floor(Math.random() * ALL_COLORS.length)];
+      earnedCubesByColor[cubeColor.id] = (earnedCubesByColor[cubeColor.id] || 0) + 1;
+      profile.cubeInventory[cubeColor.id] = (profile.cubeInventory[cubeColor.id] || 0) + 1;
+    }
 
     profile.records = profile.records || [];
     profile.records.push({score: finalScore, gold: sessionGoldEarned, level: profile.level||1, missions: missionCount});
@@ -6444,6 +6464,7 @@
     var scoreEl = document.getElementById("gameoverScoreVal");
     scoreEl.textContent = rawScore;
     document.getElementById("gameoverBonusList").style.display = "none";
+    renderGameOverCubes(earnedCubesByColor);
     overlayEl.classList.add("show");
     // Əvvəlcə xam (bonussuz) xal göstərilir, 1 saniyə sonra qızıl/vaxt/misya/boss/xp bonusları
     // bir-bir sayğac kimi açılır, onlar bitdikdən SONRA üstdəki xal əvvəlki kimi yekun
@@ -6461,6 +6482,33 @@
         });
       }, 1000);
     }
+  }
+
+  // Oyun sonunda qazanılan rəngli kubikləri bonus cədvəlinin altında ayrıca, yan-yana
+  // düzülmüş kiçik cədvəldə göstərir — hər rəngdən neçə ədəd qazanıldığını yazır
+  function renderGameOverCubes(earnedCubesByColor){
+    var wrapEl = document.getElementById("gameoverCubesWrap");
+    var listEl = document.getElementById("gameoverCubesList");
+    var earnedColors = ALL_COLORS.filter(function(c){ return earnedCubesByColor[c.id] > 0; });
+    if(!earnedColors.length){
+      wrapEl.style.display = "none";
+      return;
+    }
+    listEl.innerHTML = "";
+    earnedColors.forEach(function(color){
+      var item = document.createElement("div");
+      item.className = "gameover-cube-item";
+      var swatch = document.createElement("div");
+      swatch.className = "gameover-cube-swatch";
+      applyThemedSwatch(swatch, color);
+      var count = document.createElement("div");
+      count.className = "gameover-cube-count";
+      count.textContent = "x" + earnedCubesByColor[color.id];
+      item.appendChild(swatch);
+      item.appendChild(count);
+      listEl.appendChild(item);
+    });
+    wrapEl.style.display = "";
   }
 
   // Qızıl/vaxt/misya/boss bonuslarını bir-bir (hər biri öz sayğacı ilə) açır, hamısı
