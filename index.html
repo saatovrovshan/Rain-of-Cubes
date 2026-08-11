@@ -2781,7 +2781,6 @@
   var recentSpawnColors = [];
   var urgentColorId = null;
   var urgentUntil = 0;
-  var missingColorStreak = 0;
   var lastSpawnTime = {};
   var SPAWN_COOLDOWN_MS = 2500;
   var waveState = "calm";
@@ -6655,24 +6654,18 @@
     var chosen = null;
 
     // Balanslama: HƏR kubik (rəngindən asılı olmayaraq) finişə çatanda can aparır — ona görə
-    // ekranı yad rənglərlə doldurmaq təhlükəlidir. Misya rəngi tamam yoxdursa güclü/tavanlı
-    // məcburiyyət var; hətta bir dənə vardırsa belə, davamlı axın üçün baza meyl saxlanılır ki,
-    // oyunçu "yanlış" kubiklərin altında qalıb canlarını itirməsin
+    // ekranı yad rənglərlə doldurmaq təhlükəlidir. Misya rəngi ekranda TAMAM yoxdursa
+    // MƏCBURİ seçilir (rastgəlik yoxdur) — əks halda (xüsusilə premium/mono rəng paketləri
+    // aktivdirsə, rəng hovuzu 6-dan 9-12-yə qədər böyüyür) oyunçu heç yaranmayan misya rəngini
+    // gözləyərkən "yad" kubiklərin altında qalıb canlarını itirə bilirdi
     if(mission){
       var missionColorCount = fieldCubes.filter(function(c){
         return !c.caught && !c.isHammer && c.color && c.color.id === mission.color.id;
       }).length;
       if(missionColorCount === 0){
-        if(missingColorStreak >= 2 || Math.random() < 0.7){
-          chosen = mission.color;
-        } else {
-          missingColorStreak++;
-        }
-      } else {
-        missingColorStreak = 0;
-        if(Math.random() < 0.35){
-          chosen = mission.color;
-        }
+        chosen = mission.color;
+      } else if(Math.random() < 0.35){
+        chosen = mission.color;
       }
     }
 
@@ -6684,8 +6677,6 @@
     if(!chosen){
       chosen = candidates[Math.floor(Math.random()*candidates.length)];
     }
-
-    if(mission && chosen.id === mission.color.id) missingColorStreak = 0;
 
     lastSpawnTime[chosen.id] = now;
     recentSpawnColors.push(chosen.id);
@@ -8475,7 +8466,6 @@
     recentSpawnColors = [];
     urgentColorId = null;
     urgentUntil = 0;
-    missingColorStreak = 0;
     lastSpawnTime = {};
     sessionXpEarned = 0;
     sessionGoldEarned = 0;
