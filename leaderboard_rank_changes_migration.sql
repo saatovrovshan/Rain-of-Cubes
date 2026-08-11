@@ -31,3 +31,10 @@ create policy "lb_rank_changes_insert_any_authed" on public.leaderboard_rank_cha
 drop policy if exists "lb_rank_changes_update_any_authed" on public.leaderboard_rank_changes;
 create policy "lb_rank_changes_update_any_authed" on public.leaderboard_rank_changes
   for update using (auth.uid() is not null);
+
+-- RLS policy-ləri təkbaşına kifayət deyil — sətir səviyyəsində icazə versələr də, əgər rol
+-- cədvələ əsas GRANT-a malik deyilsə (aşağıdakılar bu faylda ƏSKİK idi), sorğu "permission
+-- denied for table" (42501) xətası ilə uğursuz olur və liderborddakı bütün +/- göstəriciləri
+-- səssizcə heç vaxt görünmür (bax computeRankChanges-in catch bloku).
+grant select, insert, update on public.leaderboard_rank_changes to authenticated;
+grant select on public.leaderboard_rank_changes to anon;

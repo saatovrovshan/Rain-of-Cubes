@@ -7278,6 +7278,9 @@
     });
     waveEndsAt += pausedFor;
     hammerEndsAt += pausedFor;
+    // sessionStartTime də paused müddətə görə irəli sürüşdürülür — əks halda oyun sonundakı
+    // "Vaxtı" bonusu (bax gameOver) pauzada keçən vaxtı da real oyun vaxtı kimi hesablayırdı
+    if(sessionStartTime) sessionStartTime += pausedFor;
     if(slowMode){
       slowEndsAt += pausedFor;
       var remaining = Math.max(0, slowEndsAt - performance.now());
