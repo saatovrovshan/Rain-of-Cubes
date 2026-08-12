@@ -1863,14 +1863,10 @@
     if(n <= 15) return Math.min(15, 6 + n);
     return 15 + Math.ceil((n - 15) / 5);
   }
-  // Rəng sayı: ilk 3 leveldə 3 rəng, sonra hər 2 leveldə +1 (maksimum 12 — bütün rənglər).
-  // Əvvəlki (hər 5 leveldə +1) templə oyunçu ~level 18-ə qədər yalnız adi (əsas) rənglərlə,
-  // premium/mono rənglərə isə yalnız ~level 41-45-də tam çatırdı — bu, oyunu həddən artıq
-  // uzun müddət asan saxlayırdı. İndi 6 əsas rəngin hamısı artıq level 8-də, premium rənglər
-  // level 10-dan, mono rənglər isə level 16-dan başlayaraq artır, tam 12 rəng isə level 20-də.
+  // Rəng sayı: ilk 3 leveldə 3 rəng, sonra hər 25 leveldə +1 (maksimum 12 — bütün rənglər)
   function arcadeColorCountForLevel(n){
     if(n <= 3) return 3;
-    return Math.min(12, 3 + Math.ceil((n - 3) / 2));
+    return Math.min(12, 3 + Math.ceil((n - 3) / 25));
   }
   // ===== Boss döyüşləri: arkadada hər 10 leveldən, sonsuz rejimdə hər 10 misyadan bir =====
   // "Tier" 1,2,3... ilə eyni boss roster-i iki rejimdə də dövr edir ki, eyni boslar görünsün.
@@ -1969,7 +1965,6 @@
     var missionsRequired = isBoss ? 1 : arcadeMissionsForLevel(n);
     var speedMult = Math.round((1 + (n-1) * 0.01) * 100) / 100;
     var colorCount = arcadeColorCountForLevel(n);
-    var forcePureSmiley = n >= 11 && (n % 3 === 0);
     var noPowerups = n >= 21 && (n % 4 === 0);
     var goldReward = (isBoss ? 60 : 20) + n * 4;
     return {
@@ -1978,7 +1973,6 @@
       missionsRequired: missionsRequired,
       speedMult: speedMult,
       colorCount: colorCount,
-      forcePureSmiley: forcePureSmiley,
       noPowerups: noPowerups,
       goldReward: goldReward,
       isBoss: isBoss,
@@ -2770,7 +2764,6 @@
   var arcadeMissionsRequired = 0;
   var arcadeSpeedMult = 1;
   var arcadeColorCount = null; // null (arkada deyil) | 3..12 aktiv rəng sayı
-  var arcadeThemeOverride = null; // null | "puresmiley"
   var arcadeNoPowerups = false;
   var arcadeIsBossLevel = false;
   var arcadeBossTier = 0;
@@ -4928,7 +4921,7 @@
   // Kubik/misya render kodunda profile.activeTheme birbaşa oxumaq əvəzinə bunu çağırır —
   // arkada rejimi bəzi levellərdə temanı müvəqqəti məcbur edə bilir (oyunçunun öz seçimini pozmadan)
   function currentTheme(){
-    return arcadeThemeOverride || profile.activeTheme;
+    return profile.activeTheme;
   }
 
   // Şəkilli kubik temaları: hər tema yalnız 6 əsas rəngi (BASE_COLORS) əhatə edir —
@@ -8292,7 +8285,6 @@
     arcadeMissionsRequired = conf.missionsRequired;
     arcadeSpeedMult = conf.speedMult;
     arcadeColorCount = conf.colorCount;
-    arcadeThemeOverride = conf.forcePureSmiley ? "puresmiley" : null;
     arcadeNoPowerups = conf.noPowerups;
     arcadeIsBossLevel = !!conf.isBoss;
     arcadeBossTier = conf.bossTier || 0;
@@ -8305,7 +8297,6 @@
     arcadeMissionsRequired = 0;
     arcadeSpeedMult = 1;
     arcadeColorCount = null;
-    arcadeThemeOverride = null;
     arcadeNoPowerups = false;
     arcadeIsBossLevel = false;
     arcadeBossTier = 0;
@@ -8395,7 +8386,6 @@
       var unlocked = n <= profile.arcade.unlockedLevel;
       var stars = profile.arcade.stars[n] || 0;
       var badges = '<span title="Rəng sayı">🎨' + conf.colorCount + '</span>';
-      if(conf.forcePureSmiley) badges += '<span title="Yalnız smaylidən tanı">😎</span>';
       if(conf.noPowerups) badges += '<span title="Ultilər söndürülüb">🚫</span>';
       if(conf.speedMult >= 1.5) badges += '<span title="Yüksək sürət">⚡</span>';
       if(conf.isBoss) badges += '<span title="Boss döyüşü">' + bossForTier(conf.bossTier).icon + '</span>';
