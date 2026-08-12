@@ -5793,9 +5793,11 @@
     bossHealthRowEl.style.display = "none";
     slotsEl.style.display = "";
     var color = pickMissionColor();
-    // Oyunun ilk 5 misyası həmişə asan olsun (2-4). Sonra tələb olunan say ekrandakı
-    // bu rəngin sayına görə tənzimlənir: rəng çoxdursa daha çox, azdırsa daha az tələb olunur —
-    // oyunçu nadir rəngi tapmaq üçün sonsuz gözləməsin.
+    // Oyunun ilk 5 misyası həmişə asan olsun (2-4). Sonra tələb olunan say ekrandakı bu rəngin
+    // HAZIRKI sayına MÜTƏNASİB təyin olunur (təxminən 60%-i) — məs. ekranda 6 dənə varsa 3-4
+    // tələb olunur, 1 dənə varsa cəmi 2. Heç vaxt ekrandakı saya BƏRABƏR/ARTIQ tələb olunmur ki,
+    // oyunçu "hamısını" tutmaq məcburiyyətində qalıb, nadir rəngi əbədi gözləyərkən canlarını
+    // yad kubiklərin altında itirməsin
     var count;
     if(missionCount < 5){
       count = 2 + Math.floor(Math.random()*3);
@@ -5803,9 +5805,7 @@
       var colorCountOnScreen = fieldCubes.filter(function(c){
         return !c.caught && !c.isHammer && c.color && c.color.id === color.id;
       }).length;
-      var maxFeasible = Math.max(3, colorCountOnScreen + 2);
-      var desired = 4 + Math.floor(Math.random()*4);
-      count = Math.min(desired, maxFeasible, 8);
+      count = Math.max(2, Math.min(Math.round(colorCountOnScreen * 0.6), 8));
     }
     mission = {color:color, count:count, filled:0};
     prevMissionColorId = color.id;
