@@ -2788,7 +2788,13 @@
   var gameOverHandled = false; // eyni anda bir neçə kubik canı 0-a endirərsə gameOver() təkrar işə düşməsin
   var sessionXpEarned = 0;
   var sessionGoldEarned = 0;
-  var sessionBossesDefeated = 0; // oyun bitdi bonusunda (222/boss) istifadə olunur
+  var sessionBossesDefeated = 0; // oyun bitdi bonusunda göstərilən boss sayı
+  var sessionBossXpEarned = 0; // bosslardan qazanılan XAM XP — oyun bitdi bonusunda 3.5x hesablanır
+  // Oyun bitdi ekranına toxunduqda bütün sayğaclar (bonus sətirləri + yekun xal) dərhal öz son
+  // dəyərinə "sıçrayır" — toxunulmasa əvvəlki kimi ardıcıl sayğac animasiyası davam edir
+  var gameOverSkipRequested = false;
+  var gameOverStartTimeoutId = null;
+  var gameOverSkipStartFn = null;
   var sessionLevelXpEarned = 0; // sürətləndiricidən ƏVVƏLKİ (xam) məbləğ — oyun bitdi ekranında göstərilir
 
   // Combo
@@ -4982,7 +4988,7 @@
 
   // Bu oyunda tamamlanan hər misya kubiklərin sürətini tədricən artırır (hər misya +3%, maksimum 75%-ə qədər)
   function applySpeedFromMissions(){
-    var speedupPct = Math.min(75, missionCount * 1.8); // əvvəlki 3%-dən 40% az (1.8%)
+    var speedupPct = Math.min(75, missionCount * 1.44); // əvvəlki 1.8%-dən daha 20% az (1.44%)
     currentFallDuration = Math.max(20000, 120000 * (1 - speedupPct/100));
   }
 
@@ -5773,15 +5779,23 @@
     }
   }
 
+  // Sonsuz rejimdə ilk boss 10-cu misyada gəlir, bundan sonrakı hər boss 15 misyadan bir
+  // (10, 25, 40, 55, 70...) — misya nömrəsi 15×tier-5 düsturuna uyğun gələndə tier qaytarılır
+  function bossTierForMissionNumber(num){
+    var tier = (num + 5) / 15;
+    return Number.isInteger(tier) && tier >= 1 ? tier : 0;
+  }
+
   function newMission(){
     updateMissionProgressDisplay();
     // Boss tetiklənməsi: arkadada hər 10-cu level tam bir boss döyüşüdür (bax buildArcadeLevel);
-    // sonsuz rejimdə tamamlanan misyaların 10,20,30... -cusu boss olur. Battle rejimi toxunulmur.
+    // sonsuz rejimdə ilk boss 10-cu misyada, sonrakılar 15 misyadan bir gəlir (bax
+    // bossTierForMissionNumber). Battle rejimi toxunulmur.
     var bossTier = 0;
     if(gameMode === "arcade"){
       if(arcadeIsBossLevel) bossTier = arcadeBossTier;
-    } else if(gameMode === "endless" && (missionCount + 1) % 10 === 0){
-      bossTier = (missionCount + 1) / 10;
+    } else if(gameMode === "endless"){
+      bossTier = bossTierForMissionNumber(missionCount + 1);
     }
     if(bossTier){
       startBossMission(bossTier, gameMode === "arcade" ? arcadeBossHp : bossHpForTier(bossTier));
@@ -6351,6 +6365,7 @@
     renderPowerups();
     addXp(xp);
     addGold(gold);
+    sessionBossXpEarned += xp;
     profile.missionsDone = (profile.missionsDone||0) + 1;
     profile.bossesDefeated = (profile.bossesDefeated||0) + 1;
     sessionBossesDefeated++;
@@ -6455,7 +6470,8 @@
     var timeBonus = bonusSeconds * 33;
     var missionBonus = missionCount * 21;
     var goldBonus = sessionGoldEarned * 55;
-    var bossBonus = sessionBossesDefeated * 222;
+    // Boss bonusu artıq boss sayına YOX, oyunçunun bosslardan qazandığı XP-nin özünə (3.5x) görə
+    var bossBonus = Math.round(sessionBossXpEarned * 3.5);
     var bonus = timeBonus + missionBonus + goldBonus + bossBonus;
     var finalScore = rawScore + bonus;
     // Bonuslarla birlikdə toplanmış yekun nəticənin (finalScore) hər 1000-inə görə 15 XP
@@ -6499,9 +6515,15 @@
     overlayEl.classList.add("show");
     // Əvvəlcə xam (bonussuz) xal göstərilir, 1 saniyə sonra qızıl/vaxt/misya/boss/xp bonusları
     // bir-bir sayğac kimi açılır, onlar bitdikdən SONRA üstdəki xal əvvəlki kimi yekun
-    // (bonuslu) xala doğru speedometer kimi (ease-out) sayaraq artır
+    // (bonuslu) xala doğru speedometer kimi (ease-out) sayaraq artır. Ekrana toxunulsa bütün
+    // sayğaclar dərhal son dəyərinə "sıçrayır" (bax gameOverSkipRequested, overlayEl-in click
+    // dinləyicisi) — toxunulmasa bu ardıcıllıq əvvəlki kimi öz sürətində davam edir.
+    gameOverSkipRequested = false;
+    gameOverStartTimeoutId = null;
+    gameOverSkipStartFn = null;
     if(bonus > 0 || xpBonus > 0){
-      setTimeout(function(){
+      var startReveal = function(){
+        gameOverStartTimeoutId = null;
         revealGameOverBonusBreakdown([
           {icon:"🪙", label:"Qızılı: " + sessionGoldEarned, value:goldBonus},
           {icon:"⏱️", label:"Vaxtı: " + formatBonusTime(bonusSeconds), value:timeBonus},
@@ -6511,7 +6533,9 @@
         ], function(){
           animateCountUp(scoreEl, rawScore, finalScore, 1400, "");
         });
-      }, 1000);
+      };
+      gameOverSkipStartFn = startReveal;
+      gameOverStartTimeoutId = setTimeout(startReveal, 1000);
     }
   }
 
@@ -6558,18 +6582,25 @@
       var el = document.getElementById("gameoverBonusVal" + i);
       animateCountUp(el, 0, items[i].value, 500, "+", function(){
         i++;
-        setTimeout(next, 150);
+        if(gameOverSkipRequested) next(); else setTimeout(next, 150);
       });
     }
     next();
   }
 
   // Rəqəmi `from`-dan `to`-ya (ease-out) sayaraq artırır — oyun bitdi ekranındakı yekun xal
-  // və bonus sətirlərinin sayğac animasiyası üçün ortaq istifadə olunur
+  // və bonus sətirlərinin sayğac animasiyası üçün ortaq istifadə olunur. gameOverSkipRequested
+  // aktivdirsə (oyunçu ekrana toxunub) hər addımda dərhal son dəyərə keçir.
   function animateCountUp(el, from, to, durationMs, prefix, onComplete){
     var startTs = null;
     el.classList.add("counting");
     function step(ts){
+      if(gameOverSkipRequested){
+        el.textContent = prefix + to;
+        el.classList.remove("counting");
+        if(onComplete) onComplete();
+        return;
+      }
       if(startTs === null) startTs = ts;
       var progress = Math.min(1, (ts - startTs) / durationMs);
       var eased = 1 - Math.pow(1 - progress, 3);
@@ -8464,6 +8495,7 @@
     sessionXpEarned = 0;
     sessionGoldEarned = 0;
     sessionBossesDefeated = 0;
+    sessionBossXpEarned = 0;
     sessionLevelXpEarned = 0;
     resetCombo();
     renderProfile();
@@ -9089,6 +9121,19 @@
   });
   document.getElementById("restartBtn").addEventListener("click", startGame);
   document.getElementById("menuReturnBtn").addEventListener("click", returnToMenu);
+  // Oyun bitdi ekranına (düymələrdən başqa istənilən yerinə) toxunduqda bonus sayğacları
+  // dərhal son dəyərinə keçir — bax gameOverSkipRequested
+  overlayEl.addEventListener("click", function(e){
+    if(!overlayEl.classList.contains("show")) return;
+    if(e.target.closest && e.target.closest("button")) return;
+    if(gameOverSkipRequested) return;
+    gameOverSkipRequested = true;
+    if(gameOverStartTimeoutId){
+      clearTimeout(gameOverStartTimeoutId);
+      gameOverStartTimeoutId = null;
+      if(gameOverSkipStartFn) gameOverSkipStartFn();
+    }
+  });
   document.getElementById("puShield").addEventListener("click", useShield);
   document.getElementById("puSlow").addEventListener("click", useSlow);
   document.getElementById("puFast").addEventListener("click", useFast);
