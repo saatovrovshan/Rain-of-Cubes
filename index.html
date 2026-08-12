@@ -5538,6 +5538,15 @@
   function renderAchievementsScreen(){
     var totalUnlocked = ACHIEVEMENTS.filter(function(a){ return a.check(profile); }).length;
     document.getElementById("achievementsTotalBadge").textContent = totalUnlocked + "/" + ACHIEVEMENTS.length;
+    // Bu ekran hər açılanda, cari (etibarlı) açılmış nailiyyət siyahısı buludla TAM
+    // uyğunlaşdırılır — köhnə oyun versiyalarından qalma "yetim" ID-lər (artıq mövcud olmayan
+    // nailiyyətlər) buludda silinir ki, liderborddakı say bu ekrandakı sayla HƏMİŞƏ tam üst-üstə düşsün
+    if(supabaseClient && cloudUserId){
+      var validUnlockedIds = ACHIEVEMENTS.filter(function(a){ return a.check(profile); }).map(function(a){ return a.id; });
+      supabaseClient.rpc("reconcile_unlocked_achievements", {p_achievement_ids: validUnlockedIds}).then(function(res){
+        if(res.error) console.error("Nailiyyət sayı uyğunlaşdırılmadı:", res.error);
+      });
+    }
     var achListEl = document.getElementById("achievementsList");
     achListEl.innerHTML = ACHIEVEMENT_CATEGORIES.map(function(cat){
       var items = achievementsInCategory(cat.id);

@@ -131,6 +131,43 @@ $$;
 
 grant execute on function public.sync_unlocked_achievements(text[]) to authenticated;
 
+-- Nailiyyətlər ekranı AÇILANDA çağırılır — client-in HAZIRKI (cari nailiyyət siyahısına görə
+-- etibarlı) tam açılmış ID siyahısını göndərir, server bunu TAM UYĞUNLAŞDIRIR: YOXSA əlavə edir,
+-- ARTIQ-YERSİZ olanları (məs. köhnə oyun versiyalarından qalma, artıq mövcud olmayan nailiyyət
+-- ID-ləri) SİLİR. sync_unlocked_achievements()-dən fərqli olaraq bu, "yalnız əlavə et" yox, TAM
+-- SET-i client-in verdiyi siyahıya bərabərləşdirir — beləliklə köhnə/səhv sətirlərdən yaranan
+-- uyğunsuzluq özü-özünə düzəlir.
+create or replace function public.reconcile_unlocked_achievements(p_achievement_ids text[])
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_count integer;
+begin
+  if auth.uid() is null then
+    raise exception 'not authenticated';
+  end if;
+
+  delete from public.unlocked_achievements
+  where player_id = auth.uid()
+    and achievement_id <> all(p_achievement_ids);
+
+  insert into public.unlocked_achievements (player_id, achievement_id)
+  select auth.uid(), unnest(p_achievement_ids)
+  on conflict (player_id, achievement_id) do nothing;
+
+  select count(*) into v_count from public.unlocked_achievements where player_id = auth.uid();
+
+  update public.profiles set achievements_unlocked = v_count where id = auth.uid();
+
+  return v_count;
+end;
+$$;
+
+grant execute on function public.reconcile_unlocked_achievements(text[]) to authenticated;
+
 -- ============================================================================
 -- BİR DƏFƏLİK DÜZƏLİŞ (İSTƏYƏ BAĞLI, amma tövsiyə olunur) — yalnız YUXARIDAKI hissələri işə
 -- saldıqdan SONRA, BİR DƏFƏ işə sal. Yuxarıdakı hissələr YALNIZ BUNDAN SONRAKI hərəkətləri qoruyur.
