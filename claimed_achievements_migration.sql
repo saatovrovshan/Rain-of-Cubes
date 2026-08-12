@@ -138,14 +138,35 @@ grant execute on function public.sync_unlocked_achievements(text[]) to authentic
 -- cədvəlinə köçürür və achievements_unlocked-ı bu HƏQİQİ sayla üst-üstə salır — nəticədə
 -- "Nailiyyətlər" ekranı ilə liderbord dərhal EYNİ rəqəmi göstərəcək. Təhlükəsizdir, bir neçə dəfə
 -- işə salsan belə eyni nəticəni verir.
+-- save_data ola bilsin json (jsonb yox) tipində saxlanılır, YA DA bəzi sətirlərdə
+-- unlockedAchievements açarı obyekt olmaya bilər (null, array və s.) — hər ikisini ehtiyatla
+-- ::jsonb-ə çeviririk və CASE ilə YALNIZ həqiqi obyekt olanda jsonb_object_keys çağırırıq, əks
+-- halda boş obyektə keçirik ki, FROM-dakı funksiya heç vaxt uyğunsuz dəyərlə çağırılıb sıradan
+-- çıxmasın (nəticədə həmin sətir üçün sadəcə heç bir açar qaytarılmır, xəta yaranmır)
 insert into public.unlocked_achievements (player_id, achievement_id, unlocked_at)
 select p.id, key, now()
-from public.profiles p, jsonb_object_keys(p.save_data->'unlockedAchievements') as key
-where p.save_data ? 'unlockedAchievements'
+from public.profiles p,
+  jsonb_object_keys(
+    case when jsonb_typeof(p.save_data::jsonb->'unlockedAchievements') = 'object'
+         then p.save_data::jsonb->'unlockedAchievements'
+         else '{}'::jsonb
+    end
+  ) as key
 on conflict (player_id, achievement_id) do nothing;
 
 update public.profiles p
 set achievements_unlocked = (
   select count(*) from public.unlocked_achievements u where u.player_id = p.id
 );
+
+-- Yoxlama: bu sorğu hər oyunçu üçün save_data-nın strukturunu göstərir — əgər unlocked_type
+-- sütunu "object" DEYİLSƏ (məs. "null" və ya boşdursa), demək o oyunçunun save_data-sında
+-- unlockedAchievements HEÇ YOXDUR və ya fərqli formatdadır, backfill onun üçün heç nə etməyəcək
+-- (bu, YENİ nailiyyət açanda sync_unlocked_achievements() ilə özü-özünə düzələcək)
+select id, name, achievements_unlocked,
+  jsonb_typeof(save_data::jsonb->'unlockedAchievements') as unlocked_type,
+  (select count(*) from public.unlocked_achievements u where u.player_id = profiles.id) as unlocked_rows_now
+from public.profiles
+order by achievements_unlocked desc nulls last
+limit 15;
 -- ============================================================================
