@@ -73,3 +73,23 @@ end;
 $$;
 
 grant execute on function public.claim_achievement(text) to authenticated;
+
+-- ============================================================================
+-- BİR DƏFƏLİK DÜZƏLİŞ (İSTƏYƏ BAĞLI) — yalnız YUXARIDAKI hissəni işə saldıqdan SONRA, BİR DƏFƏ işə sal.
+-- Yuxarıdakı hissə YALNIZ BUNDAN SONRAKI (yeni) qəbulları qoruyur. Artıq buludda olan
+-- profiles.achievements_unlocked dəyəri köhnə üsulla (unlockedAchievements sayı, YOX claimedAchievements)
+-- hesablanıb — bu, "Nailiyyətlər" ekranındakı sayla liderborddakı sayın niyə fərqli olduğunu izah edir.
+-- Bu blok: (1) hər oyunçunun save_data-dakı HƏQİQİ qəbul etdiyi nailiyyətləri claimed_achievements
+-- cədvəlinə köçürür, (2) achievements_unlocked-ı bu HƏQİQİ sayla üst-üstə salır. Nəticədə hər iki
+-- ekranda eyni (düzgün) rəqəm görünəcək. Təhlükəsizdir, bir neçə dəfə işə salsan belə eyni nəticəni verir.
+insert into public.claimed_achievements (player_id, achievement_id, claimed_at)
+select p.id, key, now()
+from public.profiles p, jsonb_object_keys(p.save_data->'claimedAchievements') as key
+where p.save_data ? 'claimedAchievements'
+on conflict (player_id, achievement_id) do nothing;
+
+update public.profiles p
+set achievements_unlocked = (
+  select count(*) from public.claimed_achievements c where c.player_id = p.id
+);
+-- ============================================================================
