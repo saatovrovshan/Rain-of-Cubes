@@ -1863,10 +1863,14 @@
     if(n <= 15) return Math.min(15, 6 + n);
     return 15 + Math.ceil((n - 15) / 5);
   }
-  // Rəng sayı: ilk 3 leveldə 3 rəng, sonra hər 5 leveldə +1 (maksimum 12 — bütün rənglər)
+  // Rəng sayı: ilk 3 leveldə 3 rəng, sonra hər 2 leveldə +1 (maksimum 12 — bütün rənglər).
+  // Əvvəlki (hər 5 leveldə +1) templə oyunçu ~level 18-ə qədər yalnız adi (əsas) rənglərlə,
+  // premium/mono rənglərə isə yalnız ~level 41-45-də tam çatırdı — bu, oyunu həddən artıq
+  // uzun müddət asan saxlayırdı. İndi 6 əsas rəngin hamısı artıq level 8-də, premium rənglər
+  // level 10-dan, mono rənglər isə level 16-dan başlayaraq artır, tam 12 rəng isə level 20-də.
   function arcadeColorCountForLevel(n){
     if(n <= 3) return 3;
-    return Math.min(12, 3 + Math.ceil((n - 3) / 5));
+    return Math.min(12, 3 + Math.ceil((n - 3) / 2));
   }
   // ===== Boss döyüşləri: arkadada hər 10 leveldən, sonsuz rejimdə hər 10 misyadan bir =====
   // "Tier" 1,2,3... ilə eyni boss roster-i iki rejimdə də dövr edir ki, eyni boslar görünsün.
