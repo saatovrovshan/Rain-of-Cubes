@@ -5136,6 +5136,18 @@
     if(newlyUnlocked.length){
       showToast("🎖️ " + newlyUnlocked[newlyUnlocked.length-1].name + " tamamlandı! Mükafatı götür");
       saveProfile();
+      // Buluddakı "Nailiyyətlər" sayğacı (profiles.achievements_unlocked) artıq client-in tam
+      // profil overwrite-i ilə YOX, YALNIZ bu server funksiyası ilə yenilənir (bax
+      // claimed_achievements_migration.sql) — beləliklə başqa (köhnəlmiş) cihazın sonrakı
+      // saveProfile()-u bu sayı səhvən azalda bilməz, VƏ liderborddakı say "Nailiyyətlər"
+      // ekranındakı AÇILMIŞ sayından HEÇ VAXT fərqli ola bilməz
+      if(supabaseClient && cloudUserId){
+        supabaseClient.rpc("sync_unlocked_achievements", {
+          p_achievement_ids: newlyUnlocked.map(function(a){ return a.id; })
+        }).then(function(res){
+          if(res.error) console.error("Nailiyyət sayğacı sinxronlaşmadı:", res.error);
+        });
+      }
     }
     updateAchievementsBtnDot();
     updateDailyMissionsDot();
