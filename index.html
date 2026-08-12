@@ -2981,7 +2981,9 @@
       total_play_time_ms: Math.round(profile.totalPlayTimeMs || 0),
       best_score: bestRecord ? bestRecord.score : 0,
       best_score_missions: bestRecord ? bestRecord.missions : 0,
-      achievements_unlocked: Object.keys(profile.unlockedAchievements || {}).length,
+      // achievements_unlocked BURADAN YAZILMIR — bu sütun YALNIZ claim_achievement() RPC-si
+      // (server-tərəfli atomik +1) tərəfindən yenilənir ki, 2 cihazdan gələn köhnəlmiş tam
+      // profil overwrite-ləri bu sayı həqiqi qəbul sayından ARTIQ/fərqli göstərməsin
       save_data: profile,
       updated_at: new Date().toISOString()
     }).then(function(res){
@@ -5148,9 +5150,37 @@
     dot.style.display = hasClaimable ? "" : "none";
   }
 
+  // Bulud aktivdirsə mükafat YALNIZ server claim_achievement() RPC-si "bu hələ qəbul edilməyib"
+  // deyə TƏSDİQ edəndən sonra verilir — (player_id,achievement_id) üzərindəki PK toqquşması eyni
+  // nailiyyətin 2 fərqli cihazda təxminən eyni vaxtda qəbul edilib qızılın 2 dəfə verilməsinin
+  // qarşısını server-tərəfli, atomik şəkildə alır (bax claimed_achievements_migration.sql).
+  // Bulud yoxdursa (qonaq/lokal rejim), tək cihaz olduğu üçün lokal yoxlama kifayətdir.
   function claimAchievement(achievementId){
     var a = ACHIEVEMENTS.find(function(x){ return x.id === achievementId; });
     if(!a || !profile.unlockedAchievements[a.id] || profile.claimedAchievements[a.id]) return;
+    if(supabaseClient && cloudUserId){
+      supabaseClient.rpc("claim_achievement", {p_achievement_id: a.id}).then(function(res){
+        if(res.error){
+          console.error("Nailiyyət qəbulu xətası:", res.error);
+          showToast("⚠️ Nailiyyət qəbul edilmədi, yenidən cəhd et");
+          return;
+        }
+        if(res.data !== true){
+          // Başqa cihazdan artıq qəbul edilib — lokal vəziyyəti sakitcə uyğunlaşdır, TƏKRAR mükafat vermə
+          profile.claimedAchievements[a.id] = true;
+          saveProfile();
+          renderAchievementsScreen();
+          updateAchievementsBtnDot();
+          return;
+        }
+        applyAchievementClaimLocally(a);
+      });
+      return;
+    }
+    applyAchievementClaimLocally(a);
+  }
+
+  function applyAchievementClaimLocally(a){
     profile.claimedAchievements[a.id] = true;
     profile.gold += ACHIEVEMENT_GOLD_REWARD;
     profile.totalGoldEarned = (profile.totalGoldEarned||0) + ACHIEVEMENT_GOLD_REWARD;
