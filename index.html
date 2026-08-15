@@ -10359,6 +10359,15 @@
     document.getElementById("cardRevealOverlay").classList.add("show");
   }
 
+  // Basıb saxlayıb sürüşdürəndə (drag) hansı xananın üstündən keçdiyini izləmək üçün pointermove/up
+  // hadisələri BİR DƏFƏ #cardPixelGrid-in özünə bağlanır (hər xana üçün ayrıca YOX) — onCardCellPointerDown
+  // isə hər xananın öz pointerdown-una bağlıdır (renderCardStage-də).
+  var cardGridEl = document.getElementById("cardPixelGrid");
+  cardGridEl.addEventListener("pointermove", onCardGridPointerMove);
+  cardGridEl.addEventListener("pointerup", onCardGridPointerUp);
+  cardGridEl.addEventListener("pointercancel", onCardGridPointerUp);
+  cardGridEl.addEventListener("contextmenu", function(ev){ ev.preventDefault(); });
+
   // Event listener-lar
   document.getElementById("cardsBtn").addEventListener("click", openCards);
   document.getElementById("cardsBack").addEventListener("click", function(){
