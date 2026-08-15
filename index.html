@@ -6005,11 +6005,20 @@
     }
   }
 
+  // Ekranda HƏMİŞƏ dəqiq 3 ürək göstərilir (kart bonusundan asılı olmayaraq say heç vaxt artmır).
+  // Bonus canlar (3-dən yuxarı) bənövşəyi ürək kimi göstərilir — bu, əsas 3 qırmızı ürəyin
+  // YERİNƏ deyil, "üstündə" sayılır: məs. 4 can = 1 bənövşəyi + 2 qırmızı. Bənövşəyi can(lar)
+  // İTKİN gedən İLK canlardır — hamısı gedəndən sonra ekranda yenidən sadəcə 3 qırmızı ürək qalır,
+  // sonra adi qayda ilə (soldan) solur.
   function renderLives(){
+    var aliveCount = Math.max(0, Math.min(lives, 3)); // lives keçici olaraq mənfiyə düşə bilər (loseLife dalbadal çağırılanda) — mənfi "solmuş ürək" sayı yaratmasın
+    var purpleCount = Math.max(0, lives - 3);
+    var redCount = aliveCount - purpleCount;
+    var lostCount = 3 - aliveCount;
     var out = "";
-    for(var i=0;i<getMaxLives();i++){
-      out += '<span class="heart' + (i < lives ? "" : " lost") + '">' + (i < lives ? "❤️" : "🖤") + "</span>";
-    }
+    for(var i=0;i<purpleCount;i++) out += '<span class="heart heart-bonus">💜</span>';
+    for(var i=0;i<redCount;i++) out += '<span class="heart">❤️</span>';
+    for(var i=0;i<lostCount;i++) out += '<span class="heart lost">🖤</span>';
     livesValEl.innerHTML = out;
   }
 
