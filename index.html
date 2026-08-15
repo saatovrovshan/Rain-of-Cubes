@@ -497,6 +497,21 @@
   .friend-action-btn.reject{background:var(--red);box-shadow:0 3px 0 #c23840}
   .friend-action-btn.reject:active{box-shadow:0 1px 0 #c23840}
   .friend-action-btn.pending{background:#b9ac9d;cursor:not-allowed;box-shadow:0 3px 0 #93887a}
+
+  /* Başqa oyunçunun profil kartındakı əməliyyat düymələri: mətnli/geniş sıra ƏVƏZİNƏ, ana menyunun
+     alt ikon sırası kimi, adın altında kompakt ikon düymələr sırası (ekrana sığacaq ölçüdə) */
+  .pc-icon-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:10px 0}
+  .pc-icon-btn{position:relative;background:var(--green);color:#fff;border:none;border-radius:12px;width:40px;height:40px;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;box-shadow:0 3px 0 #4a9e3f;transition:transform .1s}
+  .pc-icon-btn:active{transform:translateY(2px);box-shadow:0 1px 0 #4a9e3f}
+  .pc-icon-btn.reject{background:var(--red);box-shadow:0 3px 0 #c23840}
+  .pc-icon-btn.reject:active{box-shadow:0 1px 0 #c23840}
+  .pc-icon-btn.pending{background:#b9ac9d;cursor:not-allowed;box-shadow:0 3px 0 #93887a}
+  #playerCardLikeBtn{background:#e05a8a;box-shadow:0 3px 0 #b8386a}
+  #playerCardMessageBtn{background:#7d6adf;box-shadow:0 3px 0 #5b4bb0}
+  #playerCardGiftBtn{background:#e0a02c;box-shadow:0 3px 0 #b87f1a}
+  #playerCardReportBtn{background:#c23840;box-shadow:0 3px 0 #9c2830}
+  #playerCardBattleTimedBtn{background:#5b6fd6;box-shadow:0 3px 0 #4152ab}
+  #playerCardBattleEndlessBtn{background:#00a3a4;box-shadow:0 3px 0 #007c7d}
   .friend-tab-dot{position:absolute;top:-4px;right:6px;width:10px;height:10px;border-radius:50%;background:var(--red);border:2px solid #fff}
 
   .chat-messages{flex:1;overflow-y:auto;padding:14px 14px 8px;display:flex;flex-direction:column;gap:8px;text-align:left}
@@ -1554,6 +1569,19 @@
       <div class="menu-player-name" id="playerCardName" style="text-align:center;font-size:16px;margin-top:8px">Oyunçu</div>
       <div id="playerCardIdNum" style="text-align:center;font-size:10px;color:#a99;font-weight:700">#0</div>
       <div id="playerCardPresence" style="text-align:center;margin-top:4px"></div>
+      <div class="pc-icon-row">
+        <button class="pc-icon-btn" id="playerCardActionBtn" title=""></button>
+        <div id="playerCardExtraBtns" style="display:none">
+          <button class="pc-icon-btn" id="playerCardLikeBtn" title="Bəyən">🤍</button>
+          <button class="pc-icon-btn" id="playerCardMessageBtn" title="Mesaj">💬</button>
+          <button class="pc-icon-btn" id="playerCardGiftBtn" title="Hədiyyə">🎁</button>
+          <button class="pc-icon-btn" id="playerCardReportBtn" title="Şikayət">🚩</button>
+        </div>
+        <div id="playerCardBattleBtns" style="display:none">
+          <button class="pc-icon-btn" id="playerCardBattleTimedBtn" title="60san Battle">⏱️</button>
+          <button class="pc-icon-btn" id="playerCardBattleEndlessBtn" title="Sonsuz Rəqabət">♾️</button>
+        </div>
+      </div>
       <div class="profile-stats-grid" style="margin-top:12px">
         <div class="profile-stat"><div class="pnum" id="playerCardLevel">1</div><div class="plbl">Səviyyə</div></div>
         <div class="profile-stat"><div class="pnum" id="playerCardXp">0</div><div class="plbl">Ümumi xal</div></div>
@@ -1569,17 +1597,6 @@
         <div class="profile-stat"><div class="pnum" id="playerCardGiftsSent">0</div><div class="plbl">Göndərilən hədiyyə</div></div>
         <div class="profile-stat"><div class="pnum" id="playerCardLikes">0</div><div class="plbl">Bəyənmə</div></div>
         <div class="profile-stat"><div class="pnum" id="playerCardViews">0</div><div class="plbl">Baxış</div></div>
-      </div>
-      <button class="friend-action-btn" id="playerCardActionBtn" style="width:100%;padding:12px;font-size:13px"></button>
-      <div id="playerCardExtraBtns" style="display:none;gap:8px;margin-top:8px">
-        <button class="friend-action-btn" id="playerCardLikeBtn" style="flex:1;padding:12px;font-size:12px;background:#e05a8a">🤍 Bəyən</button>
-        <button class="friend-action-btn" id="playerCardMessageBtn" style="flex:1;padding:12px;font-size:12px;background:#7d6adf">💬 Mesaj</button>
-        <button class="friend-action-btn" id="playerCardGiftBtn" style="flex:1;padding:12px;font-size:12px;background:#e0a02c">🎁 Hədiyyə</button>
-        <button class="friend-action-btn" id="playerCardReportBtn" style="flex:1;padding:12px;font-size:12px;background:#c23840">🚩 Şikayət</button>
-      </div>
-      <div id="playerCardBattleBtns" style="display:none;gap:8px;margin-top:8px">
-        <button class="friend-action-btn" id="playerCardBattleTimedBtn" style="flex:1;padding:12px;font-size:12px;background:#5b6fd6">⏱️ 60san Battle</button>
-        <button class="friend-action-btn" id="playerCardBattleEndlessBtn" style="flex:1;padding:12px;font-size:12px;background:#00a3a4">♾️ Sonsuz Rəqabət</button>
       </div>
       <div class="profile-section-title" style="margin-top:12px">🎁 Aldığı hədiyyələr</div>
       <div class="player-gift-list" id="playerCardGiftList"></div>
@@ -3732,8 +3749,8 @@
       var battleBtns = document.getElementById("playerCardBattleBtns");
       var extraBtns = document.getElementById("playerCardExtraBtns");
       if(cloudUserId && playerId !== cloudUserId){
-        battleBtns.style.display = "flex";
-        extraBtns.style.display = "flex";
+        battleBtns.style.display = "contents"; // yalnız qrupu yığcam ikon sırasına "əridir", öz box-modelini yaratmır
+        extraBtns.style.display = "contents";
         document.getElementById("playerCardBattleTimedBtn").onclick = function(){ sendBattleInvite(playerId, p.name || "Oyunçu", "timed"); };
         document.getElementById("playerCardBattleEndlessBtn").onclick = function(){ sendBattleInvite(playerId, p.name || "Oyunçu", "endless"); };
       } else {
@@ -3756,7 +3773,8 @@
     supabaseClient.from("profile_likes").select("liker_id").eq("liker_id", cloudUserId).eq("liked_id", playerId).maybeSingle().then(function(res){
       btn.disabled = false;
       var liked = !!res.data;
-      btn.textContent = liked ? "❤️ Bəyənildi" : "🤍 Bəyən";
+      btn.textContent = liked ? "❤️" : "🤍";
+      btn.title = liked ? "Bəyənildi" : "Bəyən";
       btn.onclick = function(){ toggleProfileLike(playerId); };
     });
   }
@@ -3778,38 +3796,44 @@
 
   function updatePlayerCardActionBtn(playerId){
     var btn = document.getElementById("playerCardActionBtn");
-    btn.className = "friend-action-btn";
-    btn.style.width = "100%"; btn.style.padding = "12px"; btn.style.fontSize = "13px";
+    btn.className = "pc-icon-btn";
     if(!cloudUserId){
-      btn.textContent = "Daxil olmalısan";
+      btn.textContent = "🔒";
+      btn.title = "Daxil olmalısan";
       btn.className += " pending";
       btn.onclick = null;
       return;
     }
     if(playerId === cloudUserId){
-      btn.textContent = "Bu sənsən";
+      btn.textContent = "👤";
+      btn.title = "Bu sənsən";
       btn.className += " pending";
       btn.onclick = null;
       return;
     }
-    btn.textContent = "...";
+    btn.textContent = "…";
+    btn.title = "";
     supabaseClient.from("friendships").select("id,requester_id,addressee_id,status")
       .or("and(requester_id.eq." + cloudUserId + ",addressee_id.eq." + playerId + "),and(requester_id.eq." + playerId + ",addressee_id.eq." + cloudUserId + ")")
       .maybeSingle().then(function(res){
         var row = res.data;
         if(!row){
-          btn.textContent = "➕ Dost əlavə et";
+          btn.textContent = "➕";
+          btn.title = "Dost əlavə et";
           btn.onclick = function(){ sendFriendRequest(playerId); };
         } else if(row.status === "accepted"){
-          btn.textContent = "🗑 Dostluqdan çıxart";
+          btn.textContent = "🗑";
+          btn.title = "Dostluqdan çıxart";
           btn.className += " reject";
           btn.onclick = function(){ removeFriend(row.id, document.getElementById("playerCardName").textContent); };
         } else if(row.requester_id === cloudUserId){
-          btn.textContent = "⏳ Sorğu göndərilib";
+          btn.textContent = "⏳";
+          btn.title = "Sorğu göndərilib";
           btn.className += " pending";
           btn.onclick = null;
         } else {
-          btn.textContent = "✅ Sorğunu qəbul et";
+          btn.textContent = "✅";
+          btn.title = "Sorğunu qəbul et";
           btn.onclick = function(){ respondFriendRequest(row.id, true); closePlayerCard(); };
         }
       });
