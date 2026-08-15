@@ -510,8 +510,7 @@
   #playerCardMessageBtn{background:#7d6adf;box-shadow:0 3px 0 #5b4bb0}
   #playerCardGiftBtn{background:#e0a02c;box-shadow:0 3px 0 #b87f1a}
   #playerCardReportBtn{background:#c23840;box-shadow:0 3px 0 #9c2830}
-  #playerCardBattleTimedBtn{background:#5b6fd6;box-shadow:0 3px 0 #4152ab}
-  #playerCardBattleEndlessBtn{background:#00a3a4;box-shadow:0 3px 0 #007c7d}
+  #playerCardBattleBtn{background:#5b6fd6;box-shadow:0 3px 0 #4152ab}
   .friend-tab-dot{position:absolute;top:-4px;right:6px;width:10px;height:10px;border-radius:50%;background:var(--red);border:2px solid #fff}
 
   .chat-messages{flex:1;overflow-y:auto;padding:14px 14px 8px;display:flex;flex-direction:column;gap:8px;text-align:left}
@@ -1577,10 +1576,7 @@
           <button class="pc-icon-btn" id="playerCardGiftBtn" title="Hədiyyə">🎁</button>
           <button class="pc-icon-btn" id="playerCardReportBtn" title="Şikayət">🚩</button>
         </div>
-        <div id="playerCardBattleBtns" style="display:none">
-          <button class="pc-icon-btn" id="playerCardBattleTimedBtn" title="60san Battle">⏱️</button>
-          <button class="pc-icon-btn" id="playerCardBattleEndlessBtn" title="Sonsuz Rəqabət">♾️</button>
-        </div>
+        <button class="pc-icon-btn" id="playerCardBattleBtn" title="Oyun dəvəti" style="display:none">⚔️</button>
       </div>
       <div class="profile-stats-grid" style="margin-top:12px">
         <div class="profile-stat"><div class="pnum" id="playerCardLevel">1</div><div class="plbl">Səviyyə</div></div>
@@ -1609,6 +1605,19 @@
           <span class="settings-accordion-arrow" id="playerCardCardsArrow">▾</span>
         </button>
         <div class="profile-cards-body" id="playerCardCardsBody" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="battleTypeModal">
+    <div class="modal-panel" style="text-align:center;max-width:300px">
+      <div class="modal-header">
+        <h3>⚔️ Oyun dəvəti</h3>
+        <button class="modal-close" id="battleTypeModalClose">✕</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <button class="friend-action-btn" id="battleTypeTimedBtn" style="padding:14px;font-size:13px;background:#5b6fd6;box-shadow:0 3px 0 #4152ab">⏱️ 60 saniyəlik Battle</button>
+        <button class="friend-action-btn" id="battleTypeEndlessBtn" style="padding:14px;font-size:13px;background:#00a3a4;box-shadow:0 3px 0 #007c7d">♾️ Sonsuz Rəqabət</button>
       </div>
     </div>
   </div>
@@ -3746,15 +3755,14 @@
       photoContainer.className = "ppic ppic-lg frame-" + (p.active_frame || "none");
       photoContainer.innerHTML = buildAvatarInnerHtml({avatarUrl:p.avatar_url, countryFlag:p.country_flag, level:p.level, activeFrame:p.active_frame, showStarParticles:true});
       updatePlayerCardActionBtn(playerId);
-      var battleBtns = document.getElementById("playerCardBattleBtns");
+      var battleBtn = document.getElementById("playerCardBattleBtn");
       var extraBtns = document.getElementById("playerCardExtraBtns");
       if(cloudUserId && playerId !== cloudUserId){
-        battleBtns.style.display = "contents"; // yalnız qrupu yığcam ikon sırasına "əridir", öz box-modelini yaratmır
-        extraBtns.style.display = "contents";
-        document.getElementById("playerCardBattleTimedBtn").onclick = function(){ sendBattleInvite(playerId, p.name || "Oyunçu", "timed"); };
-        document.getElementById("playerCardBattleEndlessBtn").onclick = function(){ sendBattleInvite(playerId, p.name || "Oyunçu", "endless"); };
+        battleBtn.style.display = "";
+        extraBtns.style.display = "contents"; // qrupu yığcam ikon sırasına "əridir", öz box-modelini yaratmır
+        battleBtn.onclick = function(){ openBattleTypePicker(playerId, p.name || "Oyunçu"); };
       } else {
-        battleBtns.style.display = "none";
+        battleBtn.style.display = "none";
         extraBtns.style.display = "none";
       }
       document.getElementById("playerCardModal").classList.add("show");
@@ -4918,10 +4926,31 @@
           document.getElementById("battleWaitingTitle").textContent = "🎮 Dəvət göndərildi";
           document.getElementById("battleWaitingText").textContent = playerName + " (" + typeLabel + ") qəbul etməsini gözləyirik...";
           document.getElementById("battleWaitingModal").classList.add("show");
-          closePlayerCard();
         });
       });
   }
+
+  // ===== Oyun dəvəti növü seçimi (bir "⚔️" ikonun içərsində, popup pəncərədə) =====
+  var battleTypeTargetPlayerId = null;
+  var battleTypeTargetPlayerName = null;
+  function openBattleTypePicker(playerId, playerName){
+    battleTypeTargetPlayerId = playerId;
+    battleTypeTargetPlayerName = playerName;
+    document.getElementById("battleTypeModal").classList.add("show");
+  }
+  function closeBattleTypePicker(){
+    document.getElementById("battleTypeModal").classList.remove("show");
+  }
+  document.getElementById("battleTypeModalClose").addEventListener("click", closeBattleTypePicker);
+  document.getElementById("battleTypeModal").addEventListener("click", function(e){ if(e.target === this) closeBattleTypePicker(); });
+  document.getElementById("battleTypeTimedBtn").addEventListener("click", function(){
+    closeBattleTypePicker();
+    sendBattleInvite(battleTypeTargetPlayerId, battleTypeTargetPlayerName, "timed");
+  });
+  document.getElementById("battleTypeEndlessBtn").addEventListener("click", function(){
+    closeBattleTypePicker();
+    sendBattleInvite(battleTypeTargetPlayerId, battleTypeTargetPlayerName, "endless");
+  });
 
   // ===== Online rəqib tapma (pullu, reytinqli) =====
   function findMatch(){
