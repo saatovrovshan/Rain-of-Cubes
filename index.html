@@ -3142,6 +3142,12 @@
       if(p.unlocks[k] && typeof p.enabledUnlocks[k] !== "boolean") p.enabledUnlocks[k] = true;
     });
     if(!p.customMusic) p.customMusic = {menu:null, game:null};
+    // Köhnə prosedural (sintez) fon musiqisi silindi — heç vaxt seçim etməmiş (və ya köhnə "normal"
+    // seçimi olan) oyunçular üçün Jenerik treklərdən biri ("candy_tile") defolt olaraq təyin olunur.
+    // DEFAULT_MUSIC_TRACK_ID sabiti skriptin sonunda təyin olunduğundan (musiqi sistemi ilə birgə)
+    // burada onun DƏYƏRİNƏ yox, sabit mətn hərfi ilə eyni id-yə istinad edirik (hoisting qarşısı).
+    if(!p.customMusic.menu) p.customMusic.menu = "candy_tile";
+    if(!p.customMusic.game) p.customMusic.game = "candy_tile";
     if(typeof p.countryFlag !== "string") p.countryFlag = null;
     // Köhnə versiya bayrağı emoji kimi saxlayırdı (məs. "🇦🇿") — indi ISO kodu (məs. "az") istifadə olunur
     if(p.countryFlag && !/^[a-z]{2}$/i.test(p.countryFlag)) p.countryFlag = null;
@@ -8186,17 +8192,10 @@
     }
   }
 
-  // ===== Səs: Web Audio API ilə proseduraldan yaradılan musiqi və effektlər =====
+  // ===== Səs: Web Audio API ilə effektlər (fon musiqisi artıq Jenerik treklərdəndir, prosedural deyil) =====
   var audioCtx = null;
   var musicGain = null;
   var sfxGain = null;
-  var musicIntervalId = null;
-  var musicStepIndex = 0;
-  var MUSIC_STEP_MS = 180;
-  // Şən, rəqs edən 16 addımlıq dövr: bas + lead melodiya + kick vurğusu
-  var MUSIC_LEAD = [523.25,659.25,783.99,659.25, 587.33,0,523.25,587.33, 659.25,783.99,880.00,783.99, 659.25,587.33,523.25,0];
-  var MUSIC_BASS = [130.81,0,98.00,0, 130.81,0,98.00,0, 130.81,0,98.00,0, 130.81,0,146.83,0];
-  var MUSIC_KICK_STEPS = {0:true, 8:true};
 
   // ===== Jenerik (istifadəçi tərəfindən əlavə olunan) musiqilər — Web Audio ilə sonsuz, kəsilməz döngü =====
   var CUSTOM_TRACKS = [
@@ -8209,6 +8208,9 @@
     {id:"puzzle_pop", name:"Puzzle Pop"},
     {id:"puzzle_pop_alt", name:"Puzzle Pop (Alt)"}
   ];
+  // Köhnə prosedural (sintez) fon musiqisi silindi — indi HƏMİŞƏ Jenerik treklərdən biri çalır.
+  // Oyunçu Tənzimləmələrdən başqasını seçməyibsə, bu sabit defolt kimi işlədilir.
+  var DEFAULT_MUSIC_TRACK_ID = "candy_tile";
   var customTrackBuffers = {};
   var menuMusicSource = null;
   var gameMusicSource = null;
@@ -8266,27 +8268,21 @@
   // Əsas bug: bu funksiya köhnə mənbəni dayandırmadan sadəcə menuMusicSource DƏYİŞƏNİNİ üstünə
   // yazırdı — "geri" kimi bir çox düymə (məs. mağaza) faktiki oyundan çıxmadığı halda da
   // returnToMenu() çağırır, o da HƏR DƏFƏ startMenuMusic()-i yenidən çağırır. Menyu musiqisi
-  // artıq çalırkən bu YENİ bir nüsxəni köhnəsinin ÜSTÜNDƏN başladırdı (2 musiqi bug-u). Proseduran
-  // sintez (startMusic) bu barədə öz-özünə qorunurdu (musicIntervalId yoxlanışı) — xüsusi trek yolu
-  // isə qorunmurdu, ona görə bug yalnız istifadəçi xüsusi musiqi seçəndə görünürdü.
+  // artıq çalırkən bu YENİ bir nüsxəni köhnəsinin ÜSTÜNDƏN başladırdı (2 musiqi bug-u) — ona görə
+  // yuxarıdakı "artıq çalır, yenidən başlatma" yoxlanışı var.
   function startMenuMusic(){
     if(gameActive) return;
-    if(menuMusicSource || musicIntervalId) return; // artıq çalır, yenidən başlatma
+    if(menuMusicSource) return; // artıq çalır, yenidən başlatma
     if(previewingId){ stopSource(previewSource); previewSource = null; previewingId = null; renderCustomMusicList(); }
     var myToken = ++menuMusicToken;
-    if(profile.customMusic.menu){
-      playCustomLoop(profile.customMusic.menu, function(src){
-        if(myToken !== menuMusicToken){ stopSource(src); return; }
-        menuMusicSource = src;
-      });
-    } else {
-      startMusic();
-    }
+    playCustomLoop(profile.customMusic.menu || DEFAULT_MUSIC_TRACK_ID, function(src){
+      if(myToken !== menuMusicToken){ stopSource(src); return; }
+      menuMusicSource = src;
+    });
   }
 
   function stopMenuMusic(){
     menuMusicToken++;
-    stopMusic();
     stopSource(menuMusicSource);
     menuMusicSource = null;
   }
@@ -8298,22 +8294,17 @@
   // köhnə önizləmə hələ çalarkən üstünə YENİ oyun musiqisi başlayıb 2 musiqi eyni anda çalırdı.
   function startGameMusic(){
     if(!gameActive) return;
-    if(gameMusicSource || musicIntervalId) return; // artıq çalır, yenidən başlatma (bax startMenuMusic-dəki eyni fix)
+    if(gameMusicSource) return; // artıq çalır, yenidən başlatma (bax startMenuMusic-dəki eyni fix)
     if(previewingId){ stopSource(previewSource); previewSource = null; previewingId = null; renderCustomMusicList(); }
     var myToken = ++gameMusicToken;
-    if(profile.customMusic.game){
-      playCustomLoop(profile.customMusic.game, function(src){
-        if(myToken !== gameMusicToken){ stopSource(src); return; }
-        gameMusicSource = src;
-      });
-    } else {
-      startMusic();
-    }
+    playCustomLoop(profile.customMusic.game || DEFAULT_MUSIC_TRACK_ID, function(src){
+      if(myToken !== gameMusicToken){ stopSource(src); return; }
+      gameMusicSource = src;
+    });
   }
 
   function stopGameMusic(){
     gameMusicToken++;
-    stopMusic();
     stopSource(gameMusicSource);
     gameMusicSource = null;
   }
@@ -8373,13 +8364,7 @@
         '<button class="music-btn slot-btn' + (isGame ? " active" : "") + '" data-action="game" data-id="' + t.id + '">🎮 Oyun</button>' +
         '</div>';
     }).join("");
-    var normalRow = '<div class="music-track-row">' +
-      '<span class="music-btn preview-btn" style="visibility:hidden">▶️</span>' +
-      '<div class="music-track-name">🔇 Normal (prosedural)</div>' +
-      '<button class="music-btn slot-btn' + (!profile.customMusic.menu ? " active" : "") + '" data-action="menu" data-id="">🏠 Menyu</button>' +
-      '<button class="music-btn slot-btn' + (!profile.customMusic.game ? " active" : "") + '" data-action="game" data-id="">🎮 Oyun</button>' +
-      '</div>';
-    var html = rows + normalRow;
+    var html = rows;
     ["customMusicList", "settingsMusicList"].forEach(function(id){
       var container = document.getElementById(id);
       if(!container) return;
@@ -8485,70 +8470,6 @@
     [523.25, 659.25, 783.99, 1046.50].forEach(function(f, i){
       setTimeout(function(){ playTone(f, 0.18, "triangle"); }, i*80);
     });
-  }
-
-  function playMusicKick(){
-    if(!audioCtx || !musicGain) return;
-    var t = audioCtx.currentTime;
-    var osc = audioCtx.createOscillator();
-    var g = audioCtx.createGain();
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(150, t);
-    osc.frequency.exponentialRampToValueAtTime(48, t+0.12);
-    g.gain.setValueAtTime(0.9, t);
-    g.gain.exponentialRampToValueAtTime(0.001, t+0.14);
-    osc.connect(g);
-    g.connect(musicGain);
-    osc.start(t);
-    osc.stop(t+0.16);
-  }
-
-  function startMusic(){
-    ensureAudio();
-    if(!audioCtx || musicIntervalId) return;
-    musicStepIndex = 0;
-    musicIntervalId = setInterval(function(){
-      var step = musicStepIndex % MUSIC_LEAD.length;
-      musicStepIndex++;
-      if(!audioCtx || !musicGain) return;
-      var t = audioCtx.currentTime;
-
-      var leadFreq = MUSIC_LEAD[step];
-      if(leadFreq > 0){
-        var osc = audioCtx.createOscillator();
-        var g = audioCtx.createGain();
-        osc.type = "triangle";
-        osc.frequency.setValueAtTime(leadFreq, t);
-        g.gain.setValueAtTime(0.0001, t);
-        g.gain.exponentialRampToValueAtTime(0.7, t+0.015);
-        g.gain.exponentialRampToValueAtTime(0.0001, t+0.2);
-        osc.connect(g);
-        g.connect(musicGain);
-        osc.start(t);
-        osc.stop(t+0.22);
-      }
-
-      var bassFreq = MUSIC_BASS[step];
-      if(bassFreq > 0){
-        var bosc = audioCtx.createOscillator();
-        var bg = audioCtx.createGain();
-        bosc.type = "square";
-        bosc.frequency.setValueAtTime(bassFreq, t);
-        bg.gain.setValueAtTime(0.0001, t);
-        bg.gain.exponentialRampToValueAtTime(0.45, t+0.015);
-        bg.gain.exponentialRampToValueAtTime(0.0001, t+0.3);
-        bosc.connect(bg);
-        bg.connect(musicGain);
-        bosc.start(t);
-        bosc.stop(t+0.32);
-      }
-
-      if(MUSIC_KICK_STEPS[step]) playMusicKick();
-    }, MUSIC_STEP_MS);
-  }
-
-  function stopMusic(){
-    if(musicIntervalId){ clearInterval(musicIntervalId); musicIntervalId = null; }
   }
 
   // Slayder 0-100% arası xəttidir, amma 0.16 (əvvəlki sabit səviyyə) artıq MAKSIMUM deyil,
