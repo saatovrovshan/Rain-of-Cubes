@@ -2856,7 +2856,7 @@
   ];
 
   // ===== Günlük tapşırıqlar =====
-  // Hər gün (London saatına görə) hovuzdan 4 şablon təsadüfi seçilir; oyunçu hər birini ayrıca
+  // Hər gün (Azərbaycan/Bakı saatına görə) hovuzdan 4 şablon təsadüfi seçilir; oyunçu hər birini ayrıca
   // götürə bilər. Hamısı götürüldükdə 5-ci "meta" mükafat açılır. Şablon id-ləri SABİT qalır ki,
   // gün ərzində profile.dailyMissions.claimed{} düzgün işləsin (bax ensureDailyMissions).
   var DAILY_MISSION_TEMPLATES = [];
@@ -2900,7 +2900,7 @@
     return t.type === "colorMission" ? ("colorMission_" + t.colorId) : t.type;
   }
 
-  // Gün London saatına görə dəyişəndə (bax getTodayStr) 4 yeni təsadüfi şablon seçilir və
+  // Gün Azərbaycan saatına görə dəyişəndə (bax getTodayStr) 4 yeni təsadüfi şablon seçilir və
   // proqres/claim vəziyyəti sıfırlanır. Hər çağırışda etibarlı olduğu üçün hər əməliyyatdan
   // əvvəl təhlükəsizcə çağırıla bilər (idempotent) — mövcud gün üçün heç nəyi dəyişmir.
   function ensureDailyMissions(){
@@ -6345,10 +6345,29 @@
   var ULTI_IDS = ["shield","slow","fast","bomb","hammer","shuffle","rewind"];
   var ULTI_LABELS = {shield:"🛡️ Qalxan", slow:"⏱️ Yavaşlatma", fast:"⏩ Sürətləndirmə", bomb:"💣 Bomba", hammer:"🔨 Çəkic", shuffle:"🎲 Rəng Qarışdırma", rewind:"⏪ Geri Sarma"};
 
-  // Gündəlik mükafat London (Europe/London) saatına görə sıfırlanır — cihazın öz saat qurşağından
-  // asılı olmadan bütün oyunçular üçün eyni, sabit gün sərhədi (BST/GMT keçidini avtomatik idarə edir)
+  // Gündəlik mükafat Azərbaycan (Asia/Baku) saatına görə sıfırlanır — cihazın öz saat qurşağından
+  // asılı olmadan bütün oyunçular üçün eyni, sabit gün sərhədi (Bakı saatı DST bilmir, sabit UTC+4-dür)
   function getTodayStr(){
-    return new Intl.DateTimeFormat("en-CA", {timeZone:"Europe/London"}).format(new Date());
+    return new Intl.DateTimeFormat("en-CA", {timeZone:"Asia/Baku"}).format(new Date());
+  }
+
+  // Bakı saatına görə gecə yarısına (yəni "gün" dəyişənə — bax getTodayStr) qalan saniyə sayı.
+  // Cihazın YERLİ saat qurşağı Bakı ilə üst-üstə düşməyə bilər (fərqli ölkədən qoşulan oyunçular
+  // üçün) — sadə "yerli gecə yarısı" hesablaması sayğacı ƏSL gün dəyişməsindən SAATLARLA ƏVVƏL/SONRA
+  // sıfırlayıb yanlış "yeniləndi" görüntüsü yaradardı — indi Bakının ÖZ saat/dəqiqə/saniyəsindən
+  // birbaşa hesablanır, UTC offset bilməyə ehtiyac yoxdur.
+  function azSecondsUntilMidnight(){
+    var fmt = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Baku", hourCycle: "h23",
+      hour: "2-digit", minute: "2-digit", second: "2-digit"
+    });
+    var parts = {};
+    fmt.formatToParts(new Date()).forEach(function(p){ parts[p.type] = p.value; });
+    var h = parseInt(parts.hour, 10) || 0;
+    var m = parseInt(parts.minute, 10) || 0;
+    var s = parseInt(parts.second, 10) || 0;
+    var secondsSinceMidnight = h * 3600 + m * 60 + s;
+    return Math.max(0, 24 * 3600 - secondsSinceMidnight);
   }
 
   function daysBetweenStr(a, b){
@@ -11178,12 +11197,10 @@
   }
 
   function updateDungeonTimer(){
-    var now = new Date();
-    var tmr = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-    var diff = tmr - now;
-    var h = Math.floor(diff / 3600000);
-    var m = Math.floor((diff % 3600000) / 60000);
-    var s = Math.floor((diff % 60000) / 1000);
+    var secondsLeft = azSecondsUntilMidnight();
+    var h = Math.floor(secondsLeft / 3600);
+    var m = Math.floor((secondsLeft % 3600) / 60);
+    var s = secondsLeft % 60;
     function pad(n){ return n < 10 ? "0" + n : "" + n; }
     var el = document.getElementById("dungeonTimer");
     if(el) el.textContent = "⏳ Yenilənməyə: " + pad(h) + ":" + pad(m) + ":" + pad(s);
