@@ -16,7 +16,7 @@
   html,body{margin:0;padding:0;height:100%;background:#3a332c;font-family:"Segoe UI",Arial,sans-serif;overscroll-behavior:none;user-select:none;-webkit-user-select:none}
   #app{max-width:480px;margin:0 auto;height:100vh;height:100dvh;background:var(--bg);display:flex;flex-direction:column;position:relative;overflow:hidden;box-shadow:0 0 40px rgba(0,0,0,.5)}
 
-  #menuScreen,#shopScreen,#profileScreen,#achievementsScreen,#arcadeScreen,#friendsScreen,#chatScreen,#leaderboardScreen,#mailboxScreen,#bagScreen,#cardsScreen{position:absolute;inset:0;z-index:100;background:linear-gradient(180deg,#faf8ef,#f0e6d6);display:flex;flex-direction:column;padding:0;text-align:center;overflow-y:auto}
+  #menuScreen,#shopScreen,#profileScreen,#achievementsScreen,#arcadeScreen,#friendsScreen,#chatScreen,#leaderboardScreen,#mailboxScreen,#bagScreen,#cardsScreen,#dungeonScreen{position:absolute;inset:0;z-index:100;background:linear-gradient(180deg,#faf8ef,#f0e6d6);display:flex;flex-direction:column;padding:0;text-align:center;overflow-y:auto}
   #menuScreen{justify-content:flex-start;align-items:center;padding:16px 16px 10px}
   #shopScreen{padding:16px;display:none}
   #bagScreen{padding:16px;display:none;align-items:stretch}
@@ -65,6 +65,7 @@
   #profileScreen.profile-palette-emerald,#playerCardModal .modal-panel.profile-palette-emerald{--profile-accent:#1f9d55;--profile-accent2:#5be07e}
   #achievementsScreen{padding:16px;display:none;align-items:stretch}
   #arcadeScreen{padding:16px;display:none;align-items:stretch}
+  #dungeonScreen{padding:0;display:none;align-items:stretch}
   #chatScreen{padding:0;display:none;align-items:stretch;overflow-y:hidden}
   #leaderboardScreen{padding:16px;display:none;align-items:stretch}
   #mailboxScreen{padding:16px;display:none;align-items:stretch}
@@ -621,6 +622,34 @@
   .lb-name{font-size:13px;font-weight:800;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .lb-value{font-size:12px;font-weight:800;color:#c98a00;white-space:nowrap;flex-shrink:0;text-align:right}
   .lb-value .lb-value-sub{display:block;font-size:9px;font-weight:600;color:#a99}
+  .lb-row.mine{border-color:var(--gold)}
+  .lb-divider{text-align:center;font-size:12px;font-weight:800;color:#a99;padding:2px 0}
+  .dr-claimed-lbl{font-size:11px;font-weight:800;color:var(--green);flex-shrink:0}
+
+  /* ===== Zindan sistem məktubları — "Mesajlar" tabında ===== */
+  .system-convo-icon{width:44px;height:44px;border-radius:50%;background:linear-gradient(160deg,#9b59b6,#8e44ad);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;box-shadow:0 2px 0 rgba(0,0,0,.15)}
+  .dungeon-letter{background:var(--panel);border-radius:14px;padding:14px;margin-bottom:10px;border:2px solid transparent;text-align:left}
+  .dungeon-letter.unclaimed{border-color:var(--gold)}
+  .dungeon-letter-head{font-size:14px;font-weight:900;color:var(--ink)}
+  .dungeon-letter-congrats{font-size:12px;font-weight:800;color:#c98a00;margin:2px 0 8px}
+  .dungeon-letter-body{font-size:12px;color:var(--ink);line-height:1.5;margin-bottom:10px}
+  .dungeon-letter-rewards{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px}
+  .dungeon-letter-time{font-size:10px;color:#a99;font-weight:600;margin-bottom:8px}
+  .dungeon-gold-swatch{display:flex;align-items:center;justify-content:center;font-size:13px;background:linear-gradient(160deg,#ffe27a,var(--gold))}
+
+  /* ===== Zindan kubokları — reytinq nişanı, profil "Titullar" bölməsi, popup ===== */
+  .lb-trophy-icon{width:22px;height:auto;flex-shrink:0;filter:drop-shadow(0 1px 2px rgba(0,0,0,.3))}
+  .profile-titles-row{display:flex;flex-wrap:wrap;gap:14px;margin:8px 0 16px}
+  .trophy-badge{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;width:58px}
+  .trophy-badge img{width:52px;height:auto;filter:drop-shadow(0 2px 4px rgba(0,0,0,.3));transition:transform .15s}
+  .trophy-badge:active img{transform:scale(.92)}
+  .trophy-badge-count{font-size:10px;font-weight:800;color:var(--ink);background:var(--panel);border-radius:8px;padding:1px 6px}
+  .trophy-popup-img{width:170px;height:auto;margin:6px auto 6px;display:block;filter:drop-shadow(0 4px 10px rgba(0,0,0,.35))}
+  .trophy-popup-title{font-size:15px;font-weight:900;color:var(--ink);margin-bottom:12px}
+  .trophy-popup-list{display:flex;flex-direction:column;gap:8px;max-height:300px;overflow-y:auto;text-align:left}
+  .trophy-win-row{background:var(--panel);border-radius:10px;padding:8px 12px}
+  .trophy-win-date{font-size:11px;font-weight:800;color:#c98a00}
+  .trophy-win-info{font-size:12px;color:var(--ink);margin-top:2px}
   .player-card-stats{display:flex;justify-content:center;gap:18px;margin:12px 0}
   .player-card-stat{text-align:center}
   .player-card-stat .pnum{font-size:18px;font-weight:800;color:var(--ink)}
@@ -710,8 +739,27 @@
   @keyframes bossHeadShake{0%,100%{transform:translate(0,0) rotate(0)}20%{transform:translate(-4px,-2px) rotate(-6deg)}40%{transform:translate(4px,2px) rotate(6deg)}60%{transform:translate(-3px,1px) rotate(-4deg)}80%{transform:translate(3px,-1px) rotate(4deg)}}
   .boss-head.boss-head-shake{animation:bossHeadShake .35s ease}
 
-  #field{position:relative;flex:1;margin:0 12px 8px;background:var(--board);border-radius:10px;overflow:hidden}
+  #field{position:relative;flex:1;margin:0 12px 8px;background:var(--board);border-radius:10px;overflow:hidden;transition:background .4s ease}
   .cube{position:absolute;width:46px;height:46px;border-radius:9px;box-shadow:inset 0 -5px 0 rgba(0,0,0,.18),0 3px 6px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.9);font-size:22px;cursor:pointer;will-change:transform;top:-56px;z-index:5}
+
+  /* ===== Zindan oyun sahəsi teması — normal taxta
+     fonunun ƏVƏZİNƏ tünd bənövşəyi/mistik görünüş + arxada üzən köz hissəcikləri ===== */
+  #field.dungeon-field{
+    background:
+      radial-gradient(ellipse at 18% 6%, rgba(190,120,230,.32), transparent 55%),
+      radial-gradient(ellipse at 84% 96%, rgba(142,68,173,.30), transparent 55%),
+      repeating-linear-gradient(0deg, rgba(255,255,255,.025) 0 2px, transparent 2px 30px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,.025) 0 2px, transparent 2px 30px),
+      linear-gradient(180deg,#2d1b3d,#1a0f26);
+  }
+  .dungeon-field-bg{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:1}
+  .dungeon-ember{position:absolute;bottom:-12px;border-radius:50%;background:radial-gradient(circle,#ffe7a8,#ff9f43 55%,transparent 100%);box-shadow:0 0 8px 2px rgba(255,159,67,.7);opacity:0;animation:dungeonEmberRise var(--dur,6s) ease-in forwards;will-change:transform,opacity}
+  @keyframes dungeonEmberRise{
+    0%{transform:translateY(0) translateX(0);opacity:0}
+    12%{opacity:var(--peak,.85)}
+    85%{opacity:var(--peak,.85)}
+    100%{transform:translateY(var(--travel,-420px)) translateX(var(--sway,20px));opacity:0}
+  }
   .cube.flying{transition:transform .45s cubic-bezier(.5,0,.5,1),opacity .45s ease;z-index:20}
   /* Smayli TAM (kəsilmədən) göstərilir — ürək gözlər, eynək qolları, göz yaşı damcıları kimi
      dairədən kənara çıxan hissələr görünməli. Toxunma sahəsi isə ayrı, görünməz dairəvi
@@ -1057,6 +1105,34 @@
   .profile-card-tile .card-tile-frame{padding:2px}
   .profile-card-tile .card-tile-stars{font-size:6.5px;padding:1px 3px}
 
+  /* ===== Gündəlik Zindan ===== */
+  .menu-btn.dungeon-btn{background:linear-gradient(160deg,#9b59b6,#8e44ad);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 4px 0 #7d3c98,0 6px 10px rgba(0,0,0,.2)}
+  .menu-btn.dungeon-btn:active{box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 1px 0 #7d3c98,0 2px 4px rgba(0,0,0,.2)}
+  .dungeon-body{padding:16px}
+  .dungeon-timer{font-size:13px;font-weight:800;color:var(--red);background:var(--panel);border-radius:10px;padding:8px 14px;margin-bottom:12px;display:inline-block}
+  .dungeon-info-card{background:linear-gradient(160deg,#5b2c6f,#4a235a);color:#fff;border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 6px 16px rgba(0,0,0,.25)}
+  .dungeon-info-title{font-size:18px;font-weight:900;margin-bottom:10px}
+  .dungeon-stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .dungeon-stat{background:rgba(255,255,255,.15);border-radius:10px;padding:8px 4px}
+  .dungeon-stat .dnum{font-size:15px;font-weight:800}
+  .dungeon-stat .dlbl{font-size:9px;opacity:.8;text-transform:uppercase;font-weight:700;margin-top:2px}
+  .dungeon-my-score{background:linear-gradient(160deg,#ffe27a,var(--gold));color:#5c4a1f;border-radius:14px;padding:14px;margin:10px 0}
+  .dms-label{font-size:11px;font-weight:700;opacity:.8}
+  .dms-val{font-size:32px;font-weight:900;line-height:1}
+  .dms-rank{font-size:13px;font-weight:800;margin-top:2px}
+  .dungeon-leaderboard{margin-top:10px}
+  .dungeon-leaderboard .lb-list{display:flex;flex-direction:column;gap:6px}
+  .dungeon-leaderboard .shop-tabs{padding:0 0 8px}
+  .menu-play-btn:disabled{opacity:.5;cursor:not-allowed}
+
+  /* ===== Nadir Kubik ===== */
+  .cube.rare-cube{box-shadow:0 0 20px 6px rgba(255,215,0,.9),inset 0 -5px 0 rgba(0,0,0,.12),0 3px 6px rgba(0,0,0,.25) !important;animation:rareCubePulse 1s ease-in-out infinite alternate;z-index:10}
+  @keyframes rareCubePulse{0%{box-shadow:0 0 14px 4px rgba(255,215,0,.7),inset 0 -5px 0 rgba(0,0,0,.12),0 3px 6px rgba(0,0,0,.25)}100%{box-shadow:0 0 26px 10px rgba(255,200,0,.95),inset 0 -5px 0 rgba(0,0,0,.12),0 3px 6px rgba(0,0,0,.25)}}
+  .cube.rare-cube::after{content:"✨";position:absolute;top:-8px;right:-8px;font-size:14px;animation:spin 2s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .rare-cube-flash{position:absolute;top:20%;left:50%;transform:translate(-50%,-20px) scale(.8);background:linear-gradient(90deg,#ffd700,#ff9f43);color:#5c3a00;padding:10px 22px;border-radius:20px;font-size:15px;font-weight:900;z-index:35;opacity:0;pointer-events:none;transition:all .4s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+  .rare-cube-flash.show{opacity:1;transform:translate(-50%,0) scale(1)}
+
 </style>
 </head>
 <body>
@@ -1117,6 +1193,7 @@
 
     <div class="menu-grid">
       <button class="menu-btn daily-btn" id="dailyBtn"><span class="menu-btn-icon">🎁</span><span class="menu-btn-text"><b>Gündəlik Mükafat</b><small>Hər gün bir hədiyyə</small></span><span class="menu-badge" id="dailyBtnDot" style="display:none"></span></button>
+      <button class="menu-btn dungeon-btn" id="dungeonBtn"><span class="menu-btn-icon">⚔️</span><span class="menu-btn-text"><b>Gündəlik Zindan</b><small id="dungeonBtnSub">Bugünkü sınaq</small></span><span class="menu-badge" id="dungeonBtnDot" style="display:none"></span></button>
       <button class="menu-btn ranked-btn" id="rankedBtn"><span class="menu-btn-icon">👑</span><span class="menu-btn-text"><b>Reytinqli Oyun</b><small>Çevrimçi yarış</small></span><span class="ranked-btn-price">500 🪙</span></button>
       <button class="menu-btn wheel-btn" id="wheelBtn" style="grid-column:1/-1"><span class="menu-btn-icon">🎡</span><span class="menu-btn-text"><b>Mükafat Çarxı</b><small>Açarla çevir</small></span></button>
     </div>
@@ -1212,6 +1289,15 @@
       <div class="profile-stat"><div class="pnum" id="statGiftsSent">-</div><div class="plbl">Göndərilən hədiyyə</div></div>
       <div class="profile-stat"><div class="pnum" id="statLikes">-</div><div class="plbl">Bəyənmə</div></div>
       <div class="profile-stat"><div class="pnum" id="statViews">-</div><div class="plbl">Profil baxışı</div></div>
+    </div>
+
+    <div id="profileTitlesWrap" style="display:none">
+      <div class="profile-section-title">🏆 Kuboklar</div>
+      <div class="profile-titles-row" id="profileTitlesRow"></div>
+    </div>
+    <div id="profileMedalsWrap" style="display:none">
+      <div class="profile-section-title">🎖️ Medallar</div>
+      <div class="profile-titles-row" id="profileMedalsRow"></div>
     </div>
 
     <div class="profile-section-title">🏆 Rekordlar (ən yaxşı 10)</div>
@@ -1393,6 +1479,40 @@
     <div class="arcade-level-grid" id="arcadeLevelGrid"></div>
   </div>
 
+  <div id="dungeonScreen">
+    <div class="shop-sticky-top">
+      <div class="shop-header">
+        <button class="shop-back" id="dungeonBack">← Geri</button>
+        <h2>⚔️ Gündəlik Zindan</h2>
+      </div>
+    </div>
+    <div class="dungeon-body">
+      <div class="dungeon-info-card">
+        <div class="dungeon-info-title" id="dungeonTitle">Zindan #000000</div>
+        <div class="dungeon-stats-row">
+          <div class="dungeon-stat"><div class="dnum" id="dungMissions">0</div><div class="dlbl">Misya</div></div>
+          <div class="dungeon-stat"><div class="dnum" id="dungSpeed">1x</div><div class="dlbl">Sürət</div></div>
+          <div class="dungeon-stat"><div class="dnum" id="dungColors">0</div><div class="dlbl">Rəng</div></div>
+        </div>
+      </div>
+      <div class="dungeon-my-score" id="dungeonMyScore" style="display:none">
+        <div class="dms-label">Sənin bugünkü ən yaxşı xalın</div>
+        <div class="dms-val" id="dungeonMyVal">0</div>
+        <div class="dms-rank" id="dungeonMyRank">#--</div>
+      </div>
+      <button class="menu-play-btn" id="dungeonPlayBtn" style="margin:14px 0">⚔️ Zindana Giriş</button>
+      <div class="dungeon-leaderboard">
+        <div class="dungeon-timer" id="dungeonTimer">⏳ Yenilənməyə: --:--:--</div>
+        <div class="profile-section-title">🏆 Liderlik Cədvəli</div>
+        <div class="shop-tabs" id="dungeonLbTabs"></div>
+        <div class="lb-list" id="dungeonLbList"><div class="empty-hint">Yüklənir...</div></div>
+        <div id="dungeonLbMyRow" style="display:none;margin-top:6px"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="rare-cube-flash" id="rareCubeFlash">✨ Nadir Kubik Gəldi!</div>
+
   <header>
     <div class="title">Rəngli Kublar<small>MİSYA REJİMİ</small></div>
     <div class="badges">
@@ -1437,6 +1557,7 @@
   </div>
 
   <div id="field">
+    <div class="dungeon-field-bg" id="dungeonFieldBg"></div>
     <div class="slow-overlay" id="slowOverlay"></div>
     <div class="game-timers-row">
       <div class="smash-timer" id="smashTimer">🔨 <span id="smashTimerVal">5</span>s</div>
@@ -1594,6 +1715,15 @@
         <div class="profile-stat"><div class="pnum" id="playerCardLikes">0</div><div class="plbl">Bəyənmə</div></div>
         <div class="profile-stat"><div class="pnum" id="playerCardViews">0</div><div class="plbl">Baxış</div></div>
       </div>
+      <div id="playerCardTitlesWrap" style="display:none">
+        <div class="profile-section-title" style="margin-top:12px">🏆 Kuboklar</div>
+        <div class="profile-titles-row" id="playerCardTitlesRow"></div>
+      </div>
+      <div id="playerCardMedalsWrap" style="display:none">
+        <div class="profile-section-title" style="margin-top:12px">🎖️ Medallar</div>
+        <div class="profile-titles-row" id="playerCardMedalsRow"></div>
+      </div>
+
       <div class="profile-section-title" style="margin-top:12px">🎁 Aldığı hədiyyələr</div>
       <div class="player-gift-list" id="playerCardGiftList"></div>
       <button class="menu-return" id="playerCardGiftsAllBtn" style="display:none;margin-top:6px;padding:8px;font-size:11px;width:100%">Hamısına bax</button>
@@ -1647,6 +1777,26 @@
       <div class="gift-reveal-sender" id="giftRevealSender">Oyunçu tərəfindən</div>
       <div class="gift-reveal-note" id="giftRevealNote"></div>
       <button class="friend-action-btn" id="giftThanksBtn" style="width:100%;padding:12px;margin-top:12px;background:#7d6adf">🙏 Təşəkkür et</button>
+    </div>
+  </div>
+
+  <!-- Zindan kubokları -->
+  <div class="modal-overlay" id="trophyPopupModal">
+    <div class="modal-panel" style="max-width:380px;text-align:center">
+      <button class="modal-close" id="trophyPopupClose">✕</button>
+      <img id="trophyPopupImg" class="trophy-popup-img" src="" alt="">
+      <div class="trophy-popup-title" id="trophyPopupTitle"></div>
+      <div class="shop-tabs" id="trophyPopupTabs"></div>
+      <div class="trophy-popup-list" id="trophyPopupList"></div>
+    </div>
+  </div>
+
+  <!-- Zindan sistem məktubları -->
+  <div class="modal-overlay" id="dungeonMailModal">
+    <div class="modal-panel" style="max-width:420px">
+      <button class="modal-close" id="dungeonMailClose">✕</button>
+      <div class="profile-section-title">⚔️ Zindan</div>
+      <div id="dungeonMailList"><div class="empty-hint">Yüklənir...</div></div>
     </div>
   </div>
 
@@ -3166,6 +3316,7 @@
     if(!p.keys) p.keys = 0;
     if(typeof p.wheelFreeSpinDate !== "string") p.wheelFreeSpinDate = null;
     if(!p.cardCollection) p.cardCollection = {}; // Kubik Kartları: {cardId: {placed:{...}, completed:true}}
+    if(!p.dungeonScores) p.dungeonScores = {}; // Gündəlik Zindan: {"YYYY-MM-DD": score}
     p.level = levelFromXp(p.xp);
     return p;
   }
@@ -3218,6 +3369,7 @@
         checkFriendRequestsBadge();
         checkUnreadMessagesBadge();
         checkUnseenGiftsBadge();
+        checkUnseenDungeonRewardsBadge();
         checkUnseenReportsBadge();
         subscribeBattleInvites();
         subscribeIncomingMessages();
@@ -3229,6 +3381,7 @@
       checkFriendRequestsBadge();
       checkUnreadMessagesBadge();
       checkUnseenGiftsBadge();
+      checkUnseenDungeonRewardsBadge();
       checkUnseenReportsBadge();
       subscribeBattleInvites();
       subscribeIncomingMessages();
@@ -3757,6 +3910,8 @@
       document.getElementById("playerCardGiftsReceived").textContent = p.total_gifts_received || 0;
       document.getElementById("playerCardGiftsSent").textContent = p.total_gifts_sent || 0;
       renderPlayerCardCardSection(sd);
+      renderTitlesSection("playerCardTitlesRow", "playerCardTitlesWrap", playerId); // Zindan kubokları
+      renderMedalsSection("playerCardMedalsRow", "playerCardMedalsWrap", playerId); // Zindan medalları
       var photoContainer = document.getElementById("playerCardPhoto");
       photoContainer.className = "ppic ppic-lg frame-" + (p.active_frame || "none");
       photoContainer.innerHTML = buildAvatarInnerHtml({avatarUrl:p.avatar_url, countryFlag:p.country_flag, level:p.level, activeFrame:p.active_frame, showStarParticles:true});
@@ -4610,7 +4765,7 @@
     var tabs = [{id:"messages", label:"💬 Mesajlar"}, {id:"gifts", label:"🎁 Hədiyyələr"}];
     if(isAdminUser()) tabs.push({id:"reports", label:"🚩 Şikayətlər"});
     tabsEl.innerHTML = tabs.map(function(t){
-      var showDot = (t.id === "messages" && unreadMessagesTotal > 0) || (t.id === "gifts" && unseenGiftsTotal > 0) || (t.id === "reports" && unseenReportsTotal > 0);
+      var showDot = (t.id === "messages" && (unreadMessagesTotal > 0 || unseenDungeonRewardsTotal > 0)) || (t.id === "gifts" && unseenGiftsTotal > 0) || (t.id === "reports" && unseenReportsTotal > 0);
       return '<button class="shop-tab-btn' + (t.id === mailboxActiveTab ? " active" : "") + '" data-id="' + t.id + '" style="position:relative">' + t.label + (showDot ? '<span class="friend-tab-dot"></span>' : "") + '</button>';
     }).join("");
     tabsEl.querySelectorAll("button").forEach(function(btn){
@@ -4625,7 +4780,8 @@
   function renderMailboxContent(){
     var el = document.getElementById("mailboxContent");
     if(mailboxActiveTab === "messages"){
-      el.innerHTML = '<div class="friend-list" id="mailboxConversationsList"></div>';
+      el.innerHTML = '<div id="mailboxSystemRow"></div><div class="friend-list" id="mailboxConversationsList"></div>';
+      renderSystemConversationRow();
       loadConversationsList("mailboxConversationsList");
     } else if(mailboxActiveTab === "reports" && isAdminUser()){
       el.innerHTML = '<div class="gift-history-list full-width" id="mailboxReportsList"></div>';
@@ -4634,6 +4790,252 @@
       el.innerHTML = '<div class="gift-history-list full-width" id="mailboxGiftsList"></div>';
       loadMailboxGifts();
     }
+  }
+
+  // ===== Zindan mükafatları — AYRICA tab DEYİL, "Mesajlar" tab-ının içində "Zindan" adlı
+  // sistem göndəricisi kimi. Toxunanda #dungeonMailModal açılır, hər mükafat öz
+  // "məktubu" kimi göstərilir (bax dungeonLetterHtml). =====
+  var unseenDungeonRewardsTotal = 0;
+  var dungeonRewardsCache = {};
+  var DUNGEON_LB_CATEGORY_LABELS = {daily:"🌞 Günün Lideri", best:"⚔️ Zindan Lideri"};
+
+  function renderSystemConversationRow(){
+    var el = document.getElementById("mailboxSystemRow");
+    if(!el || !supabaseClient || !cloudUserId){ if(el) el.innerHTML = ""; return; }
+    supabaseClient.from("dungeon_daily_rewards").select("id", {count:"exact", head:true})
+      .eq("user_id", cloudUserId).eq("claimed", false)
+      .then(function(res){
+        el = document.getElementById("mailboxSystemRow");
+        if(!el) return;
+        var unclaimed = res.error ? 0 : (res.count || 0);
+        var preview = unclaimed > 0 ? ("🎉 " + unclaimed + " yeni mükafat gözləyir!") : "Zindan mükafatların burada";
+        el.innerHTML = '<div class="convo-row system-convo-row" id="systemConvoRow">' +
+          '<div class="system-convo-icon">⚔️</div>' +
+          '<div class="convo-row-info"><div class="convo-row-name">Zindan</div>' +
+          '<div class="convo-row-preview' + (unclaimed > 0 ? " unread" : "") + '">' + preview + '</div></div>' +
+          (unclaimed > 0 ? '<div class="convo-unread-dot"></div>' : "") +
+          '</div>';
+        var row = document.getElementById("systemConvoRow");
+        if(row) row.addEventListener("click", openDungeonMail);
+      });
+  }
+
+  function openDungeonMail(){
+    document.getElementById("dungeonMailModal").classList.add("show");
+    loadDungeonMail();
+  }
+  function closeDungeonMail(){
+    document.getElementById("dungeonMailModal").classList.remove("show");
+  }
+
+  function loadDungeonMail(){
+    if(!supabaseClient || !cloudUserId) return;
+    var el = document.getElementById("dungeonMailList");
+    if(el) el.innerHTML = '<div class="empty-hint">Yüklənir...</div>';
+    supabaseClient.from("dungeon_daily_rewards").select("id,date,category,rank,score,games_played,gold,cubes_per_color,color_ids,claimed,created_at")
+      .eq("user_id", cloudUserId).order("created_at", {ascending:false}).limit(60)
+      .then(function(res){
+        el = document.getElementById("dungeonMailList");
+        if(!el) return;
+        if(res.error){ el.innerHTML = '<div class="empty-hint">⚠️ ' + escapeHtml(res.error.message) + '</div>'; return; }
+        var rows = res.data || [];
+        dungeonRewardsCache = {};
+        rows.forEach(function(r){ dungeonRewardsCache[r.id] = r; });
+        if(!rows.length){ el.innerHTML = '<div class="empty-hint">Hələ zindan məktubu yoxdur</div>'; return; }
+        el.innerHTML = rows.map(dungeonLetterHtml).join("");
+        el.querySelectorAll(".dr-claim-btn").forEach(function(btn){
+          btn.addEventListener("click", function(){ claimDungeonReward(this.getAttribute("data-id")); });
+        });
+      });
+  }
+
+  function formatDungeonLetterTime(iso){
+    var d = new Date(iso);
+    var timeStr = "";
+    try{ timeStr = d.toLocaleTimeString("az-AZ", {hour:"2-digit", minute:"2-digit"}); }catch(e){}
+    return d.getDate() + " " + AZ_MONTHS_CHAT[d.getMonth()] + " " + d.getFullYear() + ", " + timeStr;
+  }
+
+  function dungeonLetterHtml(r){
+    var catLabel = DUNGEON_LB_CATEGORY_LABELS[r.category] || r.category;
+    var rewardsHtml = '<div class="cp-need-chip"><div class="cp-need-swatch dungeon-gold-swatch">🪙</div><div class="cp-need-count">' + r.gold + '</div></div>' +
+      (r.color_ids || []).map(function(cid){
+        var col = MENU_BG_COLORS.find(function(c){ return c.id === cid; });
+        return '<div class="cp-need-chip"><div class="cp-need-swatch" style="background:' + (col ? col.hex : "#999") + '"></div><div class="cp-need-count">' + r.cubes_per_color + '</div></div>';
+      }).join("");
+    return '<div class="dungeon-letter' + (!r.claimed ? " unclaimed" : "") + '">' +
+      '<div class="dungeon-letter-head">⚔️ Zindan</div>' +
+      '<div class="dungeon-letter-congrats">🎉 Təbriklər!</div>' +
+      '<div class="dungeon-letter-body">' + catLabel + ' sıralamasında <b>#' + r.rank + '</b> yer tutdun — ' + r.score + ' xal, ' + r.games_played + ' oyun (' + r.date + ')</div>' +
+      '<div class="dungeon-letter-rewards">' + rewardsHtml + '</div>' +
+      '<div class="dungeon-letter-time">' + formatDungeonLetterTime(r.created_at) + '</div>' +
+      (r.claimed ? '<span class="dr-claimed-lbl">✅ Alınıb</span>' : '<button class="achievement-claim-btn dr-claim-btn" data-id="' + escapeHtml(r.id) + '" style="width:100%">🎁 Mükafatları al</button>') +
+      '</div>';
+  }
+
+  function claimDungeonReward(rewardId){
+    var r = dungeonRewardsCache[rewardId];
+    if(!r || r.claimed || !supabaseClient) return;
+    supabaseClient.from("dungeon_daily_rewards").update({claimed:true}).eq("id", rewardId).eq("claimed", false)
+      .select().then(function(res){
+        if(res.error || !res.data || !res.data.length){ showToast("⚠️ Mükafat alına bilmədi"); return; }
+        addGold(r.gold);
+        (r.color_ids || []).forEach(function(cid){
+          profile.cubeInventory[cid] = (profile.cubeInventory[cid] || 0) + r.cubes_per_color;
+        });
+        saveProfile();
+        r.claimed = true;
+        showToast("🎁 Mükafat alındı: +" + r.gold + " 🪙 +" + r.cubes_per_color + "x hər rəngdən kub");
+        loadDungeonMail();
+        checkUnseenDungeonRewardsBadge();
+        renderSystemConversationRow();
+      });
+  }
+
+  // ===== Zindan kubokları + medalları — hər ikisi "dungeon_daily_rewards" cədvəlindəki
+  // sətirlərdən BİRBAŞA hesablanır (ayrıca cədvələ ehtiyac yoxdur, çünki hər oyunçunun HƏR gün
+  // üçün DƏQİQ sırası artıq orda saxlanılır): kuboklar rank<=3, medallar rank 4-10/11-20/21-30
+  // bandlarına görə. Hər sətir bir "qazanma anı"dır — oyunçu eynisini bir neçə dəfə qazana bilər,
+  // profil/oyunçu kartındakı bölmə hər tip üçün BİR nişan göstərir, üzərinə basanda bütün
+  // qazanma tarixləri (+ nəticələri) ORTAQ popupda (bax openTitlePopup) açılır.
+  var DUNGEON_TROPHY_IMAGES = {1:"trophies/trophy_1.png", 2:"trophies/trophy_2.png", 3:"trophies/trophy_3.png"};
+  var DUNGEON_TROPHY_LABELS = {1:"Kölgə Zindanı Şampionu", 2:"Kölgə Zindanı Gümüş Kuboku", 3:"Kölgə Zindanı Bürünc Kuboku"};
+  var DUNGEON_MEDAL_IMAGES = {10:"trophies/medal_top10.png", 20:"trophies/medal_top20.png", 30:"trophies/medal_top30.png"};
+  var DUNGEON_MEDAL_LABELS = {10:"Top 10 Medalı", 20:"Top 20 Medalı", 30:"Top 30 Medalı"};
+
+  // rank 1-3 artıq kubokla mükafatlandırılır, ona görə medal bandları 4-cü yerdən başlayır
+  // (üst-üstə düşmə olmasın deyə) — 30-dan sonra medal yoxdur.
+  function medalTierForRank(rank){
+    if(rank <= 3) return null;
+    if(rank <= 10) return 10;
+    if(rank <= 20) return 20;
+    if(rank <= 30) return 30;
+    return null;
+  }
+
+  function renderTitlesSection(listId, wrapId, playerId){
+    var wrapEl = document.getElementById(wrapId);
+    if(!wrapEl) return;
+    if(!supabaseClient || !playerId){ wrapEl.style.display = "none"; return; }
+    supabaseClient.from("dungeon_daily_rewards").select("rank,date,category,score,games_played")
+      .eq("user_id", playerId).lte("rank", 3)
+      .then(function(res){
+        wrapEl = document.getElementById(wrapId);
+        if(!wrapEl) return;
+        if(res.error || !res.data || !res.data.length){ wrapEl.style.display = "none"; return; }
+        var byRank = {1:[], 2:[], 3:[]};
+        res.data.forEach(function(r){ if(byRank[r.rank]) byRank[r.rank].push(r); });
+        var ranks = [1, 2, 3].filter(function(r){ return byRank[r].length > 0; });
+        if(!ranks.length){ wrapEl.style.display = "none"; return; }
+        wrapEl.style.display = "";
+        var rowEl = document.getElementById(listId);
+        rowEl.innerHTML = ranks.map(function(r){
+          return '<div class="trophy-badge" data-rank="' + r + '"><img src="' + DUNGEON_TROPHY_IMAGES[r] + '" alt="#' + r + ' kubok"><div class="trophy-badge-count">×' + byRank[r].length + '</div></div>';
+        }).join("");
+        rowEl.querySelectorAll(".trophy-badge").forEach(function(el){
+          var r = parseInt(el.getAttribute("data-rank"), 10);
+          el.addEventListener("click", function(){ openTrophyPopup(r, byRank[r]); });
+        });
+      });
+  }
+
+  function renderMedalsSection(listId, wrapId, playerId){
+    var wrapEl = document.getElementById(wrapId);
+    if(!wrapEl) return;
+    if(!supabaseClient || !playerId){ wrapEl.style.display = "none"; return; }
+    supabaseClient.from("dungeon_daily_rewards").select("rank,date,category,score,games_played")
+      .eq("user_id", playerId).gt("rank", 3).lte("rank", 30)
+      .then(function(res){
+        wrapEl = document.getElementById(wrapId);
+        if(!wrapEl) return;
+        if(res.error || !res.data || !res.data.length){ wrapEl.style.display = "none"; return; }
+        var byTier = {10:[], 20:[], 30:[]};
+        res.data.forEach(function(r){
+          var tier = medalTierForRank(r.rank);
+          if(tier) byTier[tier].push(r);
+        });
+        var tiers = [10, 20, 30].filter(function(t){ return byTier[t].length > 0; });
+        if(!tiers.length){ wrapEl.style.display = "none"; return; }
+        wrapEl.style.display = "";
+        var rowEl = document.getElementById(listId);
+        rowEl.innerHTML = tiers.map(function(t){
+          return '<div class="trophy-badge" data-tier="' + t + '"><img src="' + DUNGEON_MEDAL_IMAGES[t] + '" alt="Top ' + t + ' medalı"><div class="trophy-badge-count">×' + byTier[t].length + '</div></div>';
+        }).join("");
+        rowEl.querySelectorAll(".trophy-badge").forEach(function(el){
+          var t = parseInt(el.getAttribute("data-tier"), 10);
+          el.addEventListener("click", function(){ openMedalPopup(t, byTier[t]); });
+        });
+      });
+  }
+
+  // Popupun altında 3 filtr: "Hamısı" (default — bax openTitlePopup), "Günün Lideri", "Zindan
+  // Lideri" — kateqoriyaya görə eyni `wins` massivini lokal filtrləyir, YENİ sorğu getmir.
+  var TITLE_POPUP_FILTERS = [
+    {id:"all", label:"Hamısı"},
+    {id:"daily", label:"🌞 Günün Lideri"},
+    {id:"best", label:"⚔️ Zindan Lideri"}
+  ];
+  var titlePopupWins = [];
+  var titlePopupShowRank = false;
+  var titlePopupActiveFilter = "all";
+
+  function openTitlePopup(imgSrc, title, wins, showRank){
+    document.getElementById("trophyPopupImg").src = imgSrc;
+    document.getElementById("trophyPopupImg").alt = title;
+    document.getElementById("trophyPopupTitle").textContent = title;
+    titlePopupWins = wins;
+    titlePopupShowRank = showRank;
+    titlePopupActiveFilter = "all"; // mükafata (popupa) girdikdə İLK "Hamısı" bölməsi açıq olsun
+    renderTitlePopupTabs();
+    renderTitlePopupList();
+    document.getElementById("trophyPopupModal").classList.add("show");
+  }
+  function renderTitlePopupTabs(){
+    var tabsEl = document.getElementById("trophyPopupTabs");
+    tabsEl.innerHTML = TITLE_POPUP_FILTERS.map(function(f){
+      return '<button class="shop-tab-btn' + (f.id === titlePopupActiveFilter ? " active" : "") + '" data-id="' + f.id + '">' + f.label + '</button>';
+    }).join("");
+    tabsEl.querySelectorAll("button").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        titlePopupActiveFilter = this.getAttribute("data-id");
+        renderTitlePopupTabs();
+        renderTitlePopupList();
+      });
+    });
+  }
+  function renderTitlePopupList(){
+    var listEl = document.getElementById("trophyPopupList");
+    var filtered = titlePopupActiveFilter === "all" ? titlePopupWins :
+      titlePopupWins.filter(function(w){ return w.category === titlePopupActiveFilter; });
+    if(!filtered.length){ listEl.innerHTML = '<div class="empty-hint">Bu bölmədə hələ nəticə yoxdur</div>'; return; }
+    var sorted = filtered.slice().sort(function(a, b){ return a.date < b.date ? 1 : -1; });
+    listEl.innerHTML = sorted.map(function(w){
+      var catLabel = DUNGEON_LB_CATEGORY_LABELS[w.category] || w.category;
+      var rankTxt = titlePopupShowRank ? ("#" + w.rank + " yer · ") : "";
+      return '<div class="trophy-win-row"><div class="trophy-win-date">📅 ' + w.date + '</div>' +
+        '<div class="trophy-win-info">' + rankTxt + catLabel + ' · ' + w.score + ' xal · ' + w.games_played + ' oyun</div></div>';
+    }).join("");
+  }
+  function openTrophyPopup(rank, wins){
+    openTitlePopup(DUNGEON_TROPHY_IMAGES[rank], DUNGEON_TROPHY_LABELS[rank] || ("#" + rank + " Kubok"), wins, false);
+  }
+  function openMedalPopup(tier, wins){
+    openTitlePopup(DUNGEON_MEDAL_IMAGES[tier], DUNGEON_MEDAL_LABELS[tier] || ("Top " + tier + " Medalı"), wins, true);
+  }
+  function closeTrophyPopup(){
+    document.getElementById("trophyPopupModal").classList.remove("show");
+  }
+
+  function checkUnseenDungeonRewardsBadge(){
+    if(!supabaseClient || !cloudUserId) return;
+    supabaseClient.from("dungeon_daily_rewards").select("id", {count:"exact", head:true})
+      .eq("user_id", cloudUserId).eq("claimed", false)
+      .then(function(res){
+        if(res.error) return;
+        unseenDungeonRewardsTotal = res.count || 0;
+        refreshMailboxBtnDot();
+        if(mailboxScreen.style.display !== "none") renderMailboxTabs();
+      });
   }
 
   function loadMailboxGifts(){
@@ -4679,7 +5081,7 @@
   function refreshMailboxBtnDot(){
     var dot = document.getElementById("mailboxBtnDot");
     if(!dot) return;
-    dot.style.display = (unreadMessagesTotal > 0 || unseenGiftsTotal > 0 || unseenReportsTotal > 0) ? "" : "none";
+    dot.style.display = (unreadMessagesTotal > 0 || unseenGiftsTotal > 0 || unseenDungeonRewardsTotal > 0 || unseenReportsTotal > 0) ? "" : "none";
   }
 
   function checkUnseenReportsBadge(){
@@ -5731,6 +6133,8 @@
     renderNameTicketHint();
     renderProfileGiftList();
     renderProfileCardSection();
+    renderTitlesSection("profileTitlesRow", "profileTitlesWrap", cloudUserId); // Zindan kubokları
+    renderMedalsSection("profileMedalsRow", "profileMedalsWrap", cloudUserId); // Zindan medalları
     document.getElementById("statLevel").textContent = profile.level || 1;
     document.getElementById("statXpTotal").textContent = profile.xp || 0;
     document.getElementById("statGames").textContent = profile.gamesPlayed || 0;
@@ -5976,6 +6380,7 @@
   function reconcileDailyLogin(){
     var isNewDay = checkDailyLogin();
     dailySessionIsNewDay = dailySessionIsNewDay || isNewDay;
+    if(isNewDay) finalizeDungeonRewardsForDate(getYesterdayStr()); // Gündəlik Zindan mükafatları
     updateDailyBtnDot();
     if(dailyScreen && dailyScreen.classList.contains("show")) renderDailyScreen();
   }
@@ -6161,6 +6566,9 @@
     if(gameMode === "arcade"){
       if(arcadeIsBossLevel) bossTier = arcadeBossTier;
     } else if(gameMode === "endless"){
+      bossTier = bossTierForMissionNumber(missionCount + 1);
+    } else if(gameMode === "dungeon" && dungeonConfig && dungeonConfig.rule === "bossrush"){
+      // "Boss Rush" qaydası — sonsuz rejimdəki eyni boss cədvəlini istifadə edir
       bossTier = bossTierForMissionNumber(missionCount + 1);
     }
     if(bossTier){
@@ -6717,6 +7125,11 @@
       arcadeLevelEnd(true);
       return;
     }
+    if(gameMode === "dungeon" && missionCount >= arcadeMissionsRequired){
+      // zindan hədəf misya sayına çatdı — oyun bitdi ekranı vasitəsilə (skoru saxlayıb) bitir
+      gameOver();
+      return;
+    }
     // Kubiklər silinmir, oyun fasiləsiz davam edir — yeni misya gözləmədən dərhal verilir
     newMission();
   }
@@ -6747,6 +7160,10 @@
     renderProfile();
     if(gameMode === "arcade" && missionCount >= arcadeMissionsRequired){
       arcadeLevelEnd(true);
+      return;
+    }
+    if(gameMode === "dungeon" && missionCount >= arcadeMissionsRequired){
+      gameOver();
       return;
     }
     newMission();
@@ -6859,6 +7276,8 @@
     profile.records.sort(function(a,b){ return b.score - a.score; });
     profile.records = profile.records.slice(0, 10);
     saveProfile();
+
+    if(gameMode === "dungeon") submitDungeonScore(finalScore);
 
     // Oyun içindəki "xal" (sessionXpEarned) ilə profil səviyyəsi üçün toplanan XP tam ayrı
     // anlayışlardır — xalın XP-yə heç bir aidiyyəti yoxdur, hər qazanılan XP YALNIZ səviyyənin
@@ -7242,6 +7661,7 @@
 
     var record = {el:el, color:color, caught:false, y:0, rafId:null, lastFrame:performance.now(), animate:null, accumTime:0, smileyGlyphEl:smileyGlyphEl};
     fieldCubes.push(record);
+    tryMakeCubeRare(record, el); // Nadir Kubik
 
     var targetTop = field.clientHeight + 20;
     var travel = targetTop + 56;
@@ -7530,6 +7950,8 @@
     var brkFrect = field.getBoundingClientRect();
     var brkX = cubeRect.left - brkFrect.left + cubeRect.width/2;
     var brkY = cubeRect.top - brkFrect.top + cubeRect.height/2;
+
+    if(record.isRare){ collectRareCube(brkX, brkY); } // Nadir Kubik — hər toxunuş yolunda (rəng uyub-uymamasından asılı olmadan) bonus verir
 
     if(smashModeActive){
       playBreakSound();
@@ -8735,10 +9157,28 @@
       applyArcadeModifiers(buildArcadeLevel(arcadeLevelNum));
       levelBadge.style.display = "";
       levelBadgeVal.textContent = arcadeLevelNum;
+    } else if(gameMode === "dungeon" && dungeonConfig){
+      // arkadanın "arcadeLevelNum" kimi, zindan da öz konfiqurasiyasını (dungeonConfig)
+      // BURADA, startGame()-in özündə tətbiq edir — beləliklə "🔄 Yenidən başla" kimi startGame()-i
+      // BİRBAŞA çağıran hər hansı düymə (mənim startDungeonGame() sarğımdan keçmədən) də düzgün
+      // işləyir. Əvvəlki versiyada bu tətbiq YALNIZ startDungeonGame()-də edilirdi — restart düyməsi
+      // onu keçib clearArcadeModifiers()-ə düşürdü, nəticədə arcadeMissionsRequired 0-a enib 1-ci
+      // misyadan sonra oyun səhvən bitirdi.
+      applyArcadeModifiers({
+        missionsRequired: dungeonConfig.missions,
+        speedMult: dungeonConfig.rule === "fastdrop" ? Math.round(dungeonConfig.speed * 2 * 100) / 100 : dungeonConfig.speed,
+        colorCount: dungeonConfig.colors,
+        noPowerups: dungeonConfig.rule === "ultibanned",
+        isBoss: false,
+        bossTier: 0,
+        bossHp: 0
+      });
+      levelBadge.style.display = "none";
     } else {
       clearArcadeModifiers();
       levelBadge.style.display = "none";
     }
+    if(gameMode === "dungeon") startDungeonFieldTheme(); else stopDungeonFieldTheme(); // oyun sahəsinin zindan teması
     if(gameMode !== "battle"){
       battleTimerBadge.style.display = "none";
       battleOpponentBadge.style.display = "none";
@@ -8806,6 +9246,7 @@
   }
 
   function returnToMenu(){
+    stopDungeonFieldTheme(); // menyuya qayıdanda zindan fon animasiyası da dayansın
     spawning = false;
     gameActive = false;
     paused = false;
@@ -10369,6 +10810,414 @@
   document.getElementById("cardPrereqClose").addEventListener("click", function(){
     document.getElementById("cardPrereqOverlay").classList.remove("show");
   });
+
+  // ================= GÜNDƏLİK ZİNDAN =================
+  var dungeonScreen = document.getElementById("dungeonScreen");
+  var dungeonConfig = null;
+  var dungeonTimerInterval = null;
+  var DUNGEON_DAILY_LIMIT = 3;
+
+  // Bugünkü {played, total, best} qeydini qaytarır — köhnə (təkcə ədəd) formatlı qeydləri də
+  // (bu xüsusiyyət əvvəlki test versiyasında sadə ədəd kimi saxlanılırdı) düzgün formata çevirir.
+  function getTodayDungeonStats(){
+    var today = getTodayStr();
+    var rec = profile.dungeonScores && profile.dungeonScores[today];
+    if(!rec || typeof rec !== "object") rec = {played:0, total:0, best:0};
+    return rec;
+  }
+
+  // Zindanların adları — hazırda cəmi 1 dənədir, gələcəkdə bura fərqli günlərə uyğun başqa
+  // adlı zindanlar əlavə olunacaq (seed-ə görə seçilir ki, yeni zindan əlavə olunanda kodun
+  // qalan hissəsi toxunulmadan avtomatik dövriyyəyə girsin). `colors` HƏR ZİNDANIN ÖZ SABİT
+  // xüsusiyyətidir (kimliyinin bir hissəsi) — günə görə DƏYİŞMİR, ona görə "Kölgə Zindanı"
+  // istənilən gün oynanılsa da, HƏMİŞə 8 rəng olacaq və mükafatlar da bunun EYNİSİNƏ görə hesablanacaq.
+  var DUNGEON_DEFINITIONS = [
+    {id:"shadow_pit", name:"Kölgə Zindanı", colors:8}
+  ];
+
+  // Gün üzrə determinə edilmiş (bütün oyunçular üçün EYNİ) konfiqurasiya — tarixi mətni ədədə
+  // çevirib sadə bir sin-əsaslı psevdo-təsadüfi generator toxumu kimi istifadə edir. dateStr
+  // ötürülməsə bugünkü tarix işlədilir — keçmiş bir günün konfiqurasiyasını (mükafat
+  // hesablamaları üçün, bax finalizeDungeonRewardsForDate) yenidən qurmaq üçün də çağırılır.
+  function getDungeonConfig(dateStr){
+    var today = dateStr || getTodayStr();
+    var seed = parseInt(today.replace(/-/g, ""), 10);
+    function rng(offset){
+      var x = Math.sin(seed + offset) * 10000;
+      return x - Math.floor(x);
+    }
+    var missions = 80 + Math.floor(rng(1) * 6);                // 80-85
+    var speed = Math.round((1.2 + rng(2) * 0.8) * 100) / 100;  // 1.20-2.00
+    var rules = [
+      {id:"normal", name:"Normal", desc:"Standart oyun qaydaları"},
+      {id:"bossrush", name:"Boss Rush", desc:"Boss döyüşləri sonsuz rejimdəki cədvəllə tetiklenir"},
+      {id:"ultibanned", name:"Ultisiz", desc:"Ulti istifadəsi qadağandır!"},
+      {id:"fastdrop", name:"Sürət Düşüş", desc:"Kubiklər əlavə 2x sürətlə düşür!"}
+    ];
+    var rule = rules[Math.floor(rng(4) * rules.length)];
+    var def = DUNGEON_DEFINITIONS[Math.floor(rng(5) * DUNGEON_DEFINITIONS.length)];
+    return {date:today, missions:missions, speed:speed, colors:def.colors, rule:rule.id, ruleObj:rule, defId:def.id, name:def.name};
+  }
+
+  // Bu tarixin zindanında istifadə olunan rəngləri (rebuildColorPool-un arkada/zindan
+  // rejimində istifadə etdiyi ELƏ HƏMİN "ilk N rəng" seçimini) qaytarır — hədiyyə kublarının
+  // hansı rənglərdən veriləcəyini müəyyən etmək üçün istifadə olunur.
+  function dungeonColorIds(config){
+    return MENU_BG_COLORS.slice(0, config.colors).map(function(c){ return c.id; });
+  }
+
+  function openDungeon(){
+    menuScreen.style.display = "none";
+    stopMenuBgAnim();
+    dungeonScreen.style.display = "flex";
+    dungeonConfig = getDungeonConfig();
+    renderDungeonInfo();
+    renderDungeonLbTabs();
+    loadDungeonLeaderboard();
+    startDungeonTimer();
+  }
+  function closeDungeon(){
+    dungeonScreen.style.display = "none";
+    menuScreen.style.display = "";
+    startMenuBgAnim();
+    clearInterval(dungeonTimerInterval);
+  }
+
+  function renderDungeonInfo(){
+    var d = dungeonConfig;
+    document.getElementById("dungeonTitle").textContent = "⚔️ " + d.name + " · #" + d.date.replace(/-/g, "");
+    document.getElementById("dungMissions").textContent = d.missions;
+    document.getElementById("dungSpeed").textContent = d.speed + "x";
+    document.getElementById("dungColors").textContent = d.colors;
+    var stats = getTodayDungeonStats();
+    var myScoreEl = document.getElementById("dungeonMyScore");
+    if(stats.played > 0){
+      myScoreEl.style.display = "";
+      document.getElementById("dungeonMyVal").textContent = stats.best;
+      document.getElementById("dungeonMyRank").textContent = "🌞 Bugünkü cəm xal: " + stats.total;
+    } else {
+      myScoreEl.style.display = "none";
+    }
+    var remaining = Math.max(0, DUNGEON_DAILY_LIMIT - stats.played);
+    var playBtn = document.getElementById("dungeonPlayBtn");
+    if(remaining <= 0){
+      playBtn.disabled = true;
+      playBtn.textContent = "⏳ Bugünkü limit bitib (" + DUNGEON_DAILY_LIMIT + "/" + DUNGEON_DAILY_LIMIT + ")";
+    } else {
+      playBtn.disabled = false;
+      playBtn.textContent = "⚔️ Zindana Giriş (" + remaining + "/" + DUNGEON_DAILY_LIMIT + " qalıb)";
+    }
+  }
+
+  function updateDungeonTimer(){
+    var now = new Date();
+    var tmr = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    var diff = tmr - now;
+    var h = Math.floor(diff / 3600000);
+    var m = Math.floor((diff % 3600000) / 60000);
+    var s = Math.floor((diff % 60000) / 1000);
+    function pad(n){ return n < 10 ? "0" + n : "" + n; }
+    var el = document.getElementById("dungeonTimer");
+    if(el) el.textContent = "⏳ Yenilənməyə: " + pad(h) + ":" + pad(m) + ":" + pad(s);
+  }
+  function startDungeonTimer(){
+    clearInterval(dungeonTimerInterval);
+    updateDungeonTimer();
+    dungeonTimerInterval = setInterval(updateDungeonTimer, 1000);
+  }
+
+  function startDungeonGame(){
+    var stats = getTodayDungeonStats();
+    if(stats.played >= DUNGEON_DAILY_LIMIT){
+      showToast("⚠️ Bugünkü " + DUNGEON_DAILY_LIMIT + " zindan hüququn bitib. Sabah yenidən cəhd et!");
+      return;
+    }
+    if(!dungeonConfig) dungeonConfig = getDungeonConfig();
+    gameMode = "dungeon";
+    arcadeLevelNum = null;
+    dungeonScreen.style.display = "none";
+    startGame(); // startGame() özü dungeonConfig-i tanıyıb tətbiq edir (bax yuxarıdakı düzəliş)
+  }
+
+  // Hər oyundan sonra çağırılır — bugünkü {played,total,best} yerli qeydini artırır və
+  // buludda GÜNLÜK YEKUN sətri (user_id+date üzrə unikal) tam yenidən yazılır ki, "Günün Lideri"
+  // (cəm xal) və "Zindan Lideri" (ən yüksək xal) liderbordları eyni sətirdən oxuya bilsin.
+  function submitDungeonScore(score){
+    var today = getTodayStr();
+    if(!profile.dungeonScores) profile.dungeonScores = {};
+    var rec = getTodayDungeonStats();
+    rec.played += 1;
+    rec.total += score;
+    rec.best = Math.max(rec.best, score);
+    profile.dungeonScores[today] = rec;
+    // Hər zindan oyununun sonunda ARTAN mükafat: 1-ci oyundan sonra hər rəngdən 1 kub,
+    // 2-cidən sonra 2, 3-cüdən sonra 3 (rec.played elə bu sayğacdır) — bu, gündəlik reytinq
+    // mükafatlarından FƏRQLİDİR, dərhal hər oyunun sonunda verilir.
+    var bonusPerColor = rec.played;
+    var colorIds = dungeonColorIds(dungeonConfig || getDungeonConfig());
+    colorIds.forEach(function(cid){
+      profile.cubeInventory[cid] = (profile.cubeInventory[cid] || 0) + bonusPerColor;
+    });
+    saveProfile();
+    if(supabaseClient && cloudUserId){
+      supabaseClient.from("daily_dungeon_scores").upsert({
+        user_id: cloudUserId,
+        date: today,
+        total_score: rec.total,
+        best_score: rec.best,
+        games_played: rec.played,
+        name: profile.name,
+        level: profile.level || 1
+      }, {onConflict: "user_id,date"}).then(function(res){
+        if(res.error) console.error("Zindan xəta:", res.error);
+      });
+    }
+    var remaining = Math.max(0, DUNGEON_DAILY_LIMIT - rec.played);
+    showToast("⚔️ Zindan xalın: " + score + " · +" + bonusPerColor + "x hər rəngdən kub · qalan oyun: " + remaining + "/" + DUNGEON_DAILY_LIMIT);
+  }
+
+  // İki ayrı zindan liderbordu: "Günün Lideri" (bugünkü 3 oyunun XALLARININ CƏMİ) və
+  // "Zindan Lideri" (bugünkü 3 oyundan ƏN YÜKSƏK tək xal). İkisi də eyni `daily_dungeon_scores`
+  // sətrindən (user_id+date üzrə unikal, submitDungeonScore-da yenilənir) fərqli sütuna görə sıralanır.
+  var DUNGEON_LB_CATEGORIES = [
+    {id:"daily", label:"🌞 Günün Lideri", column:"total_score", icon:"🌞", suffix:" xal"},
+    {id:"best", label:"⚔️ Zindan Lideri", column:"best_score", icon:"⚔️", suffix:" xal"}
+  ];
+  var dungeonLbActiveTab = "daily";
+
+  function renderDungeonLbTabs(){
+    var tabsEl = document.getElementById("dungeonLbTabs");
+    tabsEl.innerHTML = DUNGEON_LB_CATEGORIES.map(function(c){
+      return '<button class="shop-tab-btn' + (c.id === dungeonLbActiveTab ? " active" : "") + '" data-id="' + c.id + '">' + c.label + '</button>';
+    }).join("");
+    tabsEl.querySelectorAll("button").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        dungeonLbActiveTab = this.getAttribute("data-id");
+        renderDungeonLbTabs();
+        loadDungeonLeaderboard();
+      });
+    });
+  }
+
+  // Adi reytinq cədvəli ilə EYNİ qaydada: TOP 50 göstərilir, oyunçu bu 50-nin xaricindəsə
+  // siyahının altında ayrıca öz sırası+xalı göstərilir, hamısında +/-1 sıra hərəkəti (computeRankChanges,
+  // reytinq cədvəlindəki İLƏ EYNİ funksiya, sadəcə fərqli kateqoriya adı ilə) və sətrə toxunanda profilə keçid var.
+  function loadDungeonLeaderboard(){
+    var cat = DUNGEON_LB_CATEGORIES.find(function(c){ return c.id === dungeonLbActiveTab; });
+    var today = getTodayStr();
+    var listEl = document.getElementById("dungeonLbList");
+    var myRowEl = document.getElementById("dungeonLbMyRow");
+    listEl.innerHTML = '<div class="empty-hint">Yüklənir...</div>';
+    myRowEl.style.display = "none";
+    myRowEl.innerHTML = "";
+    if(!supabaseClient){
+      listEl.innerHTML = '<div class="empty-hint">Onlayn olmadan liderbord yoxdur</div>';
+      return;
+    }
+    supabaseClient.from("daily_dungeon_scores").select("user_id,name,level,total_score,best_score")
+      .eq("date", today).order(cat.column, {ascending:false}).limit(500)
+      .then(function(res){
+        if(res.error){ listEl.innerHTML = '<div class="empty-hint">⚠️ ' + escapeHtml(res.error.message) + '</div>'; return; }
+        var rows = res.data || [];
+        if(!rows.length){ listEl.innerHTML = '<div class="empty-hint">Hələ heç kim oynamayıb — ilk sən ol!</div>'; return; }
+        var top = rows.slice(0, 50);
+        var myIdx = rows.findIndex(function(p){ return p.user_id === cloudUserId; });
+        var rankedRows = top.map(function(p, i){ return {id:p.user_id, rank:i+1}; });
+        if(myIdx >= 50) rankedRows.push({id:rows[myIdx].user_id, rank:myIdx+1});
+        var neededIds = top.map(function(p){ return p.user_id; });
+        if(myIdx >= 50) neededIds.push(rows[myIdx].user_id);
+        Promise.all([
+          computeRankChanges("dungeon_" + cat.id, rankedRows),
+          supabaseClient.from("profiles").select("id,avatar_url,country_flag,active_frame,last_seen").in("id", neededIds)
+        ]).then(function(results){
+          var deltaMap = results[0];
+          var profById = {};
+          (results[1].data || []).forEach(function(pr){ profById[pr.id] = pr; });
+          function rowHtml(p, rank){
+            var rc = rank <= 3 ? " top" + rank : "";
+            var mine = p.user_id === cloudUserId ? " mine" : "";
+            var val = p[cat.column] || 0;
+            var delta = deltaMap[p.user_id];
+            var deltaHtml = delta ? ('<span class="lb-rank-change ' + (delta > 0 ? "up" : "down") + '">' + (delta > 0 ? "+" : "") + delta + '</span>') : "";
+            var badgeHtml = "";
+            if(rank <= 3){
+              badgeHtml = '<img class="lb-trophy-icon" src="' + DUNGEON_TROPHY_IMAGES[rank] + '" alt="#' + rank + ' kubok">';
+            } else {
+              var medalTier = medalTierForRank(rank);
+              if(medalTier) badgeHtml = '<img class="lb-trophy-icon" src="' + DUNGEON_MEDAL_IMAGES[medalTier] + '" alt="Top ' + medalTier + ' medalı">';
+            }
+            var prof = profById[p.user_id] || {};
+            var avatarHtml = buildAvatarHtml({avatarUrl:prof.avatar_url, countryFlag:prof.country_flag, level:p.level, activeFrame:prof.active_frame, presence:{lastSeen:prof.last_seen, corner:true}});
+            return '<div class="lb-row' + rc + mine + '" data-id="' + escapeHtml(p.user_id) + '">' +
+              '<div class="lb-rank">' + rank + deltaHtml + '</div>' +
+              badgeHtml +
+              avatarHtml +
+              '<div class="lb-info"><div class="lb-name">' + escapeHtml(p.name || "Oyunçu") + '</div></div>' +
+              '<div class="lb-value">' + cat.icon + ' ' + val + cat.suffix + '</div>' +
+              '</div>';
+          }
+          listEl.innerHTML = top.map(function(p, i){ return rowHtml(p, i + 1); }).join("");
+          listEl.querySelectorAll(".lb-row").forEach(function(row){
+            row.addEventListener("click", function(){ openPlayerCard(this.getAttribute("data-id")); });
+          });
+          if(myIdx >= 50){
+            myRowEl.style.display = "";
+            myRowEl.innerHTML = '<div class="lb-divider">⋯</div>' + rowHtml(rows[myIdx], myIdx + 1);
+            myRowEl.querySelector(".lb-row").addEventListener("click", function(){ openPlayerCard(cloudUserId); });
+          }
+        });
+      });
+  }
+
+  // ===== Zindan gündəlik reytinq mükafatları (gün bitəndə mesaj qutusuna göndərilir) =====
+  // Sıraya görə: 1/2/3-cü yer öz sabit mükafatını alır, sonra top50/top100 pilləli, qalanlar isə
+  // ən aşağı pillə alır. cubesPer HƏR rəngə tətbiq olunur (bax dungeonColorIds).
+  var DUNGEON_REWARD_TIERS = [
+    {maxRank:1, gold:5000, cubesPer:50},
+    {maxRank:2, gold:4000, cubesPer:40},
+    {maxRank:3, gold:3000, cubesPer:30},
+    {maxRank:50, gold:1500, cubesPer:10},
+    {maxRank:100, gold:1000, cubesPer:5}
+  ];
+  var DUNGEON_REWARD_TIER_REST = {gold:300, cubesPer:2};
+  function dungeonRewardForRank(rank){
+    for(var i=0;i<DUNGEON_REWARD_TIERS.length;i++){
+      if(rank <= DUNGEON_REWARD_TIERS[i].maxRank) return DUNGEON_REWARD_TIERS[i];
+    }
+    return DUNGEON_REWARD_TIER_REST;
+  }
+
+  function addDaysToDateStr(str, days){
+    var p = str.split("-").map(Number);
+    var d = new Date(p[0], p[1] - 1, p[2]);
+    d.setDate(d.getDate() + days);
+    function pad(n){ return n < 10 ? "0" + n : "" + n; }
+    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+  }
+  function getYesterdayStr(){ return addDaysToDateStr(getTodayStr(), -1); }
+
+  // Server-side cron olmadığı üçün — leaderboard_rank_changes-dəki EYNİ prinsiplə — DÜNƏNKİ günün
+  // yekun sıralaması yeni gün başlayanda İSTƏNİLƏN oyunçunun kliyenti tərəfindən hesablanıb bütün
+  // iştirakçılar üçün YAZILIR (unique(user_id,date,category) + ignoreDuplicates artıq yazılmış
+  // sətri YENİDƏN yazmır, ona görə bir neçə kliyentin eyni anda çağırması təhlükəsizdir).
+  // reconcileDailyLogin()-dən (yeni gün aşkarlananda) çağırılır.
+  // Hər 2 kateqoriyanı EYNİ ANDA (Promise.all) yükləyir — bu, "hər ikisində DƏ 1-ci yer olan
+  // şəxsin mükafatı 2 qat olsun" qaydasını tətbiq etmək üçün lazımdır: hansı istifadəçinin hər
+  // iki cədvəldə də #1 olduğunu bilmək üçün əvvəlcə HƏR İKİ cədvəlin qalibini bilmək lazımdır.
+  function finalizeDungeonRewardsForDate(dateStr){
+    if(!supabaseClient || !cloudUserId) return;
+    var colorIds = dungeonColorIds(getDungeonConfig(dateStr));
+    Promise.all(DUNGEON_LB_CATEGORIES.map(function(cat){
+      return supabaseClient.from("daily_dungeon_scores").select("user_id,games_played," + cat.column)
+        .eq("date", dateStr).order(cat.column, {ascending:false}).limit(2000)
+        .then(function(res){ return {cat:cat, rows:(res.error || !res.data) ? [] : res.data}; });
+    })).then(function(results){
+      var winnerIds = results.map(function(r){ return r.rows.length ? r.rows[0].user_id : null; });
+      // Hər 2 kateqoriyanın #1-i EYNİ istifadəçidirsə (və heç biri boş deyilsə), o, hər iki
+      // mükafatını 2 qat alır — digər bütün sırlar (2-ci yerdən sonrakılar) toxunulmur.
+      var doubleWinnerId = (winnerIds[0] && winnerIds[0] === winnerIds[1]) ? winnerIds[0] : null;
+      results.forEach(function(r){
+        if(!r.rows.length) return;
+        var rows = r.rows.map(function(p, i){
+          var rank = i + 1;
+          var tier = dungeonRewardForRank(rank);
+          var mult = (rank === 1 && p.user_id === doubleWinnerId) ? 2 : 1;
+          return {
+            user_id: p.user_id, date: dateStr, category: r.cat.id, rank: rank,
+            score: p[r.cat.column] || 0, games_played: p.games_played || 0,
+            gold: tier.gold * mult, cubes_per_color: tier.cubesPer * mult, color_ids: colorIds, claimed: false
+          };
+        });
+        supabaseClient.from("dungeon_daily_rewards").upsert(rows, {onConflict: "user_id,date,category", ignoreDuplicates: true}).then(function(r2){
+          if(r2.error) console.error("Zindan mükafat sətirləri yazılmadı:", r2.error);
+        });
+      });
+    });
+  }
+
+  // ===== ZİNDAN OYUN SAHƏSİ TEMASI — menyunun arxa fon kubikləri (spawnMenuBgCube/
+  // menuBgLoop) ilə EYNİ "vaxtaşırı yarat, animasiya bitəndə sil" naxışını təkrarlayır, sadəcə
+  // üzən köz hissəcikləri #field-in İÇİNDƏ, kubiklərin (z-index:5) ARXASINDA (z-index:1) göstərir. =====
+  var dungeonFieldBg = document.getElementById("dungeonFieldBg");
+  var dungeonFieldThemeActive = false;
+  var dungeonEmberTimer = null;
+
+  function spawnDungeonEmber(){
+    if(!dungeonFieldThemeActive || !dungeonFieldBg) return;
+    var w = field.clientWidth || 300;
+    var h = field.clientHeight || 400;
+    var size = 3 + Math.random() * 5;
+    var el = document.createElement("div");
+    el.className = "dungeon-ember";
+    el.style.width = size + "px";
+    el.style.height = size + "px";
+    el.style.left = (Math.random() * Math.max(0, w - size)) + "px";
+    var dur = 4 + Math.random() * 4;
+    var travel = -(h + 60);
+    var sway = (Math.random() * 60 - 30);
+    var peak = 0.55 + Math.random() * 0.4;
+    el.style.setProperty("--dur", dur + "s");
+    el.style.setProperty("--travel", travel + "px");
+    el.style.setProperty("--sway", sway + "px");
+    el.style.setProperty("--peak", peak);
+    dungeonFieldBg.appendChild(el);
+    setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); }, dur * 1000 + 150);
+  }
+
+  function dungeonEmberLoop(){
+    if(!dungeonFieldThemeActive) return;
+    spawnDungeonEmber();
+    dungeonEmberTimer = setTimeout(dungeonEmberLoop, 220 + Math.random() * 260);
+  }
+
+  function startDungeonFieldTheme(){
+    field.classList.add("dungeon-field");
+    if(dungeonFieldThemeActive) return;
+    dungeonFieldThemeActive = true;
+    dungeonEmberLoop();
+  }
+
+  function stopDungeonFieldTheme(){
+    field.classList.remove("dungeon-field");
+    dungeonFieldThemeActive = false;
+    clearTimeout(dungeonEmberTimer);
+    if(dungeonFieldBg) dungeonFieldBg.innerHTML = "";
+  }
+
+  // ===== NADİR KUBİK =====
+  // Hər spawn olunan kubik üçün 0.5% şansla "nadir" işarələnir — rəngi olduğu kimi qalır (oyun
+  // qaydası pozulmasın, oyunçu hələ də düzgün rəngi seçməlidir), sadəcə parlaq haşiyə/✨ ilə seçilir.
+  function tryMakeCubeRare(record, el){
+    if(Math.random() >= 0.005) return false;
+    record.isRare = true;
+    el.classList.add("rare-cube");
+    showRareCubeFlash();
+    return true;
+  }
+  function showRareCubeFlash(){
+    var el = document.getElementById("rareCubeFlash");
+    el.classList.remove("show");
+    void el.offsetWidth;
+    el.classList.add("show");
+    clearTimeout(showRareCubeFlash._t);
+    showRareCubeFlash._t = setTimeout(function(){ el.classList.remove("show"); }, 2500);
+  }
+  // Rəng düzgün/səhv olmasından ASILI OLMAYARAQ toxunulduğu anda bonus verir (draft spesifikasiyaya uyğun) —
+  // kubik özü yenə normal axınla (doğru/səhv rəng, ya çəkic) davam edir, bu yalnız ƏLAVƏ mükafatdır.
+  function collectRareCube(brkX, brkY){
+    addGold(5);
+    addXp(50);
+    showFloatingText(brkX, brkY, "+5 🪙 +50 XP");
+    showToast("✨ Nadir Kub! +5 🪙 +50 XP");
+  }
+
+  document.getElementById("dungeonBtn").addEventListener("click", openDungeon);
+  document.getElementById("dungeonBack").addEventListener("click", closeDungeon);
+  document.getElementById("dungeonPlayBtn").addEventListener("click", startDungeonGame);
+  document.getElementById("dungeonMailClose").addEventListener("click", closeDungeonMail);
+  document.getElementById("dungeonMailModal").addEventListener("click", function(e){ if(e.target === this) closeDungeonMail(); });
+  document.getElementById("trophyPopupClose").addEventListener("click", closeTrophyPopup);
+  document.getElementById("trophyPopupModal").addEventListener("click", function(e){ if(e.target === this) closeTrophyPopup(); });
 
   document.getElementById("startBtn").addEventListener("click", function(){ gameMode = "endless"; arcadeLevelNum = null; startGame(); });
   document.getElementById("shopBtn").addEventListener("click", openShop);
