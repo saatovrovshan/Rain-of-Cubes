@@ -906,6 +906,7 @@
   .gameover-cube-item{display:flex;flex-direction:column;align-items:center;gap:3px}
   .gameover-cube-swatch{width:34px;height:34px;border-radius:9px;box-shadow:0 3px 8px rgba(0,0,0,.25)}
   .gameover-cube-count{font-size:12px;font-weight:900;color:var(--ink)}
+  .gameover-gold-swatch{display:flex;align-items:center;justify-content:center;font-size:16px;background:linear-gradient(160deg,#ffe27a,var(--gold))}
   #restartBtn{margin-top:14px;background:var(--green);color:#fff;border:none;border-radius:12px;padding:13px 28px;font-size:15px;font-weight:800;cursor:pointer;width:100%;box-sizing:border-box;box-shadow:0 4px 0 #4a9e3f}
   #menuReturnBtn{margin-top:8px;background:var(--blue);color:#fff;border:none;border-radius:12px;padding:11px 28px;font-size:13px;font-weight:800;cursor:pointer;width:100%;box-sizing:border-box}
 
@@ -1575,11 +1576,16 @@
         <div class="gameover-score-label">XP</div>
         <div class="gameover-stats" id="overlayStats"></div>
         <div class="gameover-bonus-list" id="gameoverBonusList" style="display:none"></div>
+        <div class="gameover-cubes-wrap" id="gameoverDungeonBonusWrap" style="display:none">
+          <div class="gameover-cubes-title">⚔️ Zindan Bonusları</div>
+          <div class="gameover-cubes-list" id="gameoverDungeonBonusList"></div>
+        </div>
         <div class="gameover-cubes-wrap" id="gameoverCubesWrap" style="display:none">
           <div class="gameover-cubes-title">🎁 Qazanılan kubiklər</div>
           <div class="gameover-cubes-list" id="gameoverCubesList"></div>
         </div>
         <button id="restartBtn">🔄 Yenidən başla</button>
+        <button class="menu-return" id="dungeonReturnBtn" style="display:none">⚔️ Zindana qayıt</button>
         <button class="menu-return" id="menuReturnBtn">🏠 Menyu</button>
       </div>
     </div>
@@ -7278,6 +7284,8 @@
     saveProfile();
 
     if(gameMode === "dungeon") submitDungeonScore(finalScore);
+    document.getElementById("dungeonReturnBtn").style.display = (gameMode === "dungeon") ? "" : "none";
+    renderGameOverDungeonBonus();
 
     // Oyun içindəki "xal" (sessionXpEarned) ilə profil səviyyəsi üçün toplanan XP tam ayrı
     // anlayışlardır — xalın XP-yə heç bir aidiyyəti yoxdur, hər qazanılan XP YALNIZ səviyyənin
@@ -7344,6 +7352,46 @@
       var count = document.createElement("div");
       count.className = "gameover-cube-count";
       count.textContent = "x" + earnedCubesByColor[color.id];
+      item.appendChild(swatch);
+      item.appendChild(count);
+      listEl.appendChild(item);
+    });
+    wrapEl.style.display = "";
+  }
+
+  // submitDungeonScore-un saxladığı lastDungeonBonus-u (qızıl + zindan rənglərindən hər birinə
+  // görə kub) oyun-bitdi ekranında "⚔️ Zindan Bonusları" bölməsi kimi göstərir — normal
+  // "Qazanılan kubiklər" bölməsi ilə EYNİ vizual naxışı (gameover-cube-item/swatch/count) təkrarlayır.
+  function renderGameOverDungeonBonus(){
+    var wrapEl = document.getElementById("gameoverDungeonBonusWrap");
+    var listEl = document.getElementById("gameoverDungeonBonusList");
+    if(gameMode !== "dungeon" || !lastDungeonBonus){
+      wrapEl.style.display = "none";
+      return;
+    }
+    var b = lastDungeonBonus;
+    listEl.innerHTML = "";
+    var goldItem = document.createElement("div");
+    goldItem.className = "gameover-cube-item";
+    var goldSwatch = document.createElement("div");
+    goldSwatch.className = "gameover-cube-swatch gameover-gold-swatch";
+    goldSwatch.textContent = "🪙";
+    var goldCount = document.createElement("div");
+    goldCount.className = "gameover-cube-count";
+    goldCount.textContent = "+" + b.gold;
+    goldItem.appendChild(goldSwatch);
+    goldItem.appendChild(goldCount);
+    listEl.appendChild(goldItem);
+    b.colorIds.forEach(function(cid){
+      var color = MENU_BG_COLORS.find(function(c){ return c.id === cid; });
+      var item = document.createElement("div");
+      item.className = "gameover-cube-item";
+      var swatch = document.createElement("div");
+      swatch.className = "gameover-cube-swatch";
+      if(color) applyThemedSwatch(swatch, color); else swatch.style.background = "#999";
+      var count = document.createElement("div");
+      count.className = "gameover-cube-count";
+      count.textContent = "+" + b.cubesPer;
       item.appendChild(swatch);
       item.appendChild(count);
       listEl.appendChild(item);
@@ -9139,6 +9187,16 @@
   }
 
   function startGame(){
+    // "🔄 Yenidən başla" (həm pauza menyusunda, həm oyun-bitdi ekranında) startGame()-i
+    // BİRBAŞA çağırır, startDungeonGame()-in gündəlik limit yoxlamasından keçmədən — bu, limit
+    // bitdikdən sonra da yenidən başlamağa imkan verən bugün idi. Buna görə limit yoxlaması
+    // BURADA, startGame()-in özündə təkrarlanır ki, HANSI düymədən çağırılırsa çağırılsın işləsin.
+    if(gameMode === "dungeon" && getTodayDungeonStats().played >= DUNGEON_DAILY_LIMIT){
+      showToast("⚠️ Bugünkü " + DUNGEON_DAILY_LIMIT + " zindan hüququn bitib. Sabah yenidən cəhd et!");
+      returnToMenu();
+      openDungeon();
+      return;
+    }
     ensureAudio();
     stopMenuBgAnim();
     menuScreen.style.display = "none";
@@ -10816,6 +10874,10 @@
   var dungeonConfig = null;
   var dungeonTimerInterval = null;
   var DUNGEON_DAILY_LIMIT = 3;
+  // Hər zindan oyununun sonunda (o günkü neçənci oyun olduğuna görə) verilən ARTAN bonus —
+  // index 1/2/3 = 1-ci/2-ci/3-cü oyun. Bax submitDungeonScore.
+  var DUNGEON_PER_GAME_BONUS = [null, {cubesPer:1, gold:50}, {cubesPer:2, gold:75}, {cubesPer:3, gold:100}];
+  var lastDungeonBonus = null;
 
   // Bugünkü {played, total, best} qeydini qaytarır — köhnə (təkcə ədəd) formatlı qeydləri də
   // (bu xüsusiyyət əvvəlki test versiyasında sadə ədəd kimi saxlanılırdı) düzgün formata çevirir.
@@ -10950,14 +11012,17 @@
     rec.total += score;
     rec.best = Math.max(rec.best, score);
     profile.dungeonScores[today] = rec;
-    // Hər zindan oyununun sonunda ARTAN mükafat: 1-ci oyundan sonra hər rəngdən 1 kub,
-    // 2-cidən sonra 2, 3-cüdən sonra 3 (rec.played elə bu sayğacdır) — bu, gündəlik reytinq
-    // mükafatlarından FƏRQLİDİR, dərhal hər oyunun sonunda verilir.
-    var bonusPerColor = rec.played;
+    // Hər zindan oyununun sonunda ARTAN mükafat: 1-ci oyundan sonra hər rəngdən 1 kub + 50 qızıl,
+    // 2-cidən sonra 2 kub + 75 qızıl, 3-cüdən sonra 3 kub + 100 qızıl (rec.played elə bu
+    // sayğacdır) — bu, gündəlik reytinq mükafatlarından FƏRQLİDİR, dərhal hər oyunun sonunda
+    // verilir. lastDungeonBonus oyun-bitdi ekranında "⚔️ Zindan Bonusları" bölməsi üçün saxlanılır.
+    var tier = DUNGEON_PER_GAME_BONUS[rec.played] || DUNGEON_PER_GAME_BONUS[DUNGEON_PER_GAME_BONUS.length - 1];
     var colorIds = dungeonColorIds(dungeonConfig || getDungeonConfig());
     colorIds.forEach(function(cid){
-      profile.cubeInventory[cid] = (profile.cubeInventory[cid] || 0) + bonusPerColor;
+      profile.cubeInventory[cid] = (profile.cubeInventory[cid] || 0) + tier.cubesPer;
     });
+    addGold(tier.gold);
+    lastDungeonBonus = {gold: tier.gold, cubesPer: tier.cubesPer, colorIds: colorIds};
     saveProfile();
     if(supabaseClient && cloudUserId){
       supabaseClient.from("daily_dungeon_scores").upsert({
@@ -10973,7 +11038,7 @@
       });
     }
     var remaining = Math.max(0, DUNGEON_DAILY_LIMIT - rec.played);
-    showToast("⚔️ Zindan xalın: " + score + " · +" + bonusPerColor + "x hər rəngdən kub · qalan oyun: " + remaining + "/" + DUNGEON_DAILY_LIMIT);
+    showToast("⚔️ Zindan xalın: " + score + " · +" + tier.gold + " 🪙 +" + tier.cubesPer + "x hər rəngdən kub · qalan oyun: " + remaining + "/" + DUNGEON_DAILY_LIMIT);
   }
 
   // İki ayrı zindan liderbordu: "Günün Lideri" (bugünkü 3 oyunun XALLARININ CƏMİ) və
@@ -11436,6 +11501,7 @@
   });
   document.getElementById("restartBtn").addEventListener("click", startGame);
   document.getElementById("menuReturnBtn").addEventListener("click", returnToMenu);
+  document.getElementById("dungeonReturnBtn").addEventListener("click", function(){ returnToMenu(); openDungeon(); });
   // Oyun bitdi ekranına (düymələrdən başqa istənilən yerinə) toxunduqda bonus sayğacları
   // dərhal son dəyərinə keçir — bax gameOverSkipRequested
   overlayEl.addEventListener("click", function(e){
