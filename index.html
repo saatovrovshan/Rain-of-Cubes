@@ -6391,6 +6391,7 @@
     if(isNewDay) finalizeDungeonRewardsForDate(getYesterdayStr()); // Gündəlik Zindan mükafatları
     updateDailyBtnDot();
     if(dailyScreen && dailyScreen.classList.contains("show")) renderDailyScreen();
+    return isNewDay;
   }
   function maybeAutoOpenDaily(){
     if(!dailySessionIsNewDay || dailyAutoOpenDone || profile.dailyClaimedToday) return;
@@ -11757,6 +11758,22 @@
   renderCombo();
   newMission();
   setInterval(updateXpBoostBadges, 1000);
+  // reconcileDailyLogin() əvvəllər YALNIZ səhifə yüklənəndə/bulud profili gələndə çağırılırdı —
+  // əgər oyunçu tab-ı bağlamadan gecə yarısını keçirsə (səhifə yenilənmədən), gündəlik reset
+  // (Zindan mükafatları, limit, liderbord) HEÇ VAXT işə düşmürdü. Hər dəqiqə yoxlayaraq bunu
+  // düzəldirik — yeni gün aşkarlansa, açıq olan Zindan ekranı da təzə günə görə yenilənir.
+  function checkDayRolloverTick(){
+    var isNewDay = reconcileDailyLogin();
+    if(isNewDay && dungeonScreen && dungeonScreen.style.display !== "none"){
+      dungeonConfig = getDungeonConfig();
+      renderDungeonInfo();
+      renderDungeonLbTabs();
+      loadDungeonLeaderboard();
+      startDungeonTimer();
+    }
+    return isNewDay;
+  }
+  setInterval(checkDayRolloverTick, 60000);
   startMenuBgAnim();
 
   // Brauzer avtomatik səs oxutmağa icazə vermir — ilk toxunuş/klikdə (əgər hələ oyunda deyiliksə) menyu musiqisi başlasın
