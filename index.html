@@ -733,6 +733,13 @@
   .trophy-badge{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;width:58px}
   .trophy-badge img{width:52px;height:auto;filter:drop-shadow(0 2px 4px rgba(0,0,0,.3));transition:transform .15s}
   .trophy-badge:active img{transform:scale(.92)}
+  /* Yalnız 1-ci yer kuboku parıldayır — drop-shadow şəklin ALFA silуетинə görə düşür, ona görə
+     parıltı düzbucaqlı qutu deyil, birbaşa kubokun ÖZ FORMASINA uyğun gəlir. */
+  .trophy-badge-first img{animation:trophyFirstGlow 1.8s ease-in-out infinite}
+  @keyframes trophyFirstGlow{
+    0%,100%{filter:drop-shadow(0 2px 4px rgba(0,0,0,.3)) drop-shadow(0 0 3px rgba(255,215,0,.55))}
+    50%{filter:drop-shadow(0 2px 4px rgba(0,0,0,.3)) drop-shadow(0 0 10px rgba(255,215,0,.95)) drop-shadow(0 0 18px rgba(255,175,0,.7))}
+  }
   .trophy-badge-count{font-size:10px;font-weight:800;color:var(--ink);background:var(--panel);border-radius:8px;padding:1px 6px}
   .trophy-popup-img{width:170px;height:auto;margin:6px auto 6px;display:block;filter:drop-shadow(0 4px 10px rgba(0,0,0,.35))}
   .trophy-popup-title{font-size:15px;font-weight:900;color:var(--ink);margin-bottom:12px}
@@ -5097,7 +5104,7 @@
         wrapEl.style.display = "";
         var rowEl = document.getElementById(listId);
         rowEl.innerHTML = ranks.map(function(r){
-          return '<div class="trophy-badge" data-rank="' + r + '"><img src="' + DUNGEON_TROPHY_IMAGES[r] + '" alt="#' + r + ' kubok"><div class="trophy-badge-count">×' + byRank[r].length + '</div></div>';
+          return '<div class="trophy-badge' + (r === 1 ? " trophy-badge-first" : "") + '" data-rank="' + r + '"><img src="' + DUNGEON_TROPHY_IMAGES[r] + '" alt="#' + r + ' kubok"><div class="trophy-badge-count">×' + byRank[r].length + '</div></div>';
         }).join("");
         rowEl.querySelectorAll(".trophy-badge").forEach(function(el){
           var r = parseInt(el.getAttribute("data-rank"), 10);
@@ -10581,7 +10588,7 @@
       var artHtml = t.art ? buildCardArtImg(t.art) : renderCardThumb(t);
       var artStateClass = t.art ? (isDone ? " card-tile-art-full" : " card-tile-art-pale") : "";
       return '<div class="card-option' + (!readyToBuild?" needs-prereq":"") + (isDone?" completed":"") + '" data-id="' + t.id + '">' +
-        '<div class="card-tile-frame' + (t.frame ? " card-frame-" + t.frame : "") + (isOpened ? " card-opened-shine" : "") + '">' +
+        '<div class="card-tile-frame' + (t.frame ? " card-frame-" + t.frame : "") + (isOpened && t.frame === "gold" ? " card-opened-shine" : "") + '">' +
           '<div class="card-tile-art' + artStateClass + '">' + artHtml +
             '<div class="card-tile-stars">' + t.rarity + '</div>' +
           '</div>' +
@@ -11239,7 +11246,8 @@
     var wrapEl = document.getElementById(containerPrefix + "CardsWrap");
     if(!wrapEl) return;
     // Profildə YALNIZ qızılla AÇILMIŞ kartlar görünür (tamamlanıb hələ açılmayanlar burada yox,
-    // Kartlar bölməsində "ödə və aç" vəziyyətində qalır) — hamısı parıldayır (card-opened-shine).
+    // Kartlar bölməsində "ödə və aç" vəziyyətində qalır) — YALNIZ QIZIL ÇƏRÇİVƏLİ (3 ulduz) kartlar
+    // parıldayır (card-opened-shine), bürünc/gümüş sadəcə tam rəngli görünür.
     var ownedIds = CARD_TEMPLATES.filter(function(t){
       return cardCollection && cardCollection[t.id] && cardCollection[t.id].opened;
     }).map(function(t){ return t.id; });
@@ -11256,7 +11264,7 @@
     bodyEl.innerHTML = sorted.map(function(t){
       var artHtml = t.art ? buildCardArtImg(t.art) : renderCardThumb(t);
       return '<div class="profile-card-tile" data-id="' + t.id + '">' +
-        '<div class="card-tile-frame completed-force card-opened-shine' + (t.frame ? " card-frame-" + t.frame : "") + '">' +
+        '<div class="card-tile-frame completed-force' + (t.frame === "gold" ? " card-opened-shine" : "") + (t.frame ? " card-frame-" + t.frame : "") + '">' +
           '<div class="card-tile-art card-tile-art-full">' + artHtml +
             '<div class="card-tile-stars">' + t.rarity + '</div>' +
           '</div>' +
