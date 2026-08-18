@@ -10798,7 +10798,7 @@
 
     var openBtn = document.getElementById("cardOpenBtn");
     openBtn.disabled = !progress.isComplete;
-    openBtn.querySelector(".card-open-label").textContent = progress.isComplete ? "Kartı Aç" : "Kartı Aç (" + progress.pct + "%)";
+    openBtn.querySelector(".card-open-label").textContent = progress.isComplete ? ("Kartı Aç — " + cardOpenPrice(template) + " 🪙") : ("Kartı Aç (" + progress.pct + "%)");
     updateActionButtonsLevelGate();
 
     checkColorCompletions(template);
@@ -10957,7 +10957,7 @@
     });
     var openBtn = document.getElementById("cardOpenBtn");
     openBtn.disabled = !progress.isComplete;
-    openBtn.querySelector(".card-open-label").textContent = progress.isComplete ? "Kartı Aç" : "Kartı Aç (" + progress.pct + "%)";
+    openBtn.querySelector(".card-open-label").textContent = progress.isComplete ? ("Kartı Aç — " + cardOpenPrice(template) + " 🪙") : ("Kartı Aç (" + progress.pct + "%)");
     updateActionButtonsLevelGate();
     checkColorCompletions(template);
     if(progress.isComplete && !activeCardCelebrated){
@@ -11082,11 +11082,15 @@
   function openCompletedCard(){
     if(!activeCardId) return;
     var template = CARD_TEMPLATES.find(function(t){ return t.id === activeCardId; });
-    // DİQQƏT: saxlanılmış "completed" bayrağına etibar edilir (isCardCompleted), computeCardProgress-ə YOX —
-    // sonuncu "placed" mövqelərini template.grid-in HAZIRKI ölçüsü ilə müqayisə edir, grid dizaynı sonradan
-    // dəyişsə (məs. kart yenidən dizayn olunanda) köhnə placed məlumatı artıq uyğun gəlməyib kartı əbədi
-    // açılmaz vəziyyətə salır, baxmayaraq ki, oyunçu onu artıq tamamlayıb.
-    if(!template || !isCardCompleted(activeCardId)) return;
+    // DİQQƏT: HƏM saxlanılmış "completed" bayrağına (isCardCompleted), HƏM DƏ canlı tərəqqiyə
+    // (computeCardProgress) baxılır — təkcə birincisinə etibar etsək, dama TƏZƏCƏ 100% dolub
+    // (heç vaxt geri qayıtmayıb saveCardProgress çağırılmadığı üçün) "Kartı Aç" düyməsinin İLK
+    // basılışında heç nə baş vermir (bayraq hələ yazılmayıb). Təkcə canlı tərəqqiyə etibar etsək
+    // isə, grid dizaynı sonradan dəyişəndə (məs. kart yenidən dizayn olunanda) köhnə placed
+    // məlumatı yeni ölçüyə uyğun gəlməyib artıq tamamlanmış kartı əbədi açılmaz edər. İkisinin
+    // BİRİ kifayətdir.
+    var liveComplete = computeCardProgress(template).isComplete;
+    if(!template || !(isCardCompleted(activeCardId) || liveComplete)) return;
     saveCardProgress();
 
     // Kart tamamlanıb, amma hələ qızılla AÇILMAYIB — böyüdülmüş görünüş əvəzinə ödəniş popup-u göstərilir.
