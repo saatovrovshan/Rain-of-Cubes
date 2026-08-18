@@ -712,9 +712,12 @@
   .lb-divider{text-align:center;font-size:12px;font-weight:800;color:#a99;padding:2px 0}
   .dr-claimed-lbl{font-size:11px;font-weight:800;color:var(--green);flex-shrink:0}
 
-  /* ===== Zindan sistem məktubları — Poçt qutusunun "🔔 Sistem" tabında ===== */
-  .dungeon-letter{background:var(--panel);border-radius:14px;padding:14px;margin-bottom:10px;border:2px solid transparent;text-align:left}
-  .dungeon-letter.unclaimed{border-color:var(--gold)}
+  /* ===== Zindan sistem mesajları — Poçt qutusunun "🔔 Sistem" tabında =====
+     Hər mükafat AYRICA qapalı mesaj sətridir (.dungeon-mail-row); üstünə basanda #dungeonRewardModal
+     açılır və orada (dungeonRewardDetailHtml) tam məzmun + "Mükafatları al" düyməsi görünür. */
+  .dungeon-mail-row{margin-bottom:8px}
+  .dungeon-mail-row-icon{width:40px;height:40px;object-fit:contain;flex-shrink:0}
+  .dungeon-mail-row-icon-fallback{border-radius:50%;background:linear-gradient(160deg,#9b59b6,#8e44ad);display:flex;align-items:center;justify-content:center;font-size:18px}
   .dungeon-letter-badge{display:flex;justify-content:center;margin-bottom:10px}
   .dungeon-letter-badge img{width:96px;height:auto;filter:drop-shadow(0 4px 8px rgba(0,0,0,.35))}
   .dungeon-letter-head{font-size:14px;font-weight:900;color:var(--ink)}
@@ -1883,6 +1886,14 @@
       <div class="trophy-popup-title" id="trophyPopupTitle"></div>
       <div class="shop-tabs" id="trophyPopupTabs"></div>
       <div class="trophy-popup-list" id="trophyPopupList"></div>
+    </div>
+  </div>
+
+  <!-- Zindan mükafat mesajının açılmış görünüşü -->
+  <div class="modal-overlay" id="dungeonRewardModal">
+    <div class="modal-panel" style="max-width:380px">
+      <button class="modal-close" id="dungeonRewardModalClose">✕</button>
+      <div id="dungeonRewardModalBody"></div>
     </div>
   </div>
 
@@ -4882,12 +4893,16 @@
   }
 
   // ===== Zindan mükafatları — Poçt qutusunun AYRICA "🔔 Sistem" tab-ında, "Mesajlar"dan tam
-  // ayrı. Hər mükafat öz "məktubu" kimi göstərilir, ən başında qazanılan kubok/medal şəkli
-  // böyük ölçüdə (bax dungeonLetterHtml). =====
+  // ayrı. Hər mükafat AYRICA, qapalı bir mesaj sətri kimi göstərilir (dungeonMailRowHtml);
+  // üstünə basanda AÇILIR (openDungeonRewardMessage) və orada, ən başda böyük kubok/medal
+  // şəkli ilə, mükafat götürülür. =====
   var unseenDungeonRewardsTotal = 0;
   var dungeonRewardsCache = {};
   var DUNGEON_LB_CATEGORY_LABELS = {daily:"🌞 Günün Lideri", best:"⚔️ Zindan Lideri"};
 
+  // Hər zindan mükafatı (dungeon_daily_rewards-dəki hər sətir) AYRICA bir "mesaj"dır — siyahıda
+  // qapalı sətir kimi görünür, oyunçu üstünə basıb AÇMALI və mükafatı ORADAN götürməlidir (bax
+  // openDungeonRewardMessage). Heç vaxt bir mesajın içində 2 mükafat birləşdirilmir.
   function loadDungeonMail(){
     if(!supabaseClient || !cloudUserId) return;
     var el = document.getElementById("dungeonMailList");
@@ -4901,10 +4916,10 @@
         var rows = res.data || [];
         dungeonRewardsCache = {};
         rows.forEach(function(r){ dungeonRewardsCache[r.id] = r; });
-        if(!rows.length){ el.innerHTML = '<div class="empty-hint">Hələ zindan məktubu yoxdur</div>'; return; }
-        el.innerHTML = rows.map(dungeonLetterHtml).join("");
-        el.querySelectorAll(".dr-claim-btn").forEach(function(btn){
-          btn.addEventListener("click", function(){ claimDungeonReward(this.getAttribute("data-id")); });
+        if(!rows.length){ el.innerHTML = '<div class="empty-hint">Hələ zindan mesajı yoxdur</div>'; return; }
+        el.innerHTML = rows.map(dungeonMailRowHtml).join("");
+        el.querySelectorAll(".dungeon-mail-row").forEach(function(row){
+          row.addEventListener("click", function(){ openDungeonRewardMessage(this.getAttribute("data-id")); });
         });
       });
   }
@@ -4916,25 +4931,54 @@
     return d.getDate() + " " + AZ_MONTHS_CHAT[d.getMonth()] + " " + d.getFullYear() + ", " + timeStr;
   }
 
-  function dungeonLetterHtml(r){
+  function dungeonRewardBadgeImg(r){
+    return r.rank <= 3 ? DUNGEON_TROPHY_IMAGES[r.rank] : DUNGEON_MEDAL_IMAGES[medalTierForRank(r.rank)];
+  }
+
+  // Siyahıdakı QAPALI mesaj sətri — açılana qədər mükafat götürülə bilmir.
+  function dungeonMailRowHtml(r){
+    var catLabel = DUNGEON_LB_CATEGORY_LABELS[r.category] || r.category;
+    var badgeImg = dungeonRewardBadgeImg(r);
+    var preview = catLabel + " · #" + r.rank + " yer — " + r.score + " xal";
+    return '<div class="convo-row dungeon-mail-row" data-id="' + escapeHtml(r.id) + '">' +
+      (badgeImg ? '<img class="dungeon-mail-row-icon" src="' + badgeImg + '" alt="">' : '<div class="dungeon-mail-row-icon dungeon-mail-row-icon-fallback">⚔️</div>') +
+      '<div class="convo-row-info"><div class="convo-row-name">⚔️ Zindan</div>' +
+      '<div class="convo-row-preview' + (!r.claimed ? " unread" : "") + '">' + preview + '</div></div>' +
+      (!r.claimed ? '<div class="convo-unread-dot"></div>' : '<span class="dr-claimed-lbl">✅</span>') +
+      '</div>';
+  }
+
+  // Mesaj AÇILDIQDA görünən tam məzmun (modalın içində) — böyük kubok/medal şəkli, təbrik mətni
+  // və (hələ alınmayıbsa) "Mükafatları al" düyməsi buradadır.
+  function dungeonRewardDetailHtml(r){
     var catLabel = DUNGEON_LB_CATEGORY_LABELS[r.category] || r.category;
     var rewardsHtml = '<div class="cp-need-chip"><div class="cp-need-swatch dungeon-gold-swatch">🪙</div><div class="cp-need-count">' + r.gold + '</div></div>' +
       (r.color_ids || []).map(function(cid){
         var col = MENU_BG_COLORS.find(function(c){ return c.id === cid; });
         return '<div class="cp-need-chip"><div class="cp-need-swatch" style="background:' + (col ? col.hex : "#999") + '"></div><div class="cp-need-count">' + r.cubes_per_color + '</div></div>';
       }).join("");
-    // Qazanılan yerə görə kubok (1-3) və ya medal (4-30) şəkli — məktubun ən başında böyük göstərilir.
-    var badgeImg = r.rank <= 3 ? DUNGEON_TROPHY_IMAGES[r.rank] : DUNGEON_MEDAL_IMAGES[medalTierForRank(r.rank)];
+    var badgeImg = dungeonRewardBadgeImg(r);
     var badgeHtml = badgeImg ? '<div class="dungeon-letter-badge"><img src="' + badgeImg + '" alt="Mükafat"></div>' : "";
-    return '<div class="dungeon-letter' + (!r.claimed ? " unclaimed" : "") + '">' +
-      badgeHtml +
+    return badgeHtml +
       '<div class="dungeon-letter-head">⚔️ Zindan</div>' +
       '<div class="dungeon-letter-congrats">🎉 Təbriklər!</div>' +
       '<div class="dungeon-letter-body">' + catLabel + ' sıralamasında <b>#' + r.rank + '</b> yer tutdun — ' + r.score + ' xal, ' + r.games_played + ' oyun (' + r.date + ')</div>' +
       '<div class="dungeon-letter-rewards">' + rewardsHtml + '</div>' +
       '<div class="dungeon-letter-time">' + formatDungeonLetterTime(r.created_at) + '</div>' +
-      (r.claimed ? '<span class="dr-claimed-lbl">✅ Alınıb</span>' : '<button class="achievement-claim-btn dr-claim-btn" data-id="' + escapeHtml(r.id) + '" style="width:100%">🎁 Mükafatları al</button>') +
-      '</div>';
+      (r.claimed ? '<span class="dr-claimed-lbl">✅ Alınıb</span>' : '<button class="achievement-claim-btn dr-claim-btn" data-id="' + escapeHtml(r.id) + '" style="width:100%">🎁 Mükafatları al</button>');
+  }
+
+  function openDungeonRewardMessage(rewardId){
+    var r = dungeonRewardsCache[rewardId];
+    if(!r) return;
+    var body = document.getElementById("dungeonRewardModalBody");
+    body.innerHTML = dungeonRewardDetailHtml(r);
+    var btn = body.querySelector(".dr-claim-btn");
+    if(btn) btn.addEventListener("click", function(){ claimDungeonReward(this.getAttribute("data-id")); });
+    document.getElementById("dungeonRewardModal").classList.add("show");
+  }
+  function closeDungeonRewardMessage(){
+    document.getElementById("dungeonRewardModal").classList.remove("show");
   }
 
   function claimDungeonReward(rewardId){
@@ -4950,6 +4994,8 @@
         saveProfile();
         r.claimed = true;
         showToast("🎁 Mükafat alındı: +" + r.gold + " 🪙 +" + r.cubes_per_color + "x hər rəngdən kub");
+        var body = document.getElementById("dungeonRewardModalBody");
+        if(body) body.innerHTML = dungeonRewardDetailHtml(r);
         loadDungeonMail();
         checkUnseenDungeonRewardsBadge();
         renderMailboxTabs();
@@ -11570,6 +11616,8 @@
   document.getElementById("dungeonPlayBtn").addEventListener("click", startDungeonGame);
   document.getElementById("trophyPopupClose").addEventListener("click", closeTrophyPopup);
   document.getElementById("trophyPopupModal").addEventListener("click", function(e){ if(e.target === this) closeTrophyPopup(); });
+  document.getElementById("dungeonRewardModalClose").addEventListener("click", closeDungeonRewardMessage);
+  document.getElementById("dungeonRewardModal").addEventListener("click", function(e){ if(e.target === this) closeDungeonRewardMessage(); });
 
   document.getElementById("startBtn").addEventListener("click", function(){ gameMode = "endless"; arcadeLevelNum = null; startGame(); });
   document.getElementById("shopBtn").addEventListener("click", openShop);
