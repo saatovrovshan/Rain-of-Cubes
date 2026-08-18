@@ -82,7 +82,7 @@
     animation:profileBgGridMove 6s linear infinite, profileBgNodePulse 2.2s ease-in-out infinite;
   }
   @keyframes profileBgNodePulse{0%,100%{opacity:.35}50%{opacity:1}}
-  #profileScreen.profile-bg-firestorm,#playerCardModal .modal-panel.profile-bg-firestorm{background:linear-gradient(180deg,#3a0a02,#7a1d02 40%,#ff6a00 90%);animation:profileBgFireFlicker 1.4s ease-in-out infinite alternate}
+  #profileScreen.profile-bg-firestorm,#playerCardModal .modal-panel.profile-bg-firestorm{background:linear-gradient(180deg,#3a0a02,#7a1d02 35%,#ff6a00 70%,#3a0a02 100%);background-size:100% 260%;background-attachment:local;animation:profileBgFireFlicker 1.4s ease-in-out infinite alternate}
   @keyframes profileBgFireFlicker{0%{filter:brightness(.92) saturate(1)}50%{filter:brightness(1.08) saturate(1.15)}100%{filter:brightness(.96) saturate(1.05)}}
   /* Atəş Fırtınası: alt kənarda döyünən alov parıltısı + yuxarı doğru qalxan köz hissəcikləri */
   #profileScreen.profile-bg-firestorm::before,#playerCardModal .modal-panel.profile-bg-firestorm::before{
@@ -125,7 +125,7 @@
       radial-gradient(1.5px 1.5px at 30% 85%,#fff,transparent);
     animation:profileBgStarsTwinkle 2.4s ease-in-out infinite alternate;
   }
-  #profileScreen.profile-bg-electric,#playerCardModal .modal-panel.profile-bg-electric{background:linear-gradient(180deg,#001433,#003366 50%,#00d2ff 120%);animation:profileBgElectricFlicker 1.8s linear infinite}
+  #profileScreen.profile-bg-electric,#playerCardModal .modal-panel.profile-bg-electric{background:linear-gradient(180deg,#001433,#003366 35%,#00d2ff 65%,#001433 100%);background-size:100% 260%;background-attachment:local;animation:profileBgElectricFlicker 1.8s linear infinite}
   @keyframes profileBgElectricFlicker{0%,19%,21%,54%,56%,100%{filter:brightness(1)}20%{filter:brightness(1.4)}55%{filter:brightness(1.25)}}
   /* Elektrik Fırtına: qısa-qısa çaxan, zikzaklı əsl ildırım fiquru */
   #profileScreen.profile-bg-electric::before,#playerCardModal .modal-panel.profile-bg-electric::before{
@@ -10620,9 +10620,13 @@
     template.grid.forEach(function(row, r){
       for(var c=0;c<row.length;c++) if(row[c] !== '.'){ total++; if(activeCardPlaced[r+","+c]) done++; }
     });
+    // DİQQƏT: "completed" heç vaxt true-dan false-a DÜŞMÜR (monoton) — kart dizaynı (grid) sonradan
+    // dəyişsə belə, artıq qazanılmış "Tamamlandı" statusu itirilmir. Əks halda köhnə placed məlumatı
+    // yeni grid ölçüsü ilə üst-üstə düşməyəndə oyunçu artıq açdığı kartı itirər.
+    var wasCompleted = isCardCompleted(activeCardId);
     profile.cardCollection[activeCardId] = {
       placed: JSON.parse(JSON.stringify(activeCardPlaced)),
-      completed: done >= total && total > 0
+      completed: wasCompleted || (done >= total && total > 0)
     };
     saveProfile();
   }
@@ -10963,7 +10967,11 @@
   function openCompletedCard(){
     if(!activeCardId) return;
     var template = CARD_TEMPLATES.find(function(t){ return t.id === activeCardId; });
-    if(!template || !computeCardProgress(template).isComplete) return; // düymənin disabled halına etibar etməyib özü də yoxlayır
+    // DİQQƏT: saxlanılmış "completed" bayrağına etibar edilir (isCardCompleted), computeCardProgress-ə YOX —
+    // sonuncu "placed" mövqelərini template.grid-in HAZIRKI ölçüsü ilə müqayisə edir, grid dizaynı sonradan
+    // dəyişsə (məs. kart yenidən dizayn olunanda) köhnə placed məlumatı artıq uyğun gəlməyib kartı əbədi
+    // açılmaz vəziyyətə salır, baxmayaraq ki, oyunçu onu artıq tamamlayıb.
+    if(!template || !isCardCompleted(activeCardId)) return;
     saveCardProgress();
     clearCardCelebrationUI();
 
