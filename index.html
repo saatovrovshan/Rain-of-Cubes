@@ -1088,6 +1088,23 @@
     box-shadow:0 2px 8px rgba(180,130,0,.45),inset 0 0 0 1px rgba(255,255,255,.35);
   }
 
+  /* Qızılla AÇILMIŞ kartlar parıldayır — həm Kartlar bölməsində (.card-tile-frame), həm profildə
+     (.profile-card-tile .card-tile-frame) eyni klass istifadə olunur. Döyünən qızılı halə +
+     üstündən keçən işıq zolağı. */
+  .card-tile-frame.card-opened-shine{position:relative;overflow:hidden;animation:cardShineGlow 2.4s ease-in-out infinite}
+  @keyframes cardShineGlow{
+    0%,100%{box-shadow:0 2px 6px rgba(0,0,0,.14),0 0 0 0 rgba(255,215,0,0)}
+    50%{box-shadow:0 2px 6px rgba(0,0,0,.14),0 0 14px 3px rgba(255,215,0,.75)}
+  }
+  .card-tile-frame.card-opened-shine::after{
+    content:"";position:absolute;top:0;left:-70%;width:45%;height:100%;
+    background:linear-gradient(100deg,transparent,rgba(255,255,255,.75) 45%,transparent 55%);
+    transform:skewX(-20deg);
+    animation:cardShineSweep 2.8s ease-in-out infinite;
+    pointer-events:none;
+  }
+  @keyframes cardShineSweep{0%{left:-70%}40%{left:140%}100%{left:140%}}
+
   /* #cardStage ekranın QALAN bütün hündürlüyünü tutur (flex:1) ki, içindəki grid-wrap öz növbəsində
      "flex:1;min-height:0" ilə HANSI ölçü qalırsa ona düz sığsın — beləliklə oyunçu heç vaxt ekranı
      sürüşdürməli olmur, hansı ölçüdə kubik şəbəkəsi olursa olsun (xanalar avtomatik kiçilib-böyüyür). */
@@ -1171,13 +1188,13 @@
 
   /* ===== "Əvvəlcə digər kartı tamamla" popup-u — seriyada sıra ilə tələb olunan kart hələ
      tamamlanmayıbsa, tikinti ekranı əvəzinə bu izahlı pəncərə açılır ===== */
-  #cardPrereqOverlay{position:absolute;inset:0;background:rgba(30,25,20,.85);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s ease;z-index:200;padding:20px}
-  #cardPrereqOverlay.show{opacity:1;pointer-events:auto}
+  #cardPrereqOverlay,#cardPayOverlay{position:absolute;inset:0;background:rgba(30,25,20,.85);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s ease;z-index:200;padding:20px}
+  #cardPrereqOverlay.show,#cardPayOverlay.show{opacity:1;pointer-events:auto}
   .cp-card{background:linear-gradient(160deg,#fffaf0,#f3e9d2);border-radius:20px;padding:22px 20px;width:100%;max-width:320px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.5);animation:crPop .3s cubic-bezier(.34,1.56,.64,1)}
-  #cpRarity{color:#e0a52c;font-weight:800;font-size:12px;letter-spacing:2px;margin-bottom:6px}
-  #cpName{font-size:18px;font-weight:900;color:var(--ink);margin-bottom:4px}
-  #cpBonus{display:none;flex-wrap:wrap;gap:5px;justify-content:center;margin:0 auto 10px}
-  #cpBonus.show{display:flex}
+  #cpRarity,#cpayRarity{color:#e0a52c;font-weight:800;font-size:12px;letter-spacing:2px;margin-bottom:6px}
+  #cpName,#cpayName{font-size:18px;font-weight:900;color:var(--ink);margin-bottom:4px}
+  #cpBonus,#cpayBonus{display:none;flex-wrap:wrap;gap:5px;justify-content:center;margin:0 auto 10px}
+  #cpBonus.show,#cpayBonus.show{display:flex}
   .cp-needs-title{font-size:11px;font-weight:700;color:#a99;text-transform:uppercase;letter-spacing:1px;margin:10px 0 8px}
   #cpNeeds{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:14px}
   .cp-need-chip{display:flex;flex-direction:column;align-items:center;gap:3px}
@@ -1186,6 +1203,11 @@
   #cpPrereqMsg{background:#fbe4e0;color:#a3391f;font-size:12.5px;font-weight:700;line-height:1.5;border-radius:10px;padding:10px 12px;margin-bottom:16px}
   #cpPrereqMsg b{color:#7a2413}
   #cardPrereqClose{background:var(--panel);color:var(--ink);border:none;border-radius:10px;padding:12px 24px;font-size:14px;font-weight:800;cursor:pointer;width:100%}
+
+  /* Kart tamamlandıqdan sonra qızılla açma popup-u */
+  #cardPayBtn{background:linear-gradient(135deg,#fff3c4,#d4a017 40%,#ffe680 65%,#a8790a);color:#4a3200;border:none;border-radius:10px;padding:13px 24px;font-size:14px;font-weight:900;cursor:pointer;width:100%;margin-top:14px;box-shadow:0 3px 0 #8c6a08}
+  #cardPayBtn:active{transform:translateY(2px);box-shadow:0 1px 0 #8c6a08}
+  .card-pay-cancel{background:none;border:none;color:#a99;font-size:12px;font-weight:700;cursor:pointer;width:100%;padding:10px;margin-top:4px}
 
   /* ===== Profil ekranında (öz profil + başqa oyunçunun profili) sahib olunan kartlar bölməsi =====
      Yalnız ƏN AZI 1 kart tamamlanıbsa göstərilir. Toxunanda AŞAĞI doğru açılıb bütün kartları göstərir. */
@@ -1480,6 +1502,17 @@
       <div id="cpNeeds"></div>
       <div id="cpPrereqMsg"></div>
       <button id="cardPrereqClose">Anladım</button>
+    </div>
+  </div>
+
+  <div id="cardPayOverlay">
+    <div class="cp-card">
+      <div id="cpayRarity"></div>
+      <div id="cpayName"></div>
+      <div id="cpayBonus"></div>
+      <div class="cp-needs-title">🎉 Kart tamamlandı!</div>
+      <button id="cardPayBtn"><span id="cpayPriceLabel"></span></button>
+      <button id="cardPayClose" class="card-pay-cancel">Sonra</button>
     </div>
   </div>
 
@@ -10365,6 +10398,15 @@
     return !!(saved && saved.completed);
   }
 
+  // Kart tamamlandıqdan SONRA açılışı qızılla ödənilir — ulduz sayına görə qiymət artır.
+  var CARD_OPEN_PRICE_BY_STARS = {1: 5000, 2: 10000, 3: 20000};
+  function cardStarCount(template){ return (template.rarity || "").length; }
+  function cardOpenPrice(template){ return CARD_OPEN_PRICE_BY_STARS[cardStarCount(template)] || 0; }
+  function isCardOpened(cardId){
+    var saved = (profile.cardCollection || {})[cardId];
+    return !!(saved && saved.opened);
+  }
+
   // Tamamlanmış kartların sayı — sadə "1/6" mətni, əlavə söz/ikon yoxdur.
   function renderCardCountDisplay(){
     var done = CARD_TEMPLATES.filter(function(t){ return isCardCompleted(t.id); }).length;
@@ -10491,21 +10533,30 @@
     });
   }
 
+  // Profildə (öz profilin VƏ başqasının player-card-ı) kartlar seriyaya görə YOX, ulduz sayına
+  // görə (çox ulduzlu → əvvəl) sıralanır — 3 ulduzlular hər zaman ilk sıralarda olur.
+  function getCardTemplatesSortedByStarsDesc(){
+    return CARD_TEMPLATES.slice().sort(function(a, b){ return cardStarCount(b) - cardStarCount(a); });
+  }
+
   function renderCardPicker(){
     renderCardCountDisplay();
     var el = document.getElementById("cardPicker");
     el.innerHTML = getSortedCardTemplatesForDisplay().map(function(t){
       var isDone = isCardCompleted(t.id);
+      var isOpened = isCardOpened(t.id);
       var readyToBuild = isCardReadyToBuild(t);
       var saved = (profile.cardCollection || {})[t.id];
       var progress = computeCardProgressFromPlaced(t, saved && saved.placed);
-      var pctLine = isDone
+      var pctLine = isOpened
         ? '✅ Tamamlandı'
-        : (!readyToBuild ? "🔒 Kilidli" : progress.pct + "%");
+        : isDone
+          ? '💰 ' + cardOpenPrice(t) + ' 🪙 ilə aç'
+          : (!readyToBuild ? "🔒 Kilidli" : progress.pct + "%");
       var artHtml = t.art ? buildCardArtImg(t.art) : renderCardThumb(t);
       var artStateClass = t.art ? (isDone ? " card-tile-art-full" : " card-tile-art-pale") : "";
       return '<div class="card-option' + (!readyToBuild?" needs-prereq":"") + (isDone?" completed":"") + '" data-id="' + t.id + '">' +
-        '<div class="card-tile-frame' + (t.frame ? " card-frame-" + t.frame : "") + '">' +
+        '<div class="card-tile-frame' + (t.frame ? " card-frame-" + t.frame : "") + (isOpened ? " card-opened-shine" : "") + '">' +
           '<div class="card-tile-art' + artStateClass + '">' + artHtml +
             '<div class="card-tile-stars">' + t.rarity + '</div>' +
           '</div>' +
@@ -10606,6 +10657,47 @@
     document.getElementById("cardPrereqOverlay").classList.add("show");
   }
 
+  // Kart tamamlanıb, amma hələ qızılla açılmayıb — qiymət göstərilib ödəniş istənilir.
+  function showCardPayPopup(template){
+    document.getElementById("cpayRarity").textContent = template.rarity;
+    document.getElementById("cpayName").textContent = template.name;
+
+    var bonusEl = document.getElementById("cpayBonus");
+    if(template.bonuses && template.bonuses.length){
+      bonusEl.innerHTML = template.bonuses.map(function(b){
+        return '<span class="bonus-chip">' + b.icon + ' ' + b.label + '</span>';
+      }).join("");
+      bonusEl.classList.add("show");
+    } else {
+      bonusEl.classList.remove("show");
+    }
+
+    var price = cardOpenPrice(template);
+    document.getElementById("cpayPriceLabel").textContent = "💰 " + price + " 🪙 ilə aç";
+    document.getElementById("cardPayOverlay").classList.add("show");
+  }
+  function closeCardPayPopup(){
+    document.getElementById("cardPayOverlay").classList.remove("show");
+  }
+  function payToOpenCard(){
+    if(!activeCardId) return;
+    var template = CARD_TEMPLATES.find(function(t){ return t.id === activeCardId; });
+    if(!template) return;
+    var price = cardOpenPrice(template);
+    if((profile.gold || 0) < price){ showToast("⚠️ Kifayət qədər qızılın yoxdur"); return; }
+    profile.gold -= price;
+    profile.totalGoldSpent = (profile.totalGoldSpent || 0) + price;
+    if(!profile.cardCollection) profile.cardCollection = {};
+    var existing = profile.cardCollection[activeCardId] || {placed: {}, completed: true};
+    existing.opened = true;
+    profile.cardCollection[activeCardId] = existing;
+    saveProfile();
+    renderProfile();
+    closeCardPayPopup();
+    showToast("✨ Kart açıldı!");
+    openCompletedCard();
+  }
+
   // Verilmiş "placed" xəritəsinə (r,c -> true) görə tərəqqini hesablayır.
   function computeCardProgressFromPlaced(template, placed){
     var total = 0, done = 0;
@@ -10645,9 +10737,11 @@
     // dəyişsə belə, artıq qazanılmış "Tamamlandı" statusu itirilmir. Əks halda köhnə placed məlumatı
     // yeni grid ölçüsü ilə üst-üstə düşməyəndə oyunçu artıq açdığı kartı itirər.
     var wasCompleted = isCardCompleted(activeCardId);
+    var wasOpened = isCardOpened(activeCardId);
     profile.cardCollection[activeCardId] = {
       placed: JSON.parse(JSON.stringify(activeCardPlaced)),
-      completed: wasCompleted || (done >= total && total > 0)
+      completed: wasCompleted || (done >= total && total > 0),
+      opened: wasOpened // qızılla açılıb-açılmadığı bayrağı — burada YENİDƏN yazılanda itirilməsin
     };
     saveProfile();
   }
@@ -10994,6 +11088,12 @@
     // açılmaz vəziyyətə salır, baxmayaraq ki, oyunçu onu artıq tamamlayıb.
     if(!template || !isCardCompleted(activeCardId)) return;
     saveCardProgress();
+
+    // Kart tamamlanıb, amma hələ qızılla AÇILMAYIB — böyüdülmüş görünüş əvəzinə ödəniş popup-u göstərilir.
+    if(!isCardOpened(activeCardId)){
+      showCardPayPopup(template);
+      return;
+    }
     clearCardCelebrationUI();
 
     var gridEl = document.getElementById("cardRevealGrid");
@@ -11044,9 +11144,11 @@
   // profile.cardCollection-da TAMAMLANMIŞ hər kartın bonuses[] massivini toplayaraq ümumi
   // (life/ultiDuration/hammerXp/hammerDropChance) cəmlərini qaytarır.
   function computeCardBonusTotals(){
+    // Bonuslar YALNIZ qızılla AÇILMIŞ kartlardan gəlir — tamamlanıb hələ açılmayan kart heç bir
+    // fayda vermir, ödəniş bonusu "aktivləşdirir" (kartın əsl mükafatı elə budur).
     var totals = {life:0, ultiDuration:0, hammerXp:0, hammerDropChance:0, dungeonXpPct:0, dungeonCubeBonus:0};
     CARD_TEMPLATES.forEach(function(t){
-      if(!isCardCompleted(t.id) || !t.bonuses) return;
+      if(!isCardOpened(t.id) || !t.bonuses) return;
       t.bonuses.forEach(function(b){
         if(totals[b.type] !== undefined) totals[b.type] += (b.amount || 0);
       });
@@ -11083,8 +11185,10 @@
   function renderCardCollectionSection(containerPrefix, cardCollection, expandedState, onToggle){
     var wrapEl = document.getElementById(containerPrefix + "CardsWrap");
     if(!wrapEl) return;
+    // Profildə YALNIZ qızılla AÇILMIŞ kartlar görünür (tamamlanıb hələ açılmayanlar burada yox,
+    // Kartlar bölməsində "ödə və aç" vəziyyətində qalır) — hamısı parıldayır (card-opened-shine).
     var ownedIds = CARD_TEMPLATES.filter(function(t){
-      return cardCollection && cardCollection[t.id] && cardCollection[t.id].completed;
+      return cardCollection && cardCollection[t.id] && cardCollection[t.id].opened;
     }).map(function(t){ return t.id; });
     if(!ownedIds.length){ wrapEl.style.display = "none"; return; }
     wrapEl.style.display = "";
@@ -11094,11 +11198,12 @@
     toggleEl.querySelector(".profile-cards-count").textContent = ownedIds.length + "/" + CARD_TEMPLATES.length;
     bodyEl.style.display = expandedState() ? "grid" : "none";
     arrowEl.classList.toggle("open", expandedState());
-    var sorted = getSortedCardTemplatesForDisplay().filter(function(t){ return ownedIds.indexOf(t.id) !== -1; });
+    // Ulduzu çox olan kartlar birinci (3 ulduzlular ilk sıralarda) — seriya sırası deyil.
+    var sorted = getCardTemplatesSortedByStarsDesc().filter(function(t){ return ownedIds.indexOf(t.id) !== -1; });
     bodyEl.innerHTML = sorted.map(function(t){
       var artHtml = t.art ? buildCardArtImg(t.art) : renderCardThumb(t);
       return '<div class="profile-card-tile" data-id="' + t.id + '">' +
-        '<div class="card-tile-frame completed-force' + (t.frame ? " card-frame-" + t.frame : "") + '">' +
+        '<div class="card-tile-frame completed-force card-opened-shine' + (t.frame ? " card-frame-" + t.frame : "") + '">' +
           '<div class="card-tile-art card-tile-art-full">' + artHtml +
             '<div class="card-tile-stars">' + t.rarity + '</div>' +
           '</div>' +
@@ -11203,6 +11308,8 @@
   document.getElementById("cardPrereqClose").addEventListener("click", function(){
     document.getElementById("cardPrereqOverlay").classList.remove("show");
   });
+  document.getElementById("cardPayBtn").addEventListener("click", payToOpenCard);
+  document.getElementById("cardPayClose").addEventListener("click", closeCardPayPopup);
 
   // ================= GÜNDƏLİK ZİNDAN =================
   var dungeonScreen = document.getElementById("dungeonScreen");
