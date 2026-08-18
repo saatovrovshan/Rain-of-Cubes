@@ -16,7 +16,7 @@
   html,body{margin:0;padding:0;height:100%;background:#3a332c;font-family:"Segoe UI",Arial,sans-serif;overscroll-behavior:none;user-select:none;-webkit-user-select:none}
   #app{max-width:480px;margin:0 auto;height:100vh;height:100dvh;background:var(--bg);display:flex;flex-direction:column;position:relative;overflow:hidden;box-shadow:0 0 40px rgba(0,0,0,.5)}
 
-  #menuScreen,#shopScreen,#profileScreen,#achievementsScreen,#arcadeScreen,#friendsScreen,#chatScreen,#leaderboardScreen,#mailboxScreen,#bagScreen,#cardsScreen,#dungeonScreen{position:absolute;inset:0;z-index:100;background:linear-gradient(180deg,#faf8ef,#f0e6d6);display:flex;flex-direction:column;padding:0;text-align:center;overflow-y:auto}
+  #menuScreen,#shopScreen,#profileScreen,#achievementsScreen,#arcadeScreen,#friendsScreen,#chatScreen,#leaderboardScreen,#mailboxScreen,#bagScreen,#cardsScreen,#dungeonScreen,#adminPanelScreen{position:absolute;inset:0;z-index:100;background:linear-gradient(180deg,#faf8ef,#f0e6d6);display:flex;flex-direction:column;padding:0;text-align:center;overflow-y:auto}
   #menuScreen{justify-content:flex-start;align-items:center;padding:16px 16px 10px}
   #shopScreen{padding:16px;display:none}
   #bagScreen{padding:16px;display:none;align-items:stretch}
@@ -1278,6 +1278,55 @@
   .rare-cube-flash{position:absolute;top:20%;left:50%;transform:translate(-50%,-20px) scale(.8);background:linear-gradient(90deg,#ffd700,#ff9f43);color:#5c3a00;padding:10px 22px;border-radius:20px;font-size:15px;font-weight:900;z-index:35;opacity:0;pointer-events:none;transition:all .4s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.3)}
   .rare-cube-flash.show{opacity:1;transform:translate(-50%,0) scale(1)}
 
+  /* ===== Admin Panel ===== */
+  #adminPanelContent{padding:16px;text-align:left}
+  .admin-search-row{display:flex;gap:8px;margin-bottom:12px}
+  .admin-search-row input{flex:1;padding:10px 12px;border-radius:10px;border:2px solid var(--board-cell);font-size:14px;font-family:inherit}
+  .admin-search-row button{background:var(--blue);color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:800;cursor:pointer}
+  .admin-player-row{display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:12px;padding:10px 12px;cursor:pointer;margin-bottom:8px;border:2px solid transparent}
+  .admin-player-row:hover{border-color:var(--blue)}
+  .admin-player-row-info{flex:1;min-width:0;text-align:left}
+  .admin-player-row-name{font-size:13px;font-weight:800;color:var(--ink)}
+  .admin-player-row-meta{font-size:11px;color:#a99;font-weight:600}
+  .admin-player-row-banned{font-size:10px;font-weight:900;color:#fff;background:var(--red);border-radius:6px;padding:2px 6px}
+
+  .admin-detail-back{background:var(--panel);color:var(--ink);border:none;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer;margin-bottom:12px}
+  .admin-detail-header{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+  .admin-detail-name{font-size:17px;font-weight:900;color:var(--ink)}
+  .admin-detail-id{font-size:11px;color:#a99;font-weight:700}
+  .admin-stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+  .admin-stat-tile{background:var(--panel);border-radius:10px;padding:9px 10px;text-align:center}
+  .admin-stat-tile .ast-val{font-size:15px;font-weight:900;color:var(--ink);font-variant-numeric:tabular-nums}
+  .admin-stat-tile .ast-lbl{font-size:9px;color:#a99;font-weight:700;text-transform:uppercase;margin-top:1px}
+  .admin-section-title{font-size:12px;font-weight:800;color:#a99;text-transform:uppercase;letter-spacing:1px;margin:16px 0 8px}
+  .admin-ban-status{background:#fbe4e0;color:#a3391f;font-size:12.5px;font-weight:700;line-height:1.5;border-radius:10px;padding:10px 12px;margin-bottom:10px}
+  .admin-ban-status.ok{background:#e4f5e0;color:#2f6b1f}
+  .admin-ban-actions{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+  .admin-ban-btn{flex:1;min-width:100px;border:none;border-radius:10px;padding:10px;font-size:12px;font-weight:800;cursor:pointer;color:#fff;background:var(--red)}
+  .admin-ban-btn.unban{background:var(--green)}
+  .admin-grant-form{background:var(--panel);border-radius:12px;padding:12px;margin-bottom:16px}
+  .admin-grant-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .admin-grant-row label{width:82px;font-size:11px;font-weight:700;color:var(--ink);flex-shrink:0;text-align:left}
+  .admin-grant-row input{flex:1;min-width:0;padding:8px 10px;border-radius:8px;border:2px solid var(--board-cell);font-size:13px;font-family:inherit}
+  .admin-grant-cubes{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}
+  .admin-grant-cube{display:flex;flex-direction:column;align-items:center;gap:2px}
+  .admin-grant-cube .agc-swatch{width:18px;height:18px;border-radius:5px}
+  .admin-grant-cube input{width:100%;text-align:center;padding:5px 2px;border-radius:6px;border:2px solid var(--board-cell);font-size:11px;font-family:inherit}
+  .admin-grant-submit{width:100%;background:var(--gold);color:#5a3d00;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:900;cursor:pointer}
+  .admin-flag-row{background:var(--panel);border-radius:12px;padding:10px 12px;margin-bottom:8px;cursor:pointer}
+  .admin-flag-row-top{display:flex;justify-content:space-between;font-size:12px;font-weight:800;color:var(--ink)}
+  .admin-flag-reason{font-size:11px;color:#c0392b;font-weight:700;margin-top:2px}
+  .admin-empty-hint{color:#a99;font-size:13px;padding:20px;text-align:center}
+
+  #banBlockScreen{position:absolute;inset:0;background:rgba(20,10,10,.96);display:none;align-items:center;justify-content:center;z-index:9999;padding:20px}
+  #banBlockScreen.show{display:flex}
+  .ban-block-card{background:linear-gradient(160deg,#fff5f2,#fbe4e0);border-radius:20px;padding:28px 22px;width:100%;max-width:340px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.5)}
+  .ban-block-icon{font-size:52px;margin-bottom:10px}
+  .ban-block-title{font-size:19px;font-weight:900;color:#a3391f;margin-bottom:10px}
+  .ban-block-reason{font-size:13px;color:#7a2413;line-height:1.5;margin-bottom:8px}
+  .ban-block-until{font-size:12px;color:#a3391f;font-weight:700;margin-bottom:18px}
+  #banBlockSignOut{background:var(--panel);color:var(--ink);border:none;border-radius:10px;padding:12px 24px;font-size:13px;font-weight:800;cursor:pointer;width:100%}
+
 </style>
 </head>
 <body>
@@ -1373,6 +1422,7 @@
       <button class="menu-icon-btn" id="bagBtn" title="Çanta">🎒</button>
       <button class="menu-icon-btn" id="mailboxBtn" title="Poçt qutusu">📬<span class="menu-icon-dot" id="mailboxBtnDot" style="display:none"></span></button>
       <button class="menu-icon-btn" id="cardsBtn" title="Kartlar">🃏</button>
+      <button class="menu-icon-btn" id="adminPanelBtn" title="Admin Panel" style="display:none">🛠️<span class="menu-icon-dot" id="adminPanelBtnDot" style="display:none"></span></button>
     </div>
   </div>
 
@@ -1611,6 +1661,28 @@
       <div class="shop-tabs" id="mailboxTabs"></div>
     </div>
     <div id="mailboxContent"></div>
+  </div>
+
+  <div id="adminPanelScreen">
+    <div class="shop-sticky-top">
+      <div class="shop-header">
+        <button class="shop-back" id="adminPanelBack">← Geri</button>
+        <h2>🛠️ Admin Panel</h2>
+      </div>
+      <div class="shop-tabs" id="adminPanelTabs"></div>
+    </div>
+    <div id="adminPanelContent"></div>
+  </div>
+
+  <!-- Banlanmış hesab üçün blok ekranı — bütün digər ekranlardan yuxarıda, bağlanmır -->
+  <div id="banBlockScreen">
+    <div class="ban-block-card">
+      <div class="ban-block-icon">⛔</div>
+      <div class="ban-block-title">Hesabınız bloklanıb</div>
+      <div class="ban-block-reason" id="banBlockReason"></div>
+      <div class="ban-block-until" id="banBlockUntil"></div>
+      <button id="banBlockSignOut">Çıxış et</button>
+    </div>
   </div>
 
   <div class="modal-overlay" id="dailyScreen">
@@ -3500,12 +3572,17 @@
     if(!supabaseClient || !session || !session.user) return;
     var userId = session.user.id;
     cloudUserId = userId;
+    updateAdminPanelBtnVisibility();
     startPresenceHeartbeat();
     renderProfile();
-    supabaseClient.from("profiles").select("save_data").eq("id", userId).maybeSingle().then(function(res){
+    supabaseClient.from("profiles").select("save_data,banned_until,banned_permanent,ban_reason").eq("id", userId).maybeSingle().then(function(res){
       if(res.error){
         console.error("Bulud profili oxuma xətası:", res.error);
         if(typeof showToast === "function") showToast("⚠️ Bulud oxuma xətası: " + res.error.message);
+        return;
+      }
+      if(res.data && isRowBanned(res.data)){
+        showBanBlockScreen(res.data);
         return;
       }
       if(res.data && res.data.save_data && Object.keys(res.data.save_data).length){
@@ -4925,9 +5002,8 @@
   function renderMailboxTabs(){
     var tabsEl = document.getElementById("mailboxTabs");
     var tabs = [{id:"messages", label:"💬 Mesajlar"}, {id:"system", label:"🔔 Sistem"}, {id:"gifts", label:"🎁 Hədiyyələr"}];
-    if(isAdminUser()) tabs.push({id:"reports", label:"🚩 Şikayətlər"});
     tabsEl.innerHTML = tabs.map(function(t){
-      var showDot = (t.id === "messages" && unreadMessagesTotal > 0) || (t.id === "system" && unseenDungeonRewardsTotal > 0) || (t.id === "gifts" && unseenGiftsTotal > 0) || (t.id === "reports" && unseenReportsTotal > 0);
+      var showDot = (t.id === "messages" && unreadMessagesTotal > 0) || (t.id === "system" && unseenDungeonRewardsTotal > 0) || (t.id === "gifts" && unseenGiftsTotal > 0);
       return '<button class="shop-tab-btn' + (t.id === mailboxActiveTab ? " active" : "") + '" data-id="' + t.id + '" style="position:relative">' + t.label + (showDot ? '<span class="friend-tab-dot"></span>' : "") + '</button>';
     }).join("");
     tabsEl.querySelectorAll("button").forEach(function(btn){
@@ -4947,9 +5023,6 @@
     } else if(mailboxActiveTab === "system"){
       el.innerHTML = '<div class="gift-history-list full-width" id="dungeonMailList"><div class="empty-hint">Yüklənir...</div></div>';
       loadDungeonMail();
-    } else if(mailboxActiveTab === "reports" && isAdminUser()){
-      el.innerHTML = '<div class="gift-history-list full-width" id="mailboxReportsList"></div>';
-      loadMailboxReports();
     } else {
       el.innerHTML = '<div class="gift-history-list full-width" id="mailboxGiftsList"></div>';
       loadMailboxGifts();
@@ -5255,7 +5328,13 @@
   function refreshMailboxBtnDot(){
     var dot = document.getElementById("mailboxBtnDot");
     if(!dot) return;
-    dot.style.display = (unreadMessagesTotal > 0 || unseenGiftsTotal > 0 || unseenDungeonRewardsTotal > 0 || unseenReportsTotal > 0) ? "" : "none";
+    dot.style.display = (unreadMessagesTotal > 0 || unseenGiftsTotal > 0 || unseenDungeonRewardsTotal > 0) ? "" : "none";
+  }
+
+  function refreshAdminPanelBtnDot(){
+    var dot = document.getElementById("adminPanelBtnDot");
+    if(!dot) return;
+    dot.style.display = unseenReportsTotal > 0 ? "" : "none";
   }
 
   function checkUnseenReportsBadge(){
@@ -5265,16 +5344,17 @@
       .then(function(res){
         if(res.error) return;
         unseenReportsTotal = res.count || 0;
-        refreshMailboxBtnDot();
-        if(mailboxScreen.style.display !== "none") renderMailboxTabs();
+        refreshAdminPanelBtnDot();
+        if(document.getElementById("adminPanelScreen").style.display !== "none") renderAdminPanelTabs();
       });
   }
 
-  function openMailboxToReports(){
-    openMailbox();
-    mailboxActiveTab = "reports";
-    renderMailboxTabs();
-    renderMailboxContent();
+  function openAdminPanelToReports(){
+    openAdminPanel();
+    adminPanelActiveTab = "reports";
+    adminCurrentPlayerId = null;
+    renderAdminPanelTabs();
+    renderAdminPanelContent();
   }
 
   function subscribeIncomingReports(){
@@ -5284,18 +5364,309 @@
       .on("postgres_changes", {event:"INSERT", schema:"public", table:"reports"}, function(payload){
         var r = payload.new;
         checkUnseenReportsBadge();
-        if(mailboxScreen.style.display !== "none" && mailboxActiveTab === "reports") loadMailboxReports();
+        if(document.getElementById("adminPanelScreen").style.display !== "none" && adminPanelActiveTab === "reports") loadMailboxReports();
         supabaseClient.from("profiles").select("name").eq("id", r.reported_id).maybeSingle().then(function(res){
           var reportedName = (res.data && res.data.name) || "Oyunçu";
           showTopNotification({
             icon: "🚩",
             title: "Yeni şikayət",
             subtitle: reportedName + " — " + r.reason,
-            onClick: openMailboxToReports
+            onClick: openAdminPanelToReports
           });
         });
       })
       .subscribe();
+  }
+
+  // ================= ADMIN PANEL =================
+  // Yalnız isAdminUser() true olan hesab görə bilir (client-side qapı) — VACİB: server tərəfində
+  // (admin_panel_migration.sql) admin-in ID-si ilə məhdudlaşdırılmış EYNİ yoxlama RLS policy kimi
+  // də var, çünki client-side yoxlama tək başına konsoldan keçilə bilər.
+  var adminPanelActiveTab = "stats"; // stats | flagged | reports
+  var adminSearchResults = [];
+  var adminCurrentPlayerId = null;
+  var adminCurrentPlayerRow = null;
+
+  function updateAdminPanelBtnVisibility(){
+    var btn = document.getElementById("adminPanelBtn");
+    if(!btn) return;
+    btn.style.display = isAdminUser() ? "" : "none";
+  }
+
+  function isRowBanned(row){
+    if(!row) return false;
+    if(row.banned_permanent) return true;
+    if(row.banned_until && new Date(row.banned_until).getTime() > Date.now()) return true;
+    return false;
+  }
+
+  function openAdminPanel(){
+    if(!isAdminUser()) return;
+    menuScreen.style.display = "none";
+    stopMenuBgAnim();
+    document.getElementById("adminPanelScreen").style.display = "flex";
+    adminPanelActiveTab = "stats";
+    adminCurrentPlayerId = null;
+    renderAdminPanelTabs();
+    renderAdminPanelContent();
+  }
+  function closeAdminPanel(){
+    document.getElementById("adminPanelScreen").style.display = "none";
+    menuScreen.style.display = "";
+    startMenuBgAnim();
+  }
+
+  function renderAdminPanelTabs(){
+    var tabsEl = document.getElementById("adminPanelTabs");
+    var tabs = [{id:"stats", label:"📊 Statistika"}, {id:"flagged", label:"⚠️ Şübhəli"}, {id:"reports", label:"🚩 Şikayətlər"}];
+    tabsEl.innerHTML = tabs.map(function(t){
+      var showDot = t.id === "reports" && unseenReportsTotal > 0;
+      return '<button class="shop-tab-btn' + (t.id === adminPanelActiveTab ? " active" : "") + '" data-id="' + t.id + '" style="position:relative">' + t.label + (showDot ? '<span class="friend-tab-dot"></span>' : "") + '</button>';
+    }).join("");
+    tabsEl.querySelectorAll("button").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        adminPanelActiveTab = this.getAttribute("data-id");
+        adminCurrentPlayerId = null;
+        renderAdminPanelTabs();
+        renderAdminPanelContent();
+      });
+    });
+  }
+
+  function renderAdminPanelContent(){
+    var el = document.getElementById("adminPanelContent");
+    if(adminCurrentPlayerId){
+      renderAdminPlayerDetail(el);
+      return;
+    }
+    if(adminPanelActiveTab === "stats"){
+      el.innerHTML =
+        '<div class="admin-search-row"><input id="adminSearchInput" placeholder="Ad və ya #ID axtar..."><button id="adminSearchBtn">Axtar</button></div>' +
+        '<div id="adminSearchResults"></div>';
+      document.getElementById("adminSearchBtn").addEventListener("click", doAdminSearch);
+      document.getElementById("adminSearchInput").addEventListener("keydown", function(e){ if(e.key === "Enter") doAdminSearch(); });
+    } else if(adminPanelActiveTab === "flagged"){
+      el.innerHTML = '<div id="adminFlaggedList" class="admin-empty-hint">Yüklənir...</div>';
+      loadSuspiciousAccounts();
+    } else if(adminPanelActiveTab === "reports"){
+      el.innerHTML = '<div class="gift-history-list full-width" id="mailboxReportsList"></div>';
+      loadMailboxReports();
+    }
+  }
+
+  function doAdminSearch(){
+    var input = document.getElementById("adminSearchInput");
+    var q = input ? input.value.trim() : "";
+    if(!q || !supabaseClient) return;
+    var idQuery = q.replace(/^#/, "").trim();
+    var query = supabaseClient.from("profiles").select("id,name,level,player_number,gold,banned_until,banned_permanent").limit(30);
+    if(/^\d+$/.test(idQuery)){
+      query = query.or("name.ilike.%" + q + "%,player_number.eq." + idQuery);
+    } else {
+      query = query.ilike("name", "%" + q + "%");
+    }
+    query.then(function(res){
+      if(res.error){ showToast("⚠️ Axtarış xətası: " + res.error.message); return; }
+      adminSearchResults = res.data || [];
+      renderAdminSearchResults();
+    });
+  }
+
+  function renderAdminSearchResults(){
+    var container = document.getElementById("adminSearchResults");
+    if(!container) return;
+    if(!adminSearchResults.length){ container.innerHTML = '<div class="admin-empty-hint">Nəticə yoxdur — yuxarıda axtar</div>'; return; }
+    container.innerHTML = adminSearchResults.map(function(p){
+      var banned = isRowBanned(p);
+      return '<div class="admin-player-row" data-id="' + p.id + '">' +
+        '<div class="admin-player-row-info"><div class="admin-player-row-name">' + escapeHtml(p.name || "Oyunçu") + ' <span style="color:#a99;font-weight:600">#' + (p.player_number||0) + '</span></div>' +
+        '<div class="admin-player-row-meta">Lv.' + (p.level||1) + ' · 🪙 ' + (p.gold||0) + '</div></div>' +
+        (banned ? '<span class="admin-player-row-banned">BANLI</span>' : '') +
+        '</div>';
+    }).join("");
+    container.querySelectorAll(".admin-player-row").forEach(function(row){
+      row.addEventListener("click", function(){ openAdminPlayerDetail(this.getAttribute("data-id")); });
+    });
+  }
+
+  function openAdminPlayerDetail(playerId){
+    if(!isAdminUser() || !supabaseClient) return;
+    adminCurrentPlayerId = playerId;
+    adminCurrentPlayerRow = null;
+    var el = document.getElementById("adminPanelContent");
+    el.innerHTML = '<div class="admin-empty-hint">Yüklənir...</div>';
+    supabaseClient.from("profiles").select("id,name,avatar_url,country_flag,level,gold,player_number,last_seen,popularity,save_data,banned_until,banned_permanent,ban_reason,created_at")
+      .eq("id", playerId).maybeSingle().then(function(res){
+        if(res.error || !res.data){ showToast("⚠️ Profil tapılmadı"); adminCurrentPlayerId = null; renderAdminPanelContent(); return; }
+        adminCurrentPlayerRow = res.data;
+        renderAdminPlayerDetail(document.getElementById("adminPanelContent"));
+      });
+  }
+
+  function renderAdminPlayerDetail(el){
+    var p = adminCurrentPlayerRow;
+    if(!p){ el.innerHTML = '<div class="admin-empty-hint">Yüklənir...</div>'; return; }
+    var sd = p.save_data || {};
+    var banned = isRowBanned(p);
+    var cardsDone = Object.keys(sd.cardCollection || {}).filter(function(k){ return sd.cardCollection[k] && sd.cardCollection[k].completed; }).length;
+    var cubeInv = sd.cubeInventory || {};
+    var cubesTotal = Object.keys(cubeInv).reduce(function(s,k){ return s + (cubeInv[k]||0); }, 0);
+    var bestScore = (sd.records && sd.records.length) ? sd.records[0].score : 0;
+    var createdWhen = "-";
+    try{ createdWhen = p.created_at ? new Date(p.created_at).toLocaleDateString("az-AZ") : "-"; }catch(e){}
+
+    var stats = [
+      ["Səviyyə", p.level||1], ["Qızıl (indi)", p.gold||0], ["Ümumi qazanılan qızıl", sd.totalGoldEarned||0],
+      ["Xərclənən qızıl", sd.totalGoldSpent||0], ["Açar", sd.keys||0], ["XP", sd.xp||0],
+      ["Oyun sayı", sd.gamesPlayed||0], ["Ən yüksək xal", bestScore], ["Oyun vaxtı", formatDuration(sd.totalPlayTimeMs||0)],
+      ["Kub inventarı (cəmi)", cubesTotal], ["Tamamlanan kartlar", cardsDone + "/" + CARD_TEMPLATES.length],
+      ["Hesab yaradılıb", createdWhen]
+    ];
+    var statsHtml = stats.map(function(pair){
+      return '<div class="admin-stat-tile"><div class="ast-val">' + pair[1] + '</div><div class="ast-lbl">' + pair[0] + '</div></div>';
+    }).join("");
+
+    var banStatusHtml = banned
+      ? ('<div class="admin-ban-status">⛔ Banlıdır' +
+          (p.banned_permanent ? " (həmişəlik)" : (p.banned_until ? " — bitmə: " + formatDungeonLetterTime(p.banned_until) : "")) +
+          (p.ban_reason ? "<br>Səbəb: " + escapeHtml(p.ban_reason) : "") + '</div>')
+      : '<div class="admin-ban-status ok">✅ Ban yoxdur</div>';
+
+    var cubeInputsHtml = MENU_BG_COLORS.map(function(c){
+      return '<div class="admin-grant-cube"><div class="agc-swatch" style="background:' + c.hex + '"></div><input type="number" data-cube="' + c.id + '" value="0" min="0"></div>';
+    }).join("");
+
+    el.innerHTML =
+      '<button class="admin-detail-back" id="adminDetailBack">← Axtarışa qayıt</button>' +
+      '<div class="admin-detail-header">' +
+        buildAvatarHtml({avatarUrl:p.avatar_url, countryFlag:p.country_flag, level:p.level, activeFrame:"none"}) +
+        '<div><div class="admin-detail-name">' + escapeHtml(p.name || "Oyunçu") + '</div><div class="admin-detail-id">#' + (p.player_number||0) + '</div></div>' +
+      '</div>' +
+      '<div class="admin-stat-grid">' + statsHtml + '</div>' +
+      '<div class="admin-section-title">Ban statusu</div>' +
+      banStatusHtml +
+      '<div class="admin-grant-row"><label>Ban səbəbi</label><input type="text" id="adminBanReason" placeholder="İstəyə görə..."></div>' +
+      '<div class="admin-ban-actions">' +
+        '<button class="admin-ban-btn" data-ban="1h">1 saatlıq</button>' +
+        '<button class="admin-ban-btn" data-ban="24h">24 saatlıq</button>' +
+        '<button class="admin-ban-btn" data-ban="perm">Həmişəlik</button>' +
+        (banned ? '<button class="admin-ban-btn unban" data-ban="unban">Ban-ı ləğv et</button>' : '') +
+      '</div>' +
+      '<div class="admin-section-title">Resurs göndər</div>' +
+      '<div class="admin-grant-form">' +
+        '<div class="admin-grant-row"><label>Qızıl</label><input type="number" id="adminGrantGold" value="0" min="0"></div>' +
+        '<div class="admin-grant-row"><label>Açar</label><input type="number" id="adminGrantKeys" value="0" min="0"></div>' +
+        '<div class="admin-grant-cubes">' + cubeInputsHtml + '</div>' +
+        '<button class="admin-grant-submit" id="adminGrantSubmit">🎁 Göndər</button>' +
+        '<div style="font-size:10px;color:#a99;margin-top:6px;text-align:center">Qeyd: oyunçu HƏMİN ANDA oyunda aktivdirsə, öz lokal profili bu dəyişikliyin üstünə yaza bilər — mümkünsə oyunçu oflayn olanda göndərin.</div>' +
+      '</div>';
+
+    document.getElementById("adminDetailBack").addEventListener("click", function(){
+      adminCurrentPlayerId = null;
+      renderAdminPanelContent();
+    });
+    el.querySelectorAll(".admin-ban-btn").forEach(function(btn){
+      btn.addEventListener("click", function(){ adminApplyBan(p.id, this.getAttribute("data-ban")); });
+    });
+    document.getElementById("adminGrantSubmit").addEventListener("click", function(){ adminGrantResources(p.id); });
+  }
+
+  function adminApplyBan(playerId, type){
+    if(!isAdminUser() || !supabaseClient) return;
+    var reasonInput = document.getElementById("adminBanReason");
+    var reason = reasonInput ? reasonInput.value.trim() : "";
+    var patch;
+    if(type === "unban"){
+      patch = {banned_until: null, banned_permanent: false, ban_reason: null};
+    } else if(type === "perm"){
+      patch = {banned_permanent: true, banned_until: null, ban_reason: reason || null};
+    } else {
+      var hours = type === "1h" ? 1 : 24;
+      patch = {banned_permanent: false, banned_until: new Date(Date.now() + hours*3600*1000).toISOString(), ban_reason: reason || null};
+    }
+    supabaseClient.from("profiles").update(patch).eq("id", playerId).select().then(function(res){
+      if(res.error || !res.data || !res.data.length){ showToast("⚠️ Əməliyyat uğursuz oldu: " + (res.error ? res.error.message : "")); return; }
+      showToast(type === "unban" ? "✅ Ban ləğv edildi" : "⛔ Oyunçu banlandı");
+      adminCurrentPlayerRow = res.data[0];
+      renderAdminPlayerDetail(document.getElementById("adminPanelContent"));
+    });
+  }
+
+  function adminGrantResources(playerId){
+    if(!isAdminUser() || !supabaseClient) return;
+    var gold = parseInt(document.getElementById("adminGrantGold").value, 10) || 0;
+    var keys = parseInt(document.getElementById("adminGrantKeys").value, 10) || 0;
+    var cubes = {};
+    var anyCube = false;
+    document.querySelectorAll('.admin-grant-cubes input[data-cube]').forEach(function(inp){
+      var v = parseInt(inp.value, 10) || 0;
+      if(v > 0){ cubes[inp.getAttribute("data-cube")] = v; anyCube = true; }
+    });
+    if(gold <= 0 && keys <= 0 && !anyCube){ showToast("⚠️ Heç bir məbləğ daxil edilməyib"); return; }
+    supabaseClient.from("profiles").select("gold,save_data").eq("id", playerId).maybeSingle().then(function(res){
+      if(res.error || !res.data){ showToast("⚠️ Profil oxunmadı"); return; }
+      var sd = res.data.save_data || {};
+      sd.gold = (sd.gold || 0) + gold;
+      sd.keys = (sd.keys || 0) + keys;
+      sd.cubeInventory = sd.cubeInventory || {};
+      Object.keys(cubes).forEach(function(cid){ sd.cubeInventory[cid] = (sd.cubeInventory[cid] || 0) + cubes[cid]; });
+      var newGoldCol = (res.data.gold || 0) + gold;
+      supabaseClient.from("profiles").update({gold: newGoldCol, save_data: sd}).eq("id", playerId).select().then(function(res2){
+        if(res2.error || !res2.data || !res2.data.length){ showToast("⚠️ Göndərilmədi: " + (res2.error ? res2.error.message : "")); return; }
+        showToast("🎁 Göndərildi!");
+        adminCurrentPlayerRow = res2.data[0];
+        renderAdminPlayerDetail(document.getElementById("adminPanelContent"));
+      });
+    });
+  }
+
+  // Şübhəli hesab aşkarlama — TAM/mükəmməl "çit aşkarlama" DEYİL, sadə, şəffaf həddi-normalar
+  // əsasında admin-ə yoxlamağa dəyər hesabları göstərir (əl ilə qərar admin-dədir).
+  function loadSuspiciousAccounts(){
+    if(!supabaseClient) return;
+    supabaseClient.from("profiles").select("id,name,player_number,level,gold,save_data,created_at")
+      .order("gold", {ascending:false}).limit(60)
+      .then(function(res){
+        var el = document.getElementById("adminFlaggedList");
+        if(!el) return;
+        if(res.error){ el.innerHTML = '<div class="admin-empty-hint">⚠️ ' + escapeHtml(res.error.message) + '</div>'; return; }
+        var flagged = (res.data || []).map(function(p){
+          var sd = p.save_data || {};
+          var reasons = [];
+          var level = p.level || 1;
+          var gold = p.gold || 0;
+          var ageHours = p.created_at ? Math.max(1, (Date.now() - new Date(p.created_at).getTime()) / 3600000) : 999999;
+          if(gold > level * 20000 + 50000) reasons.push("Qızıl səviyyəyə görə həddindən artıq yüksəkdir");
+          if(ageHours < 24 && gold > 100000) reasons.push("Yeni hesab (24 saatdan az), amma çox qızıl var");
+          if((sd.totalGoldEarned||0) > ageHours * 20000) reasons.push("Qızıl qazanma sürəti qeyri-adi yüksəkdir");
+          return reasons.length ? {p:p, reasons:reasons} : null;
+        }).filter(Boolean);
+        if(!flagged.length){ el.innerHTML = '<div class="admin-empty-hint">Şübhəli hesab tapılmadı (ilk 60 ən varlı hesab arasında)</div>'; return; }
+        el.innerHTML = flagged.map(function(f){
+          return '<div class="admin-flag-row" data-id="' + f.p.id + '">' +
+            '<div class="admin-flag-row-top"><span>' + escapeHtml(f.p.name||"Oyunçu") + ' #' + (f.p.player_number||0) + '</span><span>🪙 ' + (f.p.gold||0) + '</span></div>' +
+            f.reasons.map(function(r){ return '<div class="admin-flag-reason">⚠️ ' + r + '</div>'; }).join("") +
+            '</div>';
+        }).join("");
+        el.querySelectorAll(".admin-flag-row").forEach(function(row){
+          row.addEventListener("click", function(){ openAdminPlayerDetail(this.getAttribute("data-id")); });
+        });
+      });
+  }
+
+  // ================= BAN BLOK EKRANI =================
+  function showBanBlockScreen(row){
+    var reasonEl = document.getElementById("banBlockReason");
+    var untilEl = document.getElementById("banBlockUntil");
+    reasonEl.textContent = row.ban_reason ? row.ban_reason : "Qaydaların pozulması səbəbindən hesabınıza giriş məhdudlaşdırılıb.";
+    if(row.banned_permanent){
+      untilEl.textContent = "Bu, HƏMİŞƏLİK bloklamadır.";
+    } else if(row.banned_until){
+      var untilStr = "";
+      try{ untilStr = new Date(row.banned_until).toLocaleString("az-AZ"); }catch(e){}
+      untilEl.textContent = "Blok bitmə vaxtı: " + untilStr;
+    }
+    document.getElementById("banBlockScreen").classList.add("show");
   }
 
   function subscribeIncomingGifts(){
@@ -11818,6 +12189,12 @@
   document.getElementById("mailboxBtn").addEventListener("click", openMailbox);
   document.getElementById("rankedBtn").addEventListener("click", findMatch);
   document.getElementById("mailboxBack").addEventListener("click", closeMailbox);
+  document.getElementById("adminPanelBtn").addEventListener("click", openAdminPanel);
+  document.getElementById("adminPanelBack").addEventListener("click", closeAdminPanel);
+  document.getElementById("banBlockSignOut").addEventListener("click", function(){
+    document.getElementById("banBlockScreen").classList.remove("show");
+    signOutGoogle();
+  });
   document.getElementById("giftRevealClose").addEventListener("click", function(){
     document.getElementById("giftRevealModal").classList.remove("show");
   });
