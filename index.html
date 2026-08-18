@@ -1170,10 +1170,34 @@
   #cardOpenBtn .card-open-icon{position:absolute;left:18px;font-size:21px}
 
   /* ===== Kart açılış ekranı (kart-üstü popup, z-index başqa bütün modallardan yuxarıda) ===== */
-  #cardRevealOverlay{position:absolute;inset:0;background:rgba(30,25,20,.94);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s ease;z-index:200;padding:20px}
+  #cardRevealOverlay{position:absolute;inset:0;background:rgba(30,25,20,.94);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s ease;z-index:200;padding:20px;--reveal-glow:#ffd700}
   #cardRevealOverlay.show{opacity:1;pointer-events:auto}
-  .cr-card{background:linear-gradient(160deg,#fffaf0,#f3e9d2);border-radius:20px;padding:20px;width:100%;max-width:320px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.5);animation:crPop .4s cubic-bezier(.34,1.56,.64,1)}
+  .cr-card{position:relative;overflow:hidden;background:linear-gradient(160deg,#fffaf0,#f3e9d2);border-radius:20px;padding:20px;width:100%;max-width:320px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.5);animation:crPop .4s cubic-bezier(.34,1.56,.64,1)}
   @keyframes crPop{from{transform:scale(.75);opacity:0}to{transform:scale(1);opacity:1}}
+
+  /* Qızıla ödəyib TƏZƏCƏ açılan an üçün: mərkəzdən genişlənən işıq partlayışı (ekranın özündə,
+     kartın arxasında) + kartın üzərindən keçən parlaq şüa + spawnCardConfetti() ilə səpələnən
+     konfeti (bax triggerCardRevealCelebration). Rütbəyə görə rəng/say fərqlənir (bronz/gümüş/qızıl). */
+  #cardRevealOverlay::before{
+    content:"";position:absolute;top:50%;left:50%;width:10px;height:10px;border-radius:50%;
+    background:radial-gradient(circle, var(--reveal-glow) 0%, rgba(255,200,60,.35) 45%, transparent 72%);
+    transform:translate(-50%,-50%);opacity:0;pointer-events:none;z-index:0;
+  }
+  #cardRevealOverlay.reveal-burst::before{animation:crBurstGlow 1.1s ease-out forwards}
+  @keyframes crBurstGlow{
+    0%{width:10px;height:10px;opacity:0}
+    18%{opacity:.95}
+    100%{width:520px;height:520px;opacity:0}
+  }
+  .cr-card::after{
+    content:"";position:absolute;top:0;left:-120%;width:55%;height:100%;
+    background:linear-gradient(100deg,transparent,rgba(255,255,255,.9) 45%,transparent 55%);
+    transform:skewX(-20deg);opacity:0;pointer-events:none;z-index:5;
+  }
+  .cr-card.reveal-flash::after{animation:crShineSweep .9s ease-out .3s forwards}
+  @keyframes crShineSweep{0%{left:-120%;opacity:1}85%{opacity:1}100%{left:170%;opacity:0}}
+  .cr-card.reveal-flash{animation:crPop .4s cubic-bezier(.34,1.56,.64,1),crCardFlashPulse .7s ease-out .25s}
+  @keyframes crCardFlashPulse{0%{box-shadow:0 20px 50px rgba(0,0,0,.5)}40%{box-shadow:0 20px 50px rgba(0,0,0,.5),0 0 46px 10px var(--reveal-glow)}100%{box-shadow:0 20px 50px rgba(0,0,0,.5)}}
   #cardRevealRarity{color:#e0a52c;font-weight:800;font-size:12px;letter-spacing:2px;margin-bottom:8px}
   #cardRevealGrid{display:grid;gap:1px;background:rgba(0,0,0,.1);border-radius:8px;padding:4px;margin:0 auto 12px;width:max-content}
   .cr-cell{width:10px;height:10px;border-radius:1px}
@@ -10347,6 +10371,7 @@
   var activeCardPlaced = {}; // "r,c" -> true
   var selectedCardColorId = null;
   var activeCardCelebrated = false; // bu build sessiyasında 100%-lik bildirişi artıq göstərilibmi
+  var cardRevealIsFresh = false; // openCompletedCard() TƏZƏCƏ payToOpenCard()-dan çağırılıbmı (partlayış animasiyası yalnız bu halda)
   var activeCardColorCelebrated = {}; // {colorId: true} — bu sessiyada həmin rəng üçün "rəng tamamlandı" bildirişi göstərilibmi
   var LEVEL_REQ_AUTOFILL = 25;
   var LEVEL_REQ_RESET = 50;
@@ -10695,6 +10720,7 @@
     renderProfile();
     closeCardPayPopup();
     showToast("✨ Kart açıldı!");
+    cardRevealIsFresh = true; // reveal partlayış animasiyası YALNIZ indi (təzəcə ödənilib) oynasın
     openCompletedCard();
   }
 
@@ -10836,10 +10862,10 @@
     banner.classList.add("show");
   }
 
-  function spawnCardConfetti(container){
+  function spawnCardConfetti(container, count){
     if(!container) return;
     var colors = ["var(--red)","var(--blue)","var(--green)","var(--yellow)","var(--purple)","var(--orange)","var(--pink)","var(--cyan)","var(--gold)"];
-    for(var i=0;i<28;i++){
+    for(var i=0;i<(count || 28);i++){
       var piece = document.createElement("div");
       piece.className = "card-confetti-piece";
       piece.style.background = colors[Math.floor(Math.random()*colors.length)];
@@ -10854,6 +10880,26 @@
       container.appendChild(piece);
       (function(p){ setTimeout(function(){ p.remove(); }, 1100); })(piece);
     }
+  }
+
+  // Kart TƏZƏCƏ qızılla açılanda (payToOpenCard) çağırılır — mərkəzdən işıq partlayışı, kartın
+  // üzərindən keçən parıltı zolağı və rütbəyə görə (bronz/gümüş/qızıl) miqdarı/rəngi dəyişən
+  // konfeti partlayışı. Konfeti bilərəkdən #cardRevealOverlay-ə (kartın ÖZÜNƏ yox) əlavə olunur —
+  // .cr-card artıq overflow:hidden-dir (parıltı zolağı üçün), konfeti isə kartdan KƏNARA da
+  // səpələnməlidir.
+  var CARD_REVEAL_GLOW_BY_FRAME = {bronze: "#e8b26a", silver: "#eef1f4", gold: "#ffe066"};
+  var CARD_REVEAL_CONFETTI_BY_STARS = {1: 26, 2: 42, 3: 64};
+  function triggerCardRevealCelebration(template){
+    var overlay = document.getElementById("cardRevealOverlay");
+    var card = overlay.querySelector(".cr-card");
+    overlay.style.setProperty("--reveal-glow", CARD_REVEAL_GLOW_BY_FRAME[template.frame] || "#ffd700");
+    overlay.classList.remove("reveal-burst");
+    card.classList.remove("reveal-flash");
+    void overlay.offsetWidth; // reflow — CSS animasiyaları YENİDƏN işə salmaq üçün
+    overlay.classList.add("reveal-burst");
+    card.classList.add("reveal-flash");
+    spawnCardConfetti(overlay, CARD_REVEAL_CONFETTI_BY_STARS[cardStarCount(template)] || 28);
+    playCardCompleteSound();
   }
 
   function renderCardInventory(){
@@ -11098,6 +11144,8 @@
       showCardPayPopup(template);
       return;
     }
+    var wasFreshReveal = cardRevealIsFresh;
+    cardRevealIsFresh = false;
     clearCardCelebrationUI();
 
     var gridEl = document.getElementById("cardRevealGrid");
@@ -11142,6 +11190,7 @@
     }
     document.getElementById("cardRevealNum").textContent = "00" + (Math.floor(Math.random()*89)+10);
     document.getElementById("cardRevealOverlay").classList.add("show");
+    if(wasFreshReveal) triggerCardRevealCelebration(template);
   }
 
   // ===== Kart bonuslarının real oyun mexanikasına təsiri =====
