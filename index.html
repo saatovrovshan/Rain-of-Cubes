@@ -5144,12 +5144,20 @@
       '</div>';
   }
 
+  // Server-tərəfli (pg_cron, bax finalize_dungeon_rewards_for_date) yazılan sətirlərdə
+  // color_ids BOŞ qala bilər (rəng seçimini SQL-də TƏKRARLAMAQ əvəzinə client bunu HƏMİN
+  // tarixin zindan konfiqurasiyasından təzədən hesablayır — eyni deterministik alqoritmdir).
+  function dungeonRewardColorIds(r){
+    if(r.color_ids && r.color_ids.length) return r.color_ids;
+    return dungeonColorIds(getDungeonConfig(r.date));
+  }
+
   // Mesaj AÇILDIQDA görünən tam məzmun (modalın içində) — böyük kubok/medal şəkli, təbrik mətni
   // və (hələ alınmayıbsa) "Mükafatları al" düyməsi buradadır.
   function dungeonRewardDetailHtml(r){
     var catLabel = DUNGEON_LB_CATEGORY_LABELS[r.category] || r.category;
     var rewardsHtml = '<div class="cp-need-chip"><div class="cp-need-swatch dungeon-gold-swatch">🪙</div><div class="cp-need-count">' + r.gold + '</div></div>' +
-      (r.color_ids || []).map(function(cid){
+      dungeonRewardColorIds(r).map(function(cid){
         var col = MENU_BG_COLORS.find(function(c){ return c.id === cid; });
         return '<div class="cp-need-chip"><div class="cp-need-swatch" style="background:' + (col ? col.hex : "#999") + '"></div><div class="cp-need-count">' + r.cubes_per_color + '</div></div>';
       }).join("");
@@ -5184,7 +5192,7 @@
       .select().then(function(res){
         if(res.error || !res.data || !res.data.length){ showToast("⚠️ Mükafat alına bilmədi"); return; }
         addGold(r.gold);
-        (r.color_ids || []).forEach(function(cid){
+        dungeonRewardColorIds(r).forEach(function(cid){
           profile.cubeInventory[cid] = (profile.cubeInventory[cid] || 0) + r.cubes_per_color;
         });
         saveProfile();
