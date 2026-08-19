@@ -754,6 +754,16 @@
     0%,100%{filter:drop-shadow(0 2px 4px rgba(0,0,0,.3)) drop-shadow(0 0 3px rgba(255,215,0,.55))}
     50%{filter:drop-shadow(0 2px 4px rgba(0,0,0,.3)) drop-shadow(0 0 10px rgba(255,215,0,.95)) drop-shadow(0 0 18px rgba(255,175,0,.7))}
   }
+
+  /* ===== Səviyyə artımı təbrik popupu — bax maybeShowLevelUpPopup/openLevelUpModal ===== */
+  .level-up-panel{animation:crPop .4s cubic-bezier(.34,1.56,.64,1)}
+  .level-up-badge{width:88px;height:88px;margin:2px auto 10px;border-radius:50%;background:linear-gradient(160deg,#ffe066,#ff9d00);display:flex;align-items:center;justify-content:center;font-size:44px;animation:levelUpBadgePulse 1.3s ease-in-out infinite}
+  @keyframes levelUpBadgePulse{
+    0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(255,180,0,.5)}
+    50%{transform:scale(1.08);box-shadow:0 0 0 16px rgba(255,180,0,0)}
+  }
+  .level-up-headline{font-size:19px;font-weight:900;color:var(--ink);margin-bottom:4px}
+  .level-up-sub{font-size:12px;color:#a99;font-weight:700;margin-bottom:12px}
   .trophy-badge-count{font-size:10px;font-weight:800;color:var(--ink);background:var(--panel);border-radius:8px;padding:1px 6px}
   .trophy-popup-img{width:170px;height:auto;margin:6px auto 6px;display:block;filter:drop-shadow(0 4px 10px rgba(0,0,0,.35))}
   .trophy-popup-title{font-size:15px;font-weight:900;color:var(--ink);margin-bottom:12px}
@@ -2145,6 +2155,13 @@
     <div class="modal-panel" style="max-width:380px">
       <button class="modal-close" id="dungeonRewardModalClose">✕</button>
       <div id="dungeonRewardModalBody"></div>
+    </div>
+  </div>
+
+  <!-- Səviyyə artımı təbrik popupu — bağlana bilməz, YALNIZ "Mükafatı götür" ilə bağlanır -->
+  <div class="modal-overlay" id="levelUpModal">
+    <div class="modal-panel level-up-panel" style="max-width:360px;text-align:center">
+      <div id="levelUpModalBody"></div>
     </div>
   </div>
 
@@ -3719,6 +3736,9 @@
     if(!p.cardCollection) p.cardCollection = {}; // Kubik Kartları: {cardId: {placed:{...}, completed:true}}
     if(!p.dungeonScores) p.dungeonScores = {}; // Gündəlik Zindan: {"YYYY-MM-DD": score}
     p.level = levelFromXp(p.xp);
+    // Yeni sahə: mövcud oyunçular üçün RETROAKTİV mükafat verilməsin — ilk yükləmədə hazırkı
+    // levelə bərabərləşdirilir, YALNIZ bundan sonra qazanılan yeni levellər üçün popup açılır.
+    if(typeof p.lastRewardedLevel !== "number") p.lastRewardedLevel = p.level;
     return p;
   }
   function loadProfile(){
@@ -7825,6 +7845,84 @@
     openWheel();
   }
 
+  // ===== Səviyyə artımı təbrik popupu — hər levelin qızıl/kub mükafatı ARTAN SIRA İLƏ verilir
+  // (yuxarı level = daha böyük mükafat). Oyunçu bir oyun ərzində bir neçə level birdən qalxsa,
+  // BÜTÜN keçilmiş levellərin mükafatları CƏMLƏNİB tək popup-da göstərilir (spam qarşısı alınır),
+  // amma hər levelin öz artan payı formula ilə düzgün hesablanır. Ana menyuya HƏR qayıdışda
+  // (returnToMenu + boot) yoxlanılır; götürülmədən bağlanmır (bax openLevelUpModal — X düyməsi yoxdur). =====
+  var pendingLevelReward = null;
+
+  function levelRewardGold(level){
+    return Math.min(5000, 100 + level * 40);
+  }
+  function levelRewardCubesPerColor(level){
+    return Math.min(15, 2 + Math.floor(level / 3));
+  }
+  function computePendingLevelReward(){
+    var from = typeof profile.lastRewardedLevel === "number" ? profile.lastRewardedLevel : profile.level;
+    var to = profile.level;
+    if(to <= from) return null;
+    var gold = 0, cubesPerColor = 0;
+    for(var lv = from + 1; lv <= to; lv++){
+      gold += levelRewardGold(lv);
+      cubesPerColor += levelRewardCubesPerColor(lv);
+    }
+    return {fromLevel: from, toLevel: to, gold: gold, cubesPerColor: cubesPerColor};
+  }
+
+  function maybeShowLevelUpPopup(){
+    if(pendingLevelReward) return;
+    if(!menuScreen || menuScreen.style.display === "none") return;
+    if(dailyScreen.classList.contains("show") || wheelScreen.classList.contains("show")) return;
+    var r = computePendingLevelReward();
+    if(!r) return;
+    pendingLevelReward = r;
+    openLevelUpModal(r);
+  }
+
+  function levelUpModalHtml(r){
+    var levelsGained = r.toLevel - r.fromLevel;
+    var headline = "⭐ Səviyyə " + r.toLevel + "!";
+    var sub = levelsGained > 1 ? (levelsGained + " səviyyə birdən qazandın!") : "Yeni səviyyəyə çatdın!";
+    var chips = '<div class="cp-need-chip"><div class="cp-need-swatch dungeon-gold-swatch">🪙</div><div class="cp-need-count">' + r.gold + '</div></div>' +
+      BASE_COLORS.map(function(c){
+        return '<div class="cp-need-chip"><div class="cp-need-swatch" style="background:' + c.hex + '"></div><div class="cp-need-count">' + r.cubesPerColor + '</div></div>';
+      }).join("");
+    return '<div class="level-up-badge">⭐</div>' +
+      '<div class="level-up-headline">' + headline + '</div>' +
+      '<div class="level-up-sub">' + sub + '</div>' +
+      '<div class="dungeon-letter-rewards">' + chips + '</div>' +
+      '<button class="achievement-claim-btn" id="levelUpClaimBtn" style="width:100%;margin-top:6px">🎁 Mükafatı götür</button>';
+  }
+
+  function openLevelUpModal(r){
+    var body = document.getElementById("levelUpModalBody");
+    body.innerHTML = levelUpModalHtml(r);
+    var overlay = document.getElementById("levelUpModal");
+    overlay.classList.remove("show");
+    void overlay.offsetWidth; // reflow — pop-in animasiyasını yenidən işə salmaq üçün
+    overlay.classList.add("show");
+    spawnCardConfetti(overlay, 48);
+    playRewardSound();
+    var btn = body.querySelector("#levelUpClaimBtn");
+    if(btn) btn.addEventListener("click", claimLevelUpReward);
+  }
+
+  function claimLevelUpReward(){
+    if(!pendingLevelReward) return;
+    var r = pendingLevelReward;
+    addGold(r.gold);
+    BASE_COLORS.forEach(function(c){
+      profile.cubeInventory[c.id] = (profile.cubeInventory[c.id] || 0) + r.cubesPerColor;
+    });
+    profile.lastRewardedLevel = r.toLevel;
+    saveProfile();
+    renderProfile();
+    showToast("🎁 +" + r.gold + " 🪙 +" + r.cubesPerColor + "x hər rəngdən kub");
+    document.getElementById("levelUpModal").classList.remove("show");
+    pendingLevelReward = null;
+  }
+
   function renderDailyScreen(){
     var daysEl = document.getElementById("dailyDays");
     var todayIdx = profile.rewardDayIndex || 0;
@@ -10826,6 +10924,7 @@
     renderProfile();
     startMenuBgAnim();
     startMenuMusic();
+    maybeShowLevelUpPopup();
   }
 
   function cleanupBattleState(){
@@ -13335,6 +13434,7 @@
   // avtomatik açılış qərarını bir qədər gecikdiririk ki, bulud vəziyyəti nəzərə alınsın
   setTimeout(maybeAutoOpenDaily, 900);
   setTimeout(maybeAutoOpenWheel, 1600);
+  setTimeout(maybeShowLevelUpPopup, 2300);
 
   updateSoundUI();
   renderProfile();
