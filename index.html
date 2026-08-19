@@ -200,6 +200,19 @@
   .mt-cubes{display:inline-block;font-size:40px;font-weight:900;letter-spacing:2px;-webkit-text-stroke:2px #5c4a3a;text-shadow:0 3px 0 #5c4a3a,0 6px 10px rgba(0,0,0,.35)}
   #menuScreen .subtitle{font-size:12px;color:#a99;font-weight:700;letter-spacing:1px}
 
+  /* ===== Açılış (loading) ekranı — oyun ilk açılanda, bulud sinxronizasiyası bitənə/100%-ə
+     çatana qədər hər şeyi örtür. Digər bütün ekranların ÜSTÜNDƏ (z-index) qalır ki, alt qatda
+     menyu render olunsa belə oyunçu heç vaxt "yarımçıq/köhnə" datanı görməsin. ===== */
+  #loadingScreen{position:absolute;inset:0;z-index:2000;background:linear-gradient(180deg,#3a332c,#241f1a);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;transition:opacity .4s ease;padding:20px}
+  #loadingScreen.fade-out{opacity:0;pointer-events:none}
+  .loading-title-wrap{text-align:center}
+  .loading-cubes-row{display:flex;gap:10px}
+  .loading-cube{width:16px;height:16px;border-radius:5px;box-shadow:inset 0 -3px 0 rgba(0,0,0,.2);animation:loadingCubeBounce .9s ease-in-out infinite}
+  @keyframes loadingCubeBounce{0%,100%{transform:translateY(0);opacity:.6}50%{transform:translateY(-12px);opacity:1}}
+  .loading-bar-track{width:min(260px,70vw);height:10px;background:rgba(255,255,255,.12);border-radius:6px;overflow:hidden}
+  .loading-bar-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--green),var(--blue));border-radius:6px;transition:width .15s linear}
+  .loading-pct{font-size:13px;font-weight:800;color:#e8e0d0;font-variant-numeric:tabular-nums}
+
   .menu-stats{background:var(--panel);border-radius:12px;padding:12px 16px;display:flex;gap:16px;width:100%;box-sizing:border-box;justify-content:center;margin-bottom:8px}
   .menu-stat{text-align:center;flex:1}
   .menu-stat .num{font-size:19px;font-weight:800;color:var(--ink)}
@@ -1376,6 +1389,25 @@
 <body>
 <div id="app">
 
+  <div id="loadingScreen">
+    <div class="loading-title-wrap">
+      <h1 class="menu-title">
+        <span class="mt-rain">RAIN</span>
+        <span class="mt-of">OF</span><br>
+        <span class="mt-cubes"><span style="color:var(--red)">C</span><span style="color:var(--yellow)">U</span><span style="color:var(--green)">B</span><span style="color:var(--blue)">E</span><span style="color:var(--purple)">S</span></span>
+      </h1>
+    </div>
+    <div class="loading-cubes-row">
+      <span class="loading-cube" style="background:var(--red);animation-delay:0s"></span>
+      <span class="loading-cube" style="background:var(--yellow);animation-delay:.1s"></span>
+      <span class="loading-cube" style="background:var(--green);animation-delay:.2s"></span>
+      <span class="loading-cube" style="background:var(--blue);animation-delay:.3s"></span>
+      <span class="loading-cube" style="background:var(--purple);animation-delay:.4s"></span>
+    </div>
+    <div class="loading-bar-track"><div class="loading-bar-fill" id="loadingBarFill"></div></div>
+    <div class="loading-pct" id="loadingPct">0%</div>
+  </div>
+
   <div id="menuScreen">
     <div class="menu-bg-cubes" id="menuBgCubes"></div>
 
@@ -2273,16 +2305,58 @@
     supabaseClient.auth.signOut();
   }
 
+  // ===== Açılış (loading) ekranı: səhifə açılan kimi başlayır, bulud sinxronizasiyası
+  // bitənə (ya da şəbəkə problemi olsa, 8 saniyəlik ehtiyat müddətinə) qədər davam edir =====
+  var loadingProgress = 0;
+  var loadingTargetProgress = 8;
+  var loadingRafId = null;
+  var loadingHidden = false;
+  function setLoadingTarget(pct){ if(pct > loadingTargetProgress) loadingTargetProgress = pct; }
+  function loadingTick(){
+    loadingProgress += (loadingTargetProgress - loadingProgress) * 0.12;
+    if(loadingTargetProgress - loadingProgress < 0.4) loadingProgress = loadingTargetProgress;
+    var barEl = document.getElementById("loadingBarFill");
+    var pctEl = document.getElementById("loadingPct");
+    if(barEl) barEl.style.width = loadingProgress + "%";
+    if(pctEl) pctEl.textContent = Math.floor(loadingProgress) + "%";
+    if(loadingProgress >= 99.5 && loadingTargetProgress >= 100){
+      if(barEl) barEl.style.width = "100%";
+      if(pctEl) pctEl.textContent = "100%";
+      setTimeout(hideLoadingScreen, 250);
+      return;
+    }
+    loadingRafId = requestAnimationFrame(loadingTick);
+  }
+  function hideLoadingScreen(){
+    if(loadingHidden) return;
+    loadingHidden = true;
+    if(loadingRafId) cancelAnimationFrame(loadingRafId);
+    var el = document.getElementById("loadingScreen");
+    if(!el) return;
+    el.classList.add("fade-out");
+    setTimeout(function(){ el.style.display = "none"; }, 450);
+  }
+  loadingTick();
+  setLoadingTarget(30);
+  setTimeout(function(){ setLoadingTarget(100); }, 8000);
+
   if(supabaseClient){
     supabaseClient.auth.getSession().then(function(res){
       renderGoogleAuthUI(res.data.session);
-      if(res.data.session) onGoogleSignedIn(res.data.session);
-    });
+      if(res.data.session){
+        setLoadingTarget(55);
+        onGoogleSignedIn(res.data.session).then(function(){ setLoadingTarget(100); }, function(){ setLoadingTarget(100); });
+      } else {
+        setLoadingTarget(100);
+      }
+    }, function(){ setLoadingTarget(100); });
     supabaseClient.auth.onAuthStateChange(function(event, session){
       renderGoogleAuthUI(session);
       if(event === "SIGNED_IN" && session) onGoogleSignedIn(session);
       if(event === "SIGNED_OUT"){ cloudSyncEnabled = false; cloudUserId = null; }
     });
+  } else {
+    setLoadingTarget(100);
   }
 
   var BASE_COLORS = [
@@ -3638,14 +3712,17 @@
 
   // Google ilə giriş edilən kimi: buludda saxlanmış profil varsa onu yüklə (başqa cihazdan davam),
   // yoxdursa hazırkı lokal profili ilk bulud yaddaşı kimi göndər (mövcud tərəqqi itməsin)
+  // DİQQƏT: bu funksiya İNDİ öz fetch zəncirini QAYTARIR (return) — açılış ekranı (loadingTick)
+  // "bulud profili tam yükləndi" anını bilmək üçün buna .then() ilə qoşulur (bax
+  // supabaseClient.auth.getSession()-un .then-i). Əvvəllər "atəş-və-unut" idi.
   function onGoogleSignedIn(session){
-    if(!supabaseClient || !session || !session.user) return;
+    if(!supabaseClient || !session || !session.user) return Promise.resolve();
     var userId = session.user.id;
     cloudUserId = userId;
     updateAdminPanelBtnVisibility();
     startPresenceHeartbeat();
     renderProfile();
-    supabaseClient.from("profiles").select("save_data,banned_until,banned_permanent,ban_reason").eq("id", userId).maybeSingle().then(function(res){
+    return supabaseClient.from("profiles").select("save_data,banned_until,banned_permanent,ban_reason").eq("id", userId).maybeSingle().then(function(res){
       if(res.error){
         console.error("Bulud profili oxuma xətası:", res.error);
         if(typeof showToast === "function") showToast("⚠️ Bulud oxuma xətası: " + res.error.message);
