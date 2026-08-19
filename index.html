@@ -1476,7 +1476,7 @@
     </div>
 
     <div class="menu-stats">
-      <div class="menu-stat"><div class="num" id="menuXpStat">0</div><div class="lbl">Xal</div></div>
+      <div class="menu-stat"><div class="num" id="menuXpStat">0</div><div class="lbl">XP</div></div>
       <div class="menu-stat"><div class="num" id="menuGamesStat">0</div><div class="lbl">Oyun</div></div>
       <div class="menu-stat"><div class="num" id="menuStarsStat">0</div><div class="lbl">Ulduz</div></div>
     </div>
@@ -1583,11 +1583,9 @@
     </div>
     <div class="profile-stats-grid">
       <div class="profile-stat"><div class="pnum" id="statLevel">1</div><div class="plbl">Səviyyə</div></div>
-      <div class="profile-stat"><div class="pnum" id="statXpTotal">0</div><div class="plbl">Ümumi xal</div></div>
       <div class="profile-stat"><div class="pnum" id="statGames">0</div><div class="plbl">Oyun sayı</div></div>
       <div class="profile-stat"><div class="pnum" id="statMissions">0</div><div class="plbl">Keçilən misya</div></div>
       <div class="profile-stat"><div class="pnum" id="statGoldTotal">0</div><div class="plbl">Ümumi qızıl</div></div>
-      <div class="profile-stat"><div class="pnum" id="statGoldNow">0</div><div class="plbl">Hazırkı qızıl</div></div>
       <div class="profile-stat"><div class="pnum" id="statPowerups">0</div><div class="plbl">İstifadə edilən ulti</div></div>
       <div class="profile-stat"><div class="pnum" id="statTime">0 san</div><div class="plbl">Oyun vaxtı</div></div>
       <div class="profile-stat"><div class="pnum" id="statBestScore">0</div><div class="plbl">Ən yüksək xal</div></div>
@@ -1876,7 +1874,7 @@
     <div class="badges">
       <div class="badge" id="levelBadge" style="display:none"><div class="lbl">LEVEL</div><div class="val" id="levelBadgeVal">1</div></div>
       <div class="badge"><div class="lbl">MİSYA</div><div class="val" id="missionVal">0</div></div>
-      <div class="badge"><div class="lbl">XP</div><div class="val" id="xpVal">0</div><span class="xp-boost-inline" id="xpBoostGameBadge" style="display:none">⚡2x</span></div>
+      <div class="badge"><div class="lbl">XAL</div><div class="val" id="xpVal">0</div><span class="xp-boost-inline" id="xpBoostGameBadge" style="display:none">⚡2x</span></div>
       <div class="badge"><div class="lbl">CAN</div><div class="val hearts" id="livesVal"></div></div>
       <div class="badge" id="battleTimerBadge" style="display:none"><div class="lbl">VAXT</div><div class="val" id="battleTimerVal">60</div></div>
       <div class="badge" id="battleOpponentBadge" style="display:none"><div class="lbl" id="battleOpponentLbl">RƏQİB</div><div class="val" id="battleOpponentScoreVal">0</div></div>
@@ -1930,7 +1928,7 @@
         <div class="gameover-avatar-wrap"><div id="gameoverAvatar"></div></div>
         <div class="gameover-title">🏁 OYUN BİTDİ</div>
         <div class="gameover-score" id="gameoverScoreVal">0</div>
-        <div class="gameover-score-label">XP</div>
+        <div class="gameover-score-label">XAL</div>
         <div class="gameover-stats" id="overlayStats"></div>
         <div class="gameover-bonus-list" id="gameoverBonusList" style="display:none"></div>
         <div class="gameover-cubes-wrap" id="gameoverDungeonBonusWrap" style="display:none">
@@ -2065,11 +2063,9 @@
       </div>
       <div class="profile-stats-grid" style="margin-top:12px">
         <div class="profile-stat"><div class="pnum" id="playerCardLevel">1</div><div class="plbl">Səviyyə</div></div>
-        <div class="profile-stat"><div class="pnum" id="playerCardXp">0</div><div class="plbl">Ümumi xal</div></div>
         <div class="profile-stat"><div class="pnum" id="playerCardGames">0</div><div class="plbl">Oyun sayı</div></div>
         <div class="profile-stat"><div class="pnum" id="playerCardMissions">0</div><div class="plbl">Keçilən misya</div></div>
         <div class="profile-stat"><div class="pnum" id="playerCardGoldTotal">0</div><div class="plbl">Ümumi qızıl</div></div>
-        <div class="profile-stat"><div class="pnum" id="playerCardGoldNow">0</div><div class="plbl">Hazırkı qızıl</div></div>
         <div class="profile-stat"><div class="pnum" id="playerCardPowerups">0</div><div class="plbl">İstifadə edilən ulti</div></div>
         <div class="profile-stat"><div class="pnum" id="playerCardTime">0 san</div><div class="plbl">Oyun vaxtı</div></div>
         <div class="profile-stat"><div class="pnum" id="playerCardPopularity">0</div><div class="plbl">Populyarlıq</div></div>
@@ -4358,10 +4354,8 @@
       document.getElementById("playerCardLevel").textContent = p.level || 1;
       document.getElementById("playerCardMissions").textContent = p.missions_done || 0;
       document.getElementById("playerCardPopularity").textContent = p.popularity || 0;
-      document.getElementById("playerCardXp").textContent = sd.xp || 0;
       document.getElementById("playerCardGames").textContent = sd.gamesPlayed || 0;
       document.getElementById("playerCardGoldTotal").textContent = sd.totalGoldEarned || 0;
-      document.getElementById("playerCardGoldNow").textContent = (p.gold != null ? p.gold : (sd.gold || 0));
       document.getElementById("playerCardPowerups").textContent = sd.powerupsUsed || 0;
       document.getElementById("playerCardTime").textContent = formatDuration(sd.totalPlayTimeMs || 0);
       document.getElementById("playerCardBestScore").textContent = bestScore;
@@ -7215,7 +7209,7 @@
     renderProfile();
   }
 
-  // ===== 2x Xal sürətləndirici (mağazadan alınan, real vaxta görə fəaliyyət göstərən) =====
+  // ===== 2x XP sürətləndirici (mağazadan alınan, real vaxta görə fəaliyyət göstərən) =====
   function isXpBoostActive(){
     return !!profile.xpBoostUntil && Date.now() < profile.xpBoostUntil;
   }
@@ -7603,11 +7597,9 @@
     renderProfileCardSection();
     renderOwnTitlesAndMedals(); // Zindan kubokları/medalları
     document.getElementById("statLevel").textContent = profile.level || 1;
-    document.getElementById("statXpTotal").textContent = profile.xp || 0;
     document.getElementById("statGames").textContent = profile.gamesPlayed || 0;
     document.getElementById("statMissions").textContent = profile.missionsDone || 0;
     document.getElementById("statGoldTotal").textContent = profile.totalGoldEarned || 0;
-    document.getElementById("statGoldNow").textContent = profile.gold || 0;
     document.getElementById("statPowerups").textContent = profile.powerupsUsed || 0;
     var liveMs = (profile.totalPlayTimeMs || 0) + (sessionStartTime ? (performance.now() - sessionStartTime) : 0);
     document.getElementById("statTime").textContent = formatDuration(liveMs);
