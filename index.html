@@ -1874,7 +1874,7 @@
     <div class="badges">
       <div class="badge" id="levelBadge" style="display:none"><div class="lbl">LEVEL</div><div class="val" id="levelBadgeVal">1</div></div>
       <div class="badge"><div class="lbl">MİSYA</div><div class="val" id="missionVal">0</div></div>
-      <div class="badge"><div class="lbl">XAL</div><div class="val" id="xpVal">0</div><span class="xp-boost-inline" id="xpBoostGameBadge" style="display:none">⚡2x</span></div>
+      <div class="badge"><div class="lbl">XP</div><div class="val" id="xpVal">0</div><span class="xp-boost-inline" id="xpBoostGameBadge" style="display:none">⚡2x</span></div>
       <div class="badge"><div class="lbl">CAN</div><div class="val hearts" id="livesVal"></div></div>
       <div class="badge" id="battleTimerBadge" style="display:none"><div class="lbl">VAXT</div><div class="val" id="battleTimerVal">60</div></div>
       <div class="badge" id="battleOpponentBadge" style="display:none"><div class="lbl" id="battleOpponentLbl">RƏQİB</div><div class="val" id="battleOpponentScoreVal">0</div></div>
@@ -8853,10 +8853,10 @@
       var dungeonXpPct = getCardDungeonXpBonusPct();
       if(dungeonXpPct > 0) finalScore = Math.round(finalScore * (1 + dungeonXpPct / 100));
     }
-    // Bonuslarla birlikdə toplanmış yekun nəticənin (finalScore) hər 1000-inə görə 15 XP
+    // Bonuslarla birlikdə toplanmış yekun nəticənin (finalScore) hər 1000-inə görə 123 XP
     // bonusu — bu, digər bonuslardan fərqli olaraq YALNIZ oyunçunun səviyyəsi üçün XP-dir,
     // "xal" ekranındakı yekun ədədə (finalScore) təsir etmir
-    var xpBonus = Math.floor(finalScore / 1000) * 15;
+    var xpBonus = Math.floor(finalScore / 1000) * 123;
     // Hər tamamlanmış 8 misyaya görə 1 rastgələ (bərabər şansla) rəngli kubik qazanılır —
     // gələcək kubik-əsaslı funksiyalar üçün çantada (profile.cubeInventory) toplanır
     var cubesEarned = Math.floor(missionCount / 8);
