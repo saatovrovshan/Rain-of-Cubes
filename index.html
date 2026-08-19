@@ -1319,6 +1319,35 @@
   .admin-flag-reason{font-size:11px;color:#c0392b;font-weight:700;margin-top:2px}
   .admin-empty-hint{color:#a99;font-size:13px;padding:20px;text-align:center}
 
+  .admin-history-btn{width:100%;background:var(--blue);color:#fff;border:none;border-radius:10px;padding:11px;font-size:12px;font-weight:800;cursor:pointer;margin-bottom:10px}
+  .admin-history-row{display:flex;justify-content:space-between;align-items:center;background:var(--panel);border-radius:10px;padding:9px 12px;margin-bottom:6px;cursor:pointer}
+  .admin-history-row:hover{outline:2px solid var(--blue)}
+  .admin-history-row-left{text-align:left}
+  .admin-history-row-mode{font-size:12px;font-weight:800;color:var(--ink)}
+  .admin-history-row-when{font-size:10px;color:#a99;font-weight:600}
+  .admin-history-row-score{font-size:13px;font-weight:900;color:var(--ink);font-variant-numeric:tabular-nums}
+  .admin-history-row-noreplay{font-size:9px;color:#c0392b;font-weight:700}
+
+  /* ===== Admin replay proyektoru — canlı oyun vəziyyətinə TOXUNMUR, tam izolə edilmiş ===== */
+  #adminReplayScreen{position:absolute;inset:0;background:#12100e;display:none;flex-direction:column;z-index:500;padding:14px}
+  #adminReplayScreen.show{display:flex}
+  .admin-replay-header{display:flex;align-items:center;gap:10px;color:#fff;flex-shrink:0}
+  #adminReplayClose{background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:800;cursor:pointer}
+  #adminReplayMeta{font-size:12px;font-weight:700;color:#e8e0d0;flex:1;text-align:right}
+  .admin-replay-stats{display:flex;gap:10px;color:#e8e0d0;font-size:11px;font-weight:800;padding:10px 0;flex-shrink:0}
+  .admin-replay-stats span{background:rgba(255,255,255,.1);border-radius:8px;padding:4px 9px}
+  .admin-replay-field-wrap{flex:1;min-height:0;position:relative;background:#1c1912;border-radius:12px;overflow:hidden}
+  #adminReplayField{position:absolute;inset:0}
+  .replay-cube{position:absolute;width:32px;height:32px;border-radius:7px;box-shadow:inset 0 -3px 0 rgba(0,0,0,.25);transition:opacity .25s ease,transform .25s ease}
+  .replay-cube.replay-hit{opacity:0;transform:scale(1.5)}
+  .replay-cube.replay-wrong{opacity:0;transform:scale(.5) rotate(25deg);filter:grayscale(60%)}
+  .admin-replay-progress-track{height:6px;background:rgba(255,255,255,.12);border-radius:4px;margin-top:12px;flex-shrink:0}
+  .admin-replay-progress-fill{height:100%;width:0%;background:var(--green);border-radius:4px}
+  .admin-replay-controls{display:flex;align-items:center;gap:8px;margin-top:12px;flex-shrink:0}
+  #adminReplayPlayBtn{background:var(--green);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:15px;cursor:pointer}
+  .admin-replay-speed{background:rgba(255,255,255,.12);color:#e8e0d0;border:none;border-radius:8px;padding:9px 12px;font-size:12px;font-weight:800;cursor:pointer}
+  .admin-replay-speed.active{background:var(--blue);color:#fff}
+
   #banBlockScreen{position:absolute;inset:0;background:rgba(20,10,10,.96);display:none;align-items:center;justify-content:center;z-index:9999;padding:20px}
   #banBlockScreen.show{display:flex}
   .ban-block-card{background:linear-gradient(160deg,#fff5f2,#fbe4e0);border-radius:20px;padding:28px 22px;width:100%;max-width:340px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.5)}
@@ -1673,6 +1702,24 @@
       <div class="shop-tabs" id="adminPanelTabs"></div>
     </div>
     <div id="adminPanelContent"></div>
+  </div>
+
+  <!-- Admin replay proyektoru — canlı oyun vəziyyətinə (fieldCubes/mission/profile) TOXUNMUR,
+       tam İZOLƏ edilmiş öz kub elementləri ilə qeyd olunmuş oyunu canlandırır -->
+  <div id="adminReplayScreen">
+    <div class="admin-replay-header">
+      <button id="adminReplayClose">✕ Bağla</button>
+      <div id="adminReplayMeta"></div>
+    </div>
+    <div class="admin-replay-stats" id="adminReplayStats"></div>
+    <div class="admin-replay-field-wrap"><div id="adminReplayField"></div></div>
+    <div class="admin-replay-progress-track"><div class="admin-replay-progress-fill" id="adminReplayProgress"></div></div>
+    <div class="admin-replay-controls">
+      <button id="adminReplayPlayBtn">⏸️</button>
+      <button class="admin-replay-speed active" data-speed="1">1x</button>
+      <button class="admin-replay-speed" data-speed="2">2x</button>
+      <button class="admin-replay-speed" data-speed="4">4x</button>
+    </div>
   </div>
 
   <!-- Banlanmış hesab üçün blok ekranı — bütün digər ekranlardan yuxarıda, bağlanmır -->
@@ -3389,6 +3436,14 @@
   var slowTimerInterval = null;
   var currentFallDuration = 120000;
   var missionCount = 0;
+
+  // ===== Admin Panel: oyun tarixçəsi/replay qeydi =====
+  // Yalnız bulud hesabı olan (cloudUserId) oyunçular üçün, hər oyun boyu spawn/toxunma/buraxılma/ulti
+  // hadisələri yığılır (bax spawnCube/onCubeTap/usePowerup) və gameOver()-də game_history cədvəlinə
+  // göndərilir — admin panel bunu "▶️ Play" ilə TAM AYRI, izolə edilmiş bir vizual proyektorda (bax
+  // runAdminReplay) canlandırır. Qeyd YALNIZ müşahidədir — heç bir oyun məntiqini dəyişmir.
+  var gameActionLog = null; // null = qeyd edilmir; array = bu oyun qeyd olunur
+  var gameLogStartTime = 0;
 
   // ===== Arkada Rejimi: level-əsaslı, ulduz reytinqli rejim (Misya Rejimindən ayrı) =====
   var gameMode = "endless"; // "endless" (Misya Rejimi) | "arcade" | "battle"
@@ -5560,7 +5615,10 @@
         '<div class="admin-grant-cubes">' + cubeInputsHtml + '</div>' +
         '<button class="admin-grant-submit" id="adminGrantSubmit">🎁 Göndər</button>' +
         '<div style="font-size:10px;color:#a99;margin-top:6px;text-align:center">Qeyd: oyunçu HƏMİN ANDA oyunda aktivdirsə, öz lokal profili bu dəyişikliyin üstünə yaza bilər — mümkünsə oyunçu oflayn olanda göndərin.</div>' +
-      '</div>';
+      '</div>' +
+      '<div class="admin-section-title">Son oyunlar</div>' +
+      '<button class="admin-history-btn" id="adminHistoryLoadBtn">🎮 Son 100 oyunu göstər</button>' +
+      '<div id="adminHistoryList"></div>';
 
     document.getElementById("adminDetailBack").addEventListener("click", function(){
       adminCurrentPlayerId = null;
@@ -5570,6 +5628,7 @@
       btn.addEventListener("click", function(){ adminApplyBan(p.id, this.getAttribute("data-ban")); });
     });
     document.getElementById("adminGrantSubmit").addEventListener("click", function(){ adminGrantResources(p.id); });
+    document.getElementById("adminHistoryLoadBtn").addEventListener("click", function(){ loadAdminGameHistory(p.id); });
   }
 
   function adminApplyBan(playerId, type){
@@ -5653,6 +5712,168 @@
           row.addEventListener("click", function(){ openAdminPlayerDetail(this.getAttribute("data-id")); });
         });
       });
+  }
+
+  // ================= SON OYUNLAR + REPLAY =================
+  var adminHistoryCache = {};
+  var AZ_MODE_LABELS = {endless:"Misya Rejimi", arcade:"Arkada", battle:"Döyüş", dungeon:"Zindan"};
+
+  function loadAdminGameHistory(playerId){
+    if(!isAdminUser() || !supabaseClient) return;
+    var el = document.getElementById("adminHistoryList");
+    if(!el) return;
+    el.innerHTML = '<div class="admin-empty-hint">Yüklənir...</div>';
+    supabaseClient.from("game_history").select("id,mode,score,duration_ms,created_at")
+      .eq("user_id", playerId).order("created_at", {ascending:false}).limit(100)
+      .then(function(res){
+        el = document.getElementById("adminHistoryList");
+        if(!el) return;
+        if(res.error){ el.innerHTML = '<div class="admin-empty-hint">⚠️ ' + escapeHtml(res.error.message) + '</div>'; return; }
+        var rows = res.data || [];
+        adminHistoryCache = {};
+        rows.forEach(function(r){ adminHistoryCache[r.id] = r; });
+        if(!rows.length){ el.innerHTML = '<div class="admin-empty-hint">Bu oyunçunun qeydiyyatlı oyunu yoxdur (yalnız bu yenilikdən SONRA oynanan oyunlar qeyd olunur)</div>'; return; }
+        el.innerHTML = rows.map(function(r){
+          var when = "";
+          try{ when = new Date(r.created_at).toLocaleString("az-AZ"); }catch(e){}
+          return '<div class="admin-history-row" data-id="' + r.id + '">' +
+            '<div class="admin-history-row-left"><div class="admin-history-row-mode">' + (AZ_MODE_LABELS[r.mode] || r.mode) + '</div>' +
+            '<div class="admin-history-row-when">' + when + ' · ' + formatDuration(r.duration_ms || 0) + '</div></div>' +
+            '<div class="admin-history-row-score">' + (r.score||0) + ' xal ▶️</div>' +
+            '</div>';
+        }).join("");
+        el.querySelectorAll(".admin-history-row").forEach(function(row){
+          row.addEventListener("click", function(){ openAdminReplay(this.getAttribute("data-id")); });
+        });
+      });
+  }
+
+  function openAdminReplay(gameId){
+    if(!supabaseClient) return;
+    var meta = adminHistoryCache[gameId];
+    supabaseClient.from("game_history").select("log").eq("id", gameId).maybeSingle().then(function(res){
+      if(res.error || !res.data){ showToast("⚠️ Oyun tapılmadı"); return; }
+      runAdminReplay(res.data.log || [], meta || {});
+    });
+  }
+
+  // Replay TAM İZOLƏ edilmiş öz mini-render dövrəsidir — canlı oyunun fieldCubes/mission/profile
+  // dəyişənlərinə HEÇ TOXUNMUR, spawnCube()/onCubeTap() belə çağırmır. Ona görə admin nə qədər
+  // replay izləsə də, öz hesabına (XP/qızıl/mission) sıfır təsir var.
+  var adminReplayState = null;
+  function runAdminReplay(log, meta){
+    var overlay = document.getElementById("adminReplayScreen");
+    var field = document.getElementById("adminReplayField");
+    field.innerHTML = "";
+    var when = "";
+    try{ if(meta.created_at) when = new Date(meta.created_at).toLocaleString("az-AZ"); }catch(e){}
+    document.getElementById("adminReplayMeta").textContent =
+      (AZ_MODE_LABELS[meta.mode] || meta.mode || "") + " · " + (meta.score||0) + " xal · " + when;
+    overlay.classList.add("show");
+
+    if(adminReplayState && adminReplayState.rafId) cancelAnimationFrame(adminReplayState.rafId);
+    var st = {
+      cubes: {}, stats: {hit:0, wrong:0, timeout:0, powerup:0},
+      speed: 1, playing: true, virtualElapsed: 0, lastRealTime: null,
+      nextEventIdx: 0, fieldH: field.clientHeight || 400, rafId: null, log: log, meta: meta, done: false
+    };
+    adminReplayState = st;
+    renderReplayStats(st);
+    document.getElementById("adminReplayPlayBtn").textContent = "⏸️";
+    document.getElementById("adminReplayProgress").style.width = "0%";
+
+    function colorHex(id){
+      var c = MENU_BG_COLORS.find(function(x){ return x.id === id; });
+      return c ? c.hex : "#999";
+    }
+
+    function process(ev, idx){
+      if(ev.type === "spawn"){
+        // DİQQƏT: spawn hadisəsinin ÖZÜNÜN "seq"-i YOXDUR — qeyd zamanı (spawnCube) record.logSeq
+        // elə gameActionLog.push()-dan ƏVVƏLKİ uzunluğa (yəni bu hadisənin öz massiv indeksinə)
+        // bərabər qoyulur. tap/miss hadisələri İSƏ HƏMİN indeksi öz "seq" sahəsində daşıyır.
+        // Ona görə spawn-ı öz "seq"-inə YOX, massivdəki İNDEKSİNƏ (idx) görə açarlaşdırmalıyıq.
+        var cel = document.createElement("div");
+        cel.className = "replay-cube";
+        cel.style.background = colorHex(ev.c);
+        cel.style.left = Math.max(0, ev.x) + "px";
+        cel.style.top = "-34px";
+        field.appendChild(cel);
+        st.cubes[idx] = {el: cel, spawnT: ev.t, dur: ev.d || 1, done:false};
+      } else if(ev.type === "tap"){
+        var c = st.cubes[ev.seq];
+        if(c && !c.done){
+          c.done = true;
+          c.el.classList.add(ev.hit ? "replay-hit" : "replay-wrong");
+          st.stats[ev.hit ? "hit" : "wrong"]++;
+          (function(cc){ setTimeout(function(){ if(cc.parentNode) cc.parentNode.removeChild(cc); }, 300); })(c.el);
+        }
+        renderReplayStats(st);
+      } else if(ev.type === "miss"){
+        var c2 = st.cubes[ev.seq];
+        if(c2) c2.done = true;
+        st.stats.timeout++;
+        renderReplayStats(st);
+      } else if(ev.type === "powerup"){
+        st.stats.powerup++;
+        renderReplayStats(st);
+      }
+    }
+
+    function frame(now){
+      if(!st.playing){ st.rafId = requestAnimationFrame(frame); return; }
+      if(st.lastRealTime === null) st.lastRealTime = now;
+      var dtReal = now - st.lastRealTime;
+      st.lastRealTime = now;
+      st.virtualElapsed += dtReal * st.speed;
+
+      while(st.nextEventIdx < st.log.length && st.log[st.nextEventIdx].t <= st.virtualElapsed){
+        process(st.log[st.nextEventIdx], st.nextEventIdx);
+        st.nextEventIdx++;
+      }
+
+      Object.keys(st.cubes).forEach(function(seq){
+        var c = st.cubes[seq];
+        if(c.done) return;
+        var progress = (st.virtualElapsed - c.spawnT) / c.dur;
+        if(progress >= 1){
+          c.done = true;
+          if(c.el.parentNode) c.el.parentNode.removeChild(c.el);
+          return;
+        }
+        c.el.style.top = Math.max(-34, progress * st.fieldH) + "px";
+      });
+
+      var totalMs = Math.max(1, meta.duration_ms || st.virtualElapsed || 1);
+      document.getElementById("adminReplayProgress").style.width = Math.min(100, (st.virtualElapsed / totalMs) * 100) + "%";
+
+      if(st.nextEventIdx >= st.log.length && Object.keys(st.cubes).every(function(s){ return st.cubes[s].done; })){
+        st.playing = false;
+        st.done = true;
+        document.getElementById("adminReplayPlayBtn").textContent = "🔁";
+        return;
+      }
+      st.rafId = requestAnimationFrame(frame);
+    }
+    st.rafId = requestAnimationFrame(frame);
+  }
+
+  function renderReplayStats(st){
+    var el = document.getElementById("adminReplayStats");
+    if(!el) return;
+    el.innerHTML =
+      '<span>✅ ' + st.stats.hit + '</span>' +
+      '<span>❌ ' + st.stats.wrong + '</span>' +
+      '<span>💔 ' + st.stats.timeout + '</span>' +
+      '<span>⚡ ' + st.stats.powerup + '</span>';
+  }
+
+  function closeAdminReplay(){
+    document.getElementById("adminReplayScreen").classList.remove("show");
+    if(adminReplayState){
+      if(adminReplayState.rafId) cancelAnimationFrame(adminReplayState.rafId);
+      adminReplayState = null;
+    }
   }
 
   // ================= BAN BLOK EKRANI =================
@@ -7784,6 +8005,30 @@
     }
   }
 
+  // Bu oyunun qeydini (əgər varsa) game_history-ə göndərir — admin panelin "Son Oyunlar" +
+  // "▶️ Play" (runAdminReplay) üçün. Sükutla uğursuz ola bilər (şəbəkə/RLS problemi) — oyunun
+  // özünə HEÇ bir təsiri olmamalıdır, ona görə heç bir nəticə gözlənilmir/göstərilmir.
+  function submitGameHistory(durationMs){
+    if(!supabaseClient || !cloudUserId || !gameActionLog || !gameActionLog.length){ gameActionLog = null; return; }
+    var log = gameActionLog;
+    gameActionLog = null;
+    supabaseClient.from("game_history").insert({
+      user_id: cloudUserId, mode: gameMode, score: Math.round(sessionXpEarned || 0),
+      duration_ms: Math.round(durationMs || 0), log: log
+    }).then(function(res){
+      if(res.error) return;
+      // Yalnız SON 100 oyun saxlanılır — bundan artığını sil (öz sətirlərini silmək RLS-də
+      // hər zaman icazəlidir, admin-only policy lazım deyil).
+      supabaseClient.from("game_history").select("id").eq("user_id", cloudUserId)
+        .order("created_at", {ascending:false}).range(100, 300)
+        .then(function(res2){
+          if(res2.error || !res2.data || !res2.data.length) return;
+          var ids = res2.data.map(function(r){ return r.id; });
+          supabaseClient.from("game_history").delete().in("id", ids).then(function(){});
+        });
+    });
+  }
+
   function gameOver(){
     // Eyni anda bir neçə kubik canı 0-dan aşağı endirə bilər (hər biri öz loseLife() çağırışı
     // ilə növbəti setTimeout(gameOver,400) planlaşdırır) — təkrarını sakitcə görməzdən gəl,
@@ -7799,6 +8044,7 @@
     playGameOverSound();
     var sessionDurationMs = sessionStartTime ? (performance.now() - sessionStartTime) : 0;
     accumulatePlayTime();
+    submitGameHistory(sessionDurationMs);
 
     if(gameMode === "arcade"){
       saveProfile();
@@ -8301,6 +8547,10 @@
     var record = {el:el, color:color, caught:false, y:0, rafId:null, lastFrame:performance.now(), animate:null, accumTime:0, smileyGlyphEl:smileyGlyphEl};
     fieldCubes.push(record);
     tryMakeCubeRare(record, el); // Nadir Kubik
+    if(gameActionLog){
+      record.logSeq = gameActionLog.length;
+      gameActionLog.push({t:Math.round(performance.now()-gameLogStartTime), type:"spawn", c:color.id, x:Math.round(x), d:Math.round(duration), f:!!opts.fastStart});
+    }
 
     var targetTop = field.clientHeight + 20;
     var travel = targetTop + 56;
@@ -8349,6 +8599,7 @@
             var idx = fieldCubes.indexOf(record);
             if(idx>=0) fieldCubes.splice(idx,1);
             if(el.parentNode) el.parentNode.removeChild(el);
+            if(gameActionLog && record.logSeq !== undefined) gameActionLog.push({t:Math.round(performance.now()-gameLogStartTime), type:"miss", seq:record.logSeq});
             loseLife("Kubik düşdü!");
             return;
           }
@@ -8360,6 +8611,7 @@
           var idx2 = fieldCubes.indexOf(record);
           if(idx2>=0) fieldCubes.splice(idx2,1);
           if(el.parentNode) el.parentNode.removeChild(el);
+          if(gameActionLog && record.logSeq !== undefined) gameActionLog.push({t:Math.round(performance.now()-gameLogStartTime), type:"miss", seq:record.logSeq});
           loseLife("Kubik düşdü!");
           return;
         }
@@ -8580,6 +8832,10 @@
     if(record.caught || !spawning || !gameActive || paused) return;
     record.caught = true;
     if(record.rafId) cancelAnimationFrame(record.rafId);
+    if(gameActionLog && record.logSeq !== undefined){
+      var wasHit = !!(mission && !mission.isBoss && !smashModeActive && record.color && mission.color && record.color.id === mission.color.id);
+      gameActionLog.push({t:Math.round(performance.now()-gameLogStartTime), type:"tap", seq:record.logSeq, hit:wasHit});
+    }
 
     var idx = fieldCubes.indexOf(record);
     if(idx>=0) fieldCubes.splice(idx,1);
@@ -8798,6 +9054,7 @@
   }
 
   function usePowerup(id){
+    if(gameActionLog) gameActionLog.push({t:Math.round(performance.now()-gameLogStartTime), type:"powerup", which:id});
     profile.powerupsUsed = (profile.powerupsUsed||0) + 1;
     usesThisGame[id] = (usesThisGame[id] || 0) + 1;
     // Bir oyun ərzində istifadə olunan ultilərin CƏMİ (bütün növlər) — "bir oyunda N ulti işlət"
@@ -9886,6 +10143,8 @@
     }
     if(gameMode === "endless") addDailyProgress("endlessGames", 1);
     sessionStartTime = performance.now();
+    gameActionLog = cloudUserId ? [] : null;
+    gameLogStartTime = sessionStartTime;
     saveProfile();
     newMission();
     spawnStartBurst();
@@ -12195,6 +12454,27 @@
   document.getElementById("banBlockSignOut").addEventListener("click", function(){
     document.getElementById("banBlockScreen").classList.remove("show");
     signOutGoogle();
+  });
+  document.getElementById("adminReplayClose").addEventListener("click", closeAdminReplay);
+  document.getElementById("adminReplayPlayBtn").addEventListener("click", function(){
+    if(!adminReplayState) return;
+    if(adminReplayState.done){
+      // Bitmiş replay-i başdan oyna
+      runAdminReplay(adminReplayState.log, adminReplayState.meta || {});
+      return;
+    }
+    adminReplayState.playing = !adminReplayState.playing;
+    if(adminReplayState.playing) adminReplayState.lastRealTime = null; // fasilədən sonra vaxt sıçrayışının qarşısını al
+    this.textContent = adminReplayState.playing ? "⏸️" : "▶️";
+  });
+  document.querySelectorAll(".admin-replay-speed").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      if(!adminReplayState) return;
+      adminReplayState.speed = parseFloat(this.getAttribute("data-speed"));
+      adminReplayState.lastRealTime = null; // sürət dəyişəndə də eyni sıçrayış riski var
+      document.querySelectorAll(".admin-replay-speed").forEach(function(b){ b.classList.remove("active"); });
+      this.classList.add("active");
+    });
   });
   document.getElementById("giftRevealClose").addEventListener("click", function(){
     document.getElementById("giftRevealModal").classList.remove("show");
