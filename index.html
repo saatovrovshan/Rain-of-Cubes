@@ -12807,7 +12807,8 @@
     dungeonScreen.style.display = "none";
     menuScreen.style.display = "";
     startMenuBgAnim();
-    clearInterval(dungeonTimerInterval);
+    // DİQQƏT: dungeonTimerInterval BURADA dayandırılmır — əsas menyudakı "Gündəlik Zindan"
+    // düyməsi də (dungeonBtnSub) eyni interval ilə davamlı yenilənir, bax updateDungeonTimer.
   }
 
   function renderDungeonInfo(){
@@ -12842,8 +12843,13 @@
     var m = Math.floor((secondsLeft % 3600) / 60);
     var s = secondsLeft % 60;
     function pad(n){ return n < 10 ? "0" + n : "" + n; }
+    var timeStr = pad(h) + ":" + pad(m) + ":" + pad(s);
     var el = document.getElementById("dungeonTimer");
-    if(el) el.textContent = "⏳ Yenilənməyə: " + pad(h) + ":" + pad(m) + ":" + pad(s);
+    if(el) el.textContent = "⏳ Yenilənməyə: " + timeStr;
+    // Zindan ekranı açıq olmasa belə, əsas menyudakı düymənin üzərində DƏ eyni geri sayım
+    // göstərilir — bax startDungeonTimer-in boot zamanı çağırılması (yalnız ekran açılanda deyil)
+    var btnSub = document.getElementById("dungeonBtnSub");
+    if(btnSub) btnSub.textContent = "⏳ " + timeStr;
   }
   function startDungeonTimer(){
     clearInterval(dungeonTimerInterval);
@@ -13435,6 +13441,7 @@
   setTimeout(maybeAutoOpenDaily, 900);
   setTimeout(maybeAutoOpenWheel, 1600);
   setTimeout(maybeShowLevelUpPopup, 2300);
+  startDungeonTimer(); // əsas menyudakı "Gündəlik Zindan" düyməsinin geri sayımı bootdan etibarən işləsin
 
   updateSoundUI();
   renderProfile();
