@@ -987,7 +987,10 @@
   @keyframes missionFlashFade{0%{opacity:0}12%{opacity:1}65%{opacity:1}100%{opacity:0}}
   @keyframes missionFlashPop{0%{transform:scale(.3)}35%{transform:scale(1.2)}60%{transform:scale(1)}100%{transform:scale(1)}}
 
-  .toast{position:absolute;left:50%;top:16px;transform:translateX(-50%);background:rgba(0,0,0,.75);color:#fff;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .25s ease,top .25s ease;z-index:30;white-space:nowrap}
+  /* background bilərəkdən az örtücüdür (tünd 100% deyil) — bildiriş göstərilərkən altından keçən
+     kubiklər hələ də görünsün deyə (pointer-events:none ilə toxunuş onsuz da keçir, amma tam qapaq
+     fon oyunçunun kubiku GÖRMƏSİNƏ mane olurdu, ona görə vurmaq praktik olaraq çətinləşirdi) */
+  .toast{position:absolute;left:50%;top:16px;transform:translateX(-50%);background:rgba(0,0,0,.4);color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.9),0 0 6px rgba(0,0,0,.7);padding:8px 16px;border-radius:20px;font-size:13px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .25s ease,top .25s ease;z-index:30;white-space:nowrap}
   .toast.show{opacity:1;top:26px}
 
   .game-timers-row{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:40;display:flex;gap:5px;flex-wrap:nowrap;justify-content:center;max-width:calc(100% - 12px)}
@@ -3631,11 +3634,19 @@
   // hər kubik toxunuşu arasındakı boşluq ən çox IDLE_GAP_CAP_MS qədər "fəal" sayılır, bundan
   // artıq boşdayanma (heç bir kubikə toxunmadan gözləmə) bonusa daxil edilmir. Ekrandakı "Vaxtı:"
   // etiketi isə DƏYİŞMİR — hələ də əsl keçən vaxtı göstərir (bax gameOver-də bonusSeconds).
+  // Sayğac oyun başlayanda YOX, məhz BİRİNCİ kubik toxunuşunda başlayır (bax activityStarted) —
+  // oyunçunun reaksiya üçün sərf etdiyi ilk anlar heç vaxt "fəal vaxt" sayılmır.
   var sessionActiveMs = 0;
   var lastActivityTime = 0;
+  var activityStarted = false;
   var IDLE_GAP_CAP_MS = 3000;
   function recordActivity(){
     var now = performance.now();
+    if(!activityStarted){
+      activityStarted = true;
+      lastActivityTime = now;
+      return;
+    }
     sessionActiveMs += Math.min(now - lastActivityTime, IDLE_GAP_CAP_MS);
     lastActivityTime = now;
   }
@@ -10894,6 +10905,7 @@
     sessionStartTime = performance.now();
     sessionActiveMs = 0;
     lastActivityTime = sessionStartTime;
+    activityStarted = false;
     gameActionLog = cloudUserId ? [] : null;
     gameLogStartTime = sessionStartTime;
     saveProfile();
