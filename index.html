@@ -3627,6 +3627,18 @@
   var sessionGoldEarned = 0;
   var sessionBossesDefeated = 0; // oyun bitdi bonusunda göstərilən boss sayı
   var sessionBossXpEarned = 0; // bosslardan qazanılan XAM XP — oyun bitdi bonusunda 3.5x hesablanır
+  // Vaxt bonusu artıq XAM keçən vaxta görə YOX, oyunçunun FƏAL olduğu vaxta görə hesablanır —
+  // hər kubik toxunuşu arasındakı boşluq ən çox IDLE_GAP_CAP_MS qədər "fəal" sayılır, bundan
+  // artıq boşdayanma (heç bir kubikə toxunmadan gözləmə) bonusa daxil edilmir. Ekrandakı "Vaxtı:"
+  // etiketi isə DƏYİŞMİR — hələ də əsl keçən vaxtı göstərir (bax gameOver-də bonusSeconds).
+  var sessionActiveMs = 0;
+  var lastActivityTime = 0;
+  var IDLE_GAP_CAP_MS = 3000;
+  function recordActivity(){
+    var now = performance.now();
+    sessionActiveMs += Math.min(now - lastActivityTime, IDLE_GAP_CAP_MS);
+    lastActivityTime = now;
+  }
   // Oyun bitdi ekranına toxunduqda bütün sayğaclar (bonus sətirləri + yekun xal) dərhal öz son
   // dəyərinə "sıçrayır" — toxunulmasa əvvəlki kimi ardıcıl sayğac animasiyası davam edir
   var gameOverSkipRequested = false;
@@ -8791,8 +8803,12 @@
     // qızıl və öldürülən boss sayına görə. Bu bonus oyunçunun HƏQİQİ (saxlanılan) xalına əlavə
     // olunur ki, liderbord/naliyyətlər də bunu əks etdirsin — sadəcə vizual effekt deyil.
     var rawScore = sessionXpEarned;
-    var bonusSeconds = Math.floor(sessionDurationMs / 1000);
-    var timeBonus = bonusSeconds * 33;
+    var bonusSeconds = Math.floor(sessionDurationMs / 1000); // "Vaxtı:" etiketində göstərilən ƏSL keçən vaxt — dəyişməz
+    // Son toxunuşdan oyun bitənə qədərki boşluq da eyni 3san. tavanla əlavə olunur (oyunçu heç
+    // toxunmadan oyunu bitirərsə belə düzgün hesablansın)
+    recordActivity();
+    var activeSeconds = Math.floor(sessionActiveMs / 1000);
+    var timeBonus = activeSeconds * 99; // əvvəlki 33-ün 3 qatı, YALNIZ fəal saniyələrə görə (bax sessionActiveMs)
     var missionBonus = missionCount * 21;
     var goldBonus = sessionGoldEarned * 55;
     // Boss bonusu artıq boss sayına YOX, oyunçunun bosslardan qazandığı XP-nin özünə (3.5x) görə
@@ -9561,6 +9577,9 @@
   function onCubeTap(record){
     if(record.caught || !spawning || !gameActive || paused) return;
     record.caught = true;
+    // Vaxt bonusu üçün fəallıq qeydi — rəngindən/nəticəsindən asılı olmadan HƏR toxunuş "fəal"
+    // sayılır (bax recordActivity/sessionActiveMs elanı)
+    recordActivity();
     if(record.rafId) cancelAnimationFrame(record.rafId);
     if(gameActionLog && record.logSeq !== undefined){
       var wasHit = !!(mission && !mission.isBoss && !smashModeActive && record.color && mission.color && record.color.id === mission.color.id);
@@ -10873,6 +10892,8 @@
     }
     if(gameMode === "endless") addDailyProgress("endlessGames", 1);
     sessionStartTime = performance.now();
+    sessionActiveMs = 0;
+    lastActivityTime = sessionStartTime;
     gameActionLog = cloudUserId ? [] : null;
     gameLogStartTime = sessionStartTime;
     saveProfile();
