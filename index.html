@@ -1295,6 +1295,9 @@
   .admin-detail-header{display:flex;align-items:center;gap:12px;margin-bottom:14px}
   .admin-detail-name{font-size:17px;font-weight:900;color:var(--ink)}
   .admin-detail-id{font-size:11px;color:#a99;font-weight:700}
+  .admin-photo-box{background:var(--panel);border-radius:12px;padding:14px;text-align:center;margin-bottom:16px}
+  .admin-photo-preview{width:140px;height:140px;object-fit:cover;border-radius:14px;box-shadow:0 4px 12px rgba(0,0,0,.25);margin-bottom:10px}
+  .admin-photo-delete{background:var(--red);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:12px;font-weight:800;cursor:pointer;display:block;margin:0 auto}
   .admin-stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
   .admin-stat-tile{background:var(--panel);border-radius:10px;padding:9px 10px;text-align:center}
   .admin-stat-tile .ast-val{font-size:15px;font-weight:900;color:var(--ink);font-variant-numeric:tabular-nums}
@@ -5598,6 +5601,13 @@
         buildAvatarHtml({avatarUrl:p.avatar_url, countryFlag:p.country_flag, level:p.level, activeFrame:"none"}) +
         '<div><div class="admin-detail-name">' + escapeHtml(p.name || "Oyunçu") + '</div><div class="admin-detail-id">#' + (p.player_number||0) + '</div></div>' +
       '</div>' +
+      '<div class="admin-section-title">Profil şəkli</div>' +
+      '<div class="admin-photo-box">' +
+        (p.avatar_url
+          ? ('<img class="admin-photo-preview" id="adminPhotoPreview" src="' + escapeHtml(p.avatar_url) + '">' +
+             '<button class="admin-photo-delete" id="adminPhotoDeleteBtn">🗑️ Şəkli sil</button>')
+          : '<div class="admin-empty-hint">Şəkil yoxdur</div>') +
+      '</div>' +
       '<div class="admin-stat-grid">' + statsHtml + '</div>' +
       '<div class="admin-section-title">Ban statusu</div>' +
       banStatusHtml +
@@ -5605,8 +5615,14 @@
       '<div class="admin-ban-actions">' +
         '<button class="admin-ban-btn" data-ban="1h">1 saatlıq</button>' +
         '<button class="admin-ban-btn" data-ban="24h">24 saatlıq</button>' +
+        '<button class="admin-ban-btn" data-ban="7d">1 həftəlik</button>' +
         '<button class="admin-ban-btn" data-ban="perm">Həmişəlik</button>' +
         (banned ? '<button class="admin-ban-btn unban" data-ban="unban">Ban-ı ləğv et</button>' : '') +
+      '</div>' +
+      '<div class="admin-grant-row">' +
+        '<label>Xüsusi</label>' +
+        '<input type="number" id="adminCustomBanHours" placeholder="saat" min="1" step="1" style="max-width:90px">' +
+        '<button class="admin-ban-btn" id="adminCustomBanBtn" style="flex:0 0 auto">Bu qədər saat banla</button>' +
       '</div>' +
       '<div class="admin-section-title">Resurs göndər</div>' +
       '<div class="admin-grant-form">' +
@@ -5624,13 +5640,17 @@
       adminCurrentPlayerId = null;
       renderAdminPanelContent();
     });
-    el.querySelectorAll(".admin-ban-btn").forEach(function(btn){
+    el.querySelectorAll(".admin-ban-actions .admin-ban-btn").forEach(function(btn){
       btn.addEventListener("click", function(){ adminApplyBan(p.id, this.getAttribute("data-ban")); });
     });
+    document.getElementById("adminCustomBanBtn").addEventListener("click", function(){ adminApplyCustomBan(p.id); });
     document.getElementById("adminGrantSubmit").addEventListener("click", function(){ adminGrantResources(p.id); });
     document.getElementById("adminHistoryLoadBtn").addEventListener("click", function(){ loadAdminGameHistory(p.id); });
+    var photoDeleteBtn = document.getElementById("adminPhotoDeleteBtn");
+    if(photoDeleteBtn) photoDeleteBtn.addEventListener("click", function(){ adminDeletePhoto(p.id); });
   }
 
+  var ADMIN_BAN_HOURS_BY_TYPE = {"1h":1, "24h":24, "7d":24*7};
   function adminApplyBan(playerId, type){
     if(!isAdminUser() || !supabaseClient) return;
     var reasonInput = document.getElementById("adminBanReason");
@@ -5641,14 +5661,54 @@
     } else if(type === "perm"){
       patch = {banned_permanent: true, banned_until: null, ban_reason: reason || null};
     } else {
-      var hours = type === "1h" ? 1 : 24;
+      var hours = ADMIN_BAN_HOURS_BY_TYPE[type] || 24;
       patch = {banned_permanent: false, banned_until: new Date(Date.now() + hours*3600*1000).toISOString(), ban_reason: reason || null};
     }
+    adminSendBanUpdate(playerId, patch, type === "unban" ? "✅ Ban ləğv edildi" : "⛔ Oyunçu banlandı");
+  }
+
+  // "Bu qədər saat banla" — admin öz istədiyi müddəti (saatla) yazır.
+  function adminApplyCustomBan(playerId){
+    if(!isAdminUser() || !supabaseClient) return;
+    var hoursInput = document.getElementById("adminCustomBanHours");
+    var hours = hoursInput ? parseFloat(hoursInput.value) : NaN;
+    if(!hours || hours <= 0){ showToast("⚠️ Düzgün saat sayı yaz"); return; }
+    var reasonInput = document.getElementById("adminBanReason");
+    var reason = reasonInput ? reasonInput.value.trim() : "";
+    var patch = {banned_permanent: false, banned_until: new Date(Date.now() + hours*3600*1000).toISOString(), ban_reason: reason || null};
+    adminSendBanUpdate(playerId, patch, "⛔ Oyunçu " + hours + " saatlıq banlandı");
+  }
+
+  function adminSendBanUpdate(playerId, patch, successMsg){
     supabaseClient.from("profiles").update(patch).eq("id", playerId).select().then(function(res){
       if(res.error || !res.data || !res.data.length){ showToast("⚠️ Əməliyyat uğursuz oldu: " + (res.error ? res.error.message : "")); return; }
-      showToast(type === "unban" ? "✅ Ban ləğv edildi" : "⛔ Oyunçu banlandı");
+      showToast(successMsg);
       adminCurrentPlayerRow = res.data[0];
       renderAdminPlayerDetail(document.getElementById("adminPanelContent"));
+    });
+  }
+
+  // Profil şəklini silir — HƏM profiles.avatar_url (sütun), HƏM save_data.photoDataUrl (JSON
+  // blob) təmizlənir ki, oyunçunun öz klienti sonrakı adi saveProfile() sinxronizasiyasında
+  // köhnə şəkli TƏZƏDƏN yükləməsin. Qeyd: oyunçu HƏMİN ANDA aktivdirsə, ehtimal az da olsa,
+  // silinmədən dərhal sonra öz növbəti sinxronizasiyası ilə şəkli yenidən göndərə bilər — ən
+  // etibarlısı bunu banla birlikdə etməkdir (banlı hesab növbəti girişdə bloklanır).
+  function adminDeletePhoto(playerId){
+    if(!isAdminUser() || !supabaseClient) return;
+    supabaseClient.from("profiles").select("save_data").eq("id", playerId).maybeSingle().then(function(res){
+      if(res.error || !res.data){ showToast("⚠️ Profil oxunmadı"); return; }
+      var sd = res.data.save_data || {};
+      sd.photoDataUrl = null;
+      supabaseClient.from("profiles").update({avatar_url: null, save_data: sd}).eq("id", playerId).select().then(function(res2){
+        if(res2.error || !res2.data || !res2.data.length){ showToast("⚠️ Şəkil silinmədi: " + (res2.error ? res2.error.message : "")); return; }
+        showToast("🗑️ Profil şəkli silindi");
+        adminCurrentPlayerRow = res2.data[0];
+        renderAdminPlayerDetail(document.getElementById("adminPanelContent"));
+        // DİQQƏT: render YUXARIDA #adminBanReason-u TAMAMİLƏ YENİDƏN qurur — ona görə səbəbi
+        // YALNIZ render-dən SONRA doldurmaq olar, əks halda təzə (boş) input onu dərhal əvəz edər.
+        var reasonInput = document.getElementById("adminBanReason");
+        if(reasonInput) reasonInput.value = "Uyğunsuz profil şəkli";
+      });
     });
   }
 
