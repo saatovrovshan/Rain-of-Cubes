@@ -7618,11 +7618,14 @@
         renderProfile();
       });
     } else {
-      document.getElementById("statPopularity").textContent = "-";
-      document.getElementById("statLikes").textContent = "-";
-      document.getElementById("statViews").textContent = "-";
-      document.getElementById("statGiftsReceived").textContent = "-";
-      document.getElementById("statGiftsSent").textContent = "-";
+      // Qonaq oyunçunun bulud hesabı yoxdur (populyarlıq/bəyənmə/baxış/hədiyyə server-tərəfli
+      // sosial məlumatlardır), amma buna baxmayaraq "0" göstərilir — "-" əvəzinə giriş etmiş
+      // oyunçuların gördüyü EYNİ formatda (rəqəm) görünsün deyə, sadəcə həqiqətən sıfırdır
+      document.getElementById("statPopularity").textContent = "0";
+      document.getElementById("statLikes").textContent = "0";
+      document.getElementById("statViews").textContent = "0";
+      document.getElementById("statGiftsReceived").textContent = "0";
+      document.getElementById("statGiftsSent").textContent = "0";
       document.getElementById("profileIdNum").textContent = "#-";
     }
   }
