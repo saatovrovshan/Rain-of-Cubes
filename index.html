@@ -1322,6 +1322,17 @@
   .admin-flag-reason{font-size:11px;color:#c0392b;font-weight:700;margin-top:2px}
   .admin-empty-hint{color:#a99;font-size:13px;padding:20px;text-align:center}
 
+  .admin-dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px}
+  .admin-dash-card{background:var(--panel);border-radius:12px;padding:12px 10px;text-align:center}
+  .admin-dash-card.clickable{cursor:pointer;border:2px solid transparent}
+  .admin-dash-card.clickable:hover{border-color:var(--blue)}
+  .adc-icon{font-size:16px}
+  .adc-val{font-size:20px;font-weight:900;color:var(--ink);font-variant-numeric:tabular-nums}
+  .adc-lbl{font-size:10px;color:#a99;font-weight:700;text-transform:uppercase;margin-top:1px}
+  .admin-dash-modes{background:var(--panel);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+  .admin-mode-row{display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--ink);padding:4px 0}
+  .admin-mode-total{border-top:2px solid var(--board-cell);margin-top:4px;padding-top:6px;font-weight:900}
+
   .admin-history-btn{width:100%;background:var(--blue);color:#fff;border:none;border-radius:10px;padding:11px;font-size:12px;font-weight:800;cursor:pointer;margin-bottom:10px}
   .admin-history-row{display:flex;justify-content:space-between;align-items:center;background:var(--panel);border-radius:10px;padding:9px 12px;margin-bottom:6px;cursor:pointer}
   .admin-history-row:hover{outline:2px solid var(--blue)}
@@ -5508,10 +5519,19 @@
     }
     if(adminPanelActiveTab === "stats"){
       el.innerHTML =
+        '<div class="admin-dash-grid" id="adminDashGrid"></div>' +
+        '<div id="adminDashExpand"></div>' +
+        '<div class="admin-section-title">Bugünkü oyun sayı (rejimə görə)</div>' +
+        '<div id="adminDashModes" class="admin-dash-modes"><div class="admin-empty-hint">Yüklənir...</div></div>' +
+        '<div class="admin-section-title">Bugünkü liderlər (top 50)</div>' +
+        '<div class="shop-tabs" id="adminLeaderTabs"></div>' +
+        '<div id="adminLeaderList"></div>' +
+        '<div class="admin-section-title">Oyunçu axtarışı</div>' +
         '<div class="admin-search-row"><input id="adminSearchInput" placeholder="Ad və ya #ID axtar..."><button id="adminSearchBtn">Axtar</button></div>' +
         '<div id="adminSearchResults"></div>';
       document.getElementById("adminSearchBtn").addEventListener("click", doAdminSearch);
       document.getElementById("adminSearchInput").addEventListener("keydown", function(e){ if(e.key === "Enter") doAdminSearch(); });
+      loadAdminDashboard();
     } else if(adminPanelActiveTab === "flagged"){
       el.innerHTML = '<div id="adminFlaggedList" class="admin-empty-hint">Yüklənir...</div>';
       loadSuspiciousAccounts();
@@ -5745,6 +5765,165 @@
         adminCurrentPlayerRow = res2.data[0];
         renderAdminPlayerDetail(document.getElementById("adminPanelContent"));
       });
+    });
+  }
+
+  // ================= ÜMUMİ STATİSTİKA (dashboard) =================
+  // Bakı sabit UTC+4-dür (DST yoxdur) — "bu gün"ün başlanğıcı həmişə eyni düsturla tapılır.
+  function bakuTodayStartISO(){
+    return new Date(getTodayStr() + "T00:00:00+04:00").toISOString();
+  }
+
+  var adminDashCache = {online:[], newPlayers:[], deltas:[], modeCounts:{}, activeToday:[]};
+  var adminLeaderMetric = "goldEarned";
+  var ADMIN_LEADER_METRICS = [
+    {id:"goldEarned", label:"🪙 Qazanılan qızıl", field:"gold_earned_delta", unit:""},
+    {id:"goldSpent", label:"💸 Xərclənən qızıl", field:"gold_spent_delta", unit:""},
+    {id:"xp", label:"⭐ XP", field:"xp_delta", unit:""},
+    {id:"missions", label:"🎯 Misya", field:"missions_delta", unit:""},
+    {id:"active", label:"🎮 Ən aktiv", field:"gamesCount", unit:" oyun"}
+  ];
+
+  function loadAdminDashboard(){
+    if(!isAdminUser() || !supabaseClient) return;
+    var gridEl = document.getElementById("adminDashGrid");
+    var modesEl = document.getElementById("adminDashModes");
+    if(gridEl) gridEl.innerHTML = '<div class="admin-empty-hint">Yüklənir...</div>';
+    var todayStart = bakuTodayStartISO();
+    var onlineSince = new Date(Date.now() - PRESENCE_ONLINE_THRESHOLD_MS).toISOString();
+
+    Promise.all([
+      supabaseClient.from("profiles").select("id,name,player_number,avatar_url,country_flag,active_frame,level,last_seen").gte("last_seen", onlineSince).order("last_seen", {ascending:false}).limit(200),
+      supabaseClient.from("profiles").select("id", {count:"exact", head:true}),
+      supabaseClient.from("profiles").select("id", {count:"exact", head:true}).gte("last_seen", todayStart),
+      supabaseClient.from("profiles").select("id,name,player_number,avatar_url,country_flag,active_frame,level,created_at", {count:"exact"}).gte("created_at", todayStart).order("created_at", {ascending:false}).limit(50),
+      supabaseClient.from("game_history").select("user_id,mode").gte("created_at", todayStart).limit(10000),
+      supabaseClient.rpc("admin_daily_deltas")
+    ]).then(function(results){
+      var online = results[0].data || [];
+      var totalCount = results[1].count || 0;
+      var activeTodayCount = results[2].count || 0;
+      var newPlayers = results[3].data || [];
+      var newTodayCount = results[3].count || 0;
+      var gameRows = results[4].data || [];
+      var deltas = results[5].data || [];
+
+      var modeCounts = {};
+      var gamesByUser = {};
+      gameRows.forEach(function(r){
+        modeCounts[r.mode] = (modeCounts[r.mode] || 0) + 1;
+        gamesByUser[r.user_id] = (gamesByUser[r.user_id] || 0) + 1;
+      });
+
+      adminDashCache.online = online;
+      adminDashCache.newPlayers = newPlayers;
+      adminDashCache.deltas = deltas;
+      adminDashCache.modeCounts = modeCounts;
+      adminDashCache.gamesByUser = gamesByUser;
+
+      renderAdminDashCards(online.length, totalCount, activeTodayCount, newTodayCount);
+      renderAdminDashModes(modeCounts, gameRows.length);
+      renderAdminLeaderTabs();
+      renderAdminLeaderList();
+    });
+  }
+
+  function renderAdminDashCards(onlineCount, totalCount, activeTodayCount, newTodayCount){
+    var el = document.getElementById("adminDashGrid");
+    if(!el) return;
+    var cards = [
+      {id:"online", icon:"🟢", label:"Onlayn oyunçu", val:onlineCount},
+      {id:"total", icon:"👥", label:"Qeydiyyatlı (cəmi)", val:totalCount},
+      {id:"activeToday", icon:"📅", label:"Bu gün aktiv", val:activeTodayCount},
+      {id:"newToday", icon:"✨", label:"Bu gün yeni", val:newTodayCount}
+    ];
+    el.innerHTML = cards.map(function(c){
+      return '<div class="admin-dash-card" data-id="' + c.id + '"><div class="adc-icon">' + c.icon + '</div><div class="adc-val">' + c.val + '</div><div class="adc-lbl">' + c.label + '</div></div>';
+    }).join("");
+    el.querySelectorAll(".admin-dash-card[data-id='online'], .admin-dash-card[data-id='newToday']").forEach(function(card){
+      card.classList.add("clickable");
+      card.addEventListener("click", function(){ toggleAdminDashExpand(this.getAttribute("data-id")); });
+    });
+  }
+
+  var adminDashExpandedId = null;
+  function toggleAdminDashExpand(id){
+    adminDashExpandedId = (adminDashExpandedId === id) ? null : id;
+    renderAdminDashExpand();
+  }
+  function renderAdminDashExpand(){
+    var el = document.getElementById("adminDashExpand");
+    if(!el) return;
+    if(!adminDashExpandedId){ el.innerHTML = ""; return; }
+    var list = adminDashExpandedId === "online" ? adminDashCache.online : adminDashCache.newPlayers;
+    var title = adminDashExpandedId === "online" ? "🟢 Hazırda onlayn olanlar" : "✨ Bu gün qeydiyyatdan keçənlər";
+    if(!list.length){ el.innerHTML = '<div class="admin-empty-hint">' + title + ' — heç kim yoxdur</div>'; return; }
+    el.innerHTML = '<div class="admin-section-title">' + title + '</div>' +
+      list.map(function(p){
+        return '<div class="admin-player-row" data-id="' + p.id + '">' +
+          '<div class="admin-player-row-info"><div class="admin-player-row-name">' + escapeHtml(p.name || "Oyunçu") + ' <span style="color:#a99;font-weight:600">#' + (p.player_number||0) + '</span></div>' +
+          '<div class="admin-player-row-meta">Lv.' + (p.level||1) + '</div></div>' +
+          '</div>';
+      }).join("");
+    el.querySelectorAll(".admin-player-row").forEach(function(row){
+      row.addEventListener("click", function(){ openAdminPlayerDetail(this.getAttribute("data-id")); });
+    });
+  }
+
+  function renderAdminDashModes(modeCounts, total){
+    var el = document.getElementById("adminDashModes");
+    if(!el) return;
+    var modes = ["endless", "arcade", "battle", "dungeon"];
+    var rowsHtml = modes.map(function(m){
+      return '<div class="admin-mode-row"><span>' + (AZ_MODE_LABELS[m] || m) + '</span><span>' + (modeCounts[m] || 0) + '</span></div>';
+    }).join("");
+    el.innerHTML = rowsHtml + '<div class="admin-mode-row admin-mode-total"><span>Cəmi</span><span>' + total + '</span></div>';
+  }
+
+  function renderAdminLeaderTabs(){
+    var el = document.getElementById("adminLeaderTabs");
+    if(!el) return;
+    el.innerHTML = ADMIN_LEADER_METRICS.map(function(m){
+      return '<button class="shop-tab-btn' + (m.id === adminLeaderMetric ? " active" : "") + '" data-metric="' + m.id + '">' + m.label + '</button>';
+    }).join("");
+    el.querySelectorAll("button").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        adminLeaderMetric = this.getAttribute("data-metric");
+        renderAdminLeaderTabs();
+        renderAdminLeaderList();
+      });
+    });
+  }
+
+  function renderAdminLeaderList(){
+    var el = document.getElementById("adminLeaderList");
+    if(!el) return;
+    var metric = ADMIN_LEADER_METRICS.find(function(m){ return m.id === adminLeaderMetric; });
+    var rows;
+    if(metric.id === "active"){
+      var byUser = adminDashCache.gamesByUser || {};
+      var ids = Object.keys(byUser).sort(function(a,b){ return byUser[b] - byUser[a]; }).slice(0, 50);
+      var deltaById = {};
+      (adminDashCache.deltas || []).forEach(function(d){ deltaById[d.user_id] = d; });
+      rows = ids.map(function(id){
+        var d = deltaById[id];
+        return {user_id:id, name: d ? d.name : "Oyunçu", player_number: d ? d.player_number : 0, gamesCount: byUser[id]};
+      });
+    } else {
+      rows = (adminDashCache.deltas || []).filter(function(d){ return (d[metric.field]||0) > 0; })
+        .sort(function(a,b){ return (b[metric.field]||0) - (a[metric.field]||0); }).slice(0, 50);
+    }
+    if(!rows.length){ el.innerHTML = '<div class="admin-empty-hint">Bu gün üçün məlumat yoxdur</div>'; return; }
+    el.innerHTML = rows.map(function(r, i){
+      var val = metric.id === "active" ? r.gamesCount : (r[metric.field] || 0);
+      return '<div class="admin-history-row" data-id="' + r.user_id + '">' +
+        '<div class="admin-history-row-left"><div class="admin-history-row-mode">#' + (i+1) + ' · ' + escapeHtml(r.name || "Oyunçu") + '</div>' +
+        '<div class="admin-history-row-when">#' + (r.player_number||0) + '</div></div>' +
+        '<div class="admin-history-row-score">' + val + metric.unit + '</div>' +
+        '</div>';
+    }).join("");
+    el.querySelectorAll(".admin-history-row").forEach(function(row){
+      row.addEventListener("click", function(){ openAdminPlayerDetail(this.getAttribute("data-id")); });
     });
   }
 
