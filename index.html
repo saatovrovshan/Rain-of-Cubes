@@ -1346,6 +1346,14 @@
   .admin-mode-row{display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--ink);padding:4px 0}
   .admin-mode-total{border-top:2px solid var(--board-cell);margin-top:4px;padding-top:6px;font-weight:900}
 
+  .admin-period-row{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+  .admin-period-btn{flex:1;min-width:70px;background:var(--panel);color:var(--ink);border:2px solid transparent;border-radius:10px;padding:8px 6px;font-size:11px;font-weight:800;cursor:pointer}
+  .admin-period-btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .admin-period-custom{display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+  .admin-period-custom input[type=date]{flex:1;min-width:120px;padding:8px;border-radius:8px;border:2px solid var(--board-cell);font-size:12px;font-family:inherit}
+  .admin-period-custom button{background:var(--gold);color:#5a3d00;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer}
+  .admin-period-label{font-size:11px;color:#a99;font-weight:700;margin-bottom:8px}
+
   .admin-history-btn{width:100%;background:var(--blue);color:#fff;border:none;border-radius:10px;padding:11px;font-size:12px;font-weight:800;cursor:pointer;margin-bottom:10px}
   .admin-history-row{display:flex;justify-content:space-between;align-items:center;background:var(--panel);border-radius:10px;padding:9px 12px;margin-bottom:6px;cursor:pointer}
   .admin-history-row:hover{outline:2px solid var(--blue)}
@@ -1354,6 +1362,19 @@
   .admin-history-row-when{font-size:10px;color:#a99;font-weight:600}
   .admin-history-row-score{font-size:13px;font-weight:900;color:var(--ink);font-variant-numeric:tabular-nums}
   .admin-history-row-noreplay{font-size:9px;color:#c0392b;font-weight:700}
+
+  /* ===== Admin statistika hesabatı — yalnız çapda (PDF export) görünür ===== */
+  #adminPrintReport{display:none}
+  @media print{
+    body.printing-stats > *:not(#adminPrintReport){display:none !important}
+    body.printing-stats #adminPrintReport{display:block !important;position:static;color:#000;background:#fff;padding:0;font-family:inherit}
+    #adminPrintReport h1{font-size:20px;margin:0 0 8px}
+    #adminPrintReport h2{font-size:16px;margin:18px 0 6px;border-bottom:2px solid #333;padding-bottom:4px}
+    #adminPrintReport h3{font-size:13px;margin:12px 0 4px}
+    #adminPrintReport table{width:100%;border-collapse:collapse;margin-bottom:8px}
+    #adminPrintReport th,#adminPrintReport td{border:1px solid #999;padding:4px 8px;font-size:11px;text-align:left}
+    #adminPrintReport .apr-empty{font-size:11px;color:#666;margin:0 0 8px}
+  }
 
   /* ===== Admin replay proyektoru — canlı oyun vəziyyətinə TOXUNMUR, tam izolə edilmiş ===== */
   #adminReplayScreen{position:absolute;inset:0;background:#12100e;display:none;flex-direction:column;z-index:500;padding:14px}
@@ -5596,18 +5617,27 @@
     }
     if(adminPanelActiveTab === "stats"){
       el.innerHTML =
+        '<div class="admin-period-row" id="adminPeriodRow"></div>' +
+        '<div class="admin-period-custom" id="adminPeriodCustom" style="display:none">' +
+          '<input type="date" id="adminRangeStart"><span>—</span><input type="date" id="adminRangeEnd">' +
+          '<button id="adminRangeApply">Tətbiq et</button>' +
+        '</div>' +
+        '<div class="admin-period-label" id="adminPeriodLabel"></div>' +
         '<div class="admin-dash-grid" id="adminDashGrid"></div>' +
         '<div id="adminDashExpand"></div>' +
-        '<div class="admin-section-title">Bugünkü oyun sayı (rejimə görə)</div>' +
+        '<div class="admin-section-title">Oyun sayı (rejimə görə)</div>' +
         '<div id="adminDashModes" class="admin-dash-modes"><div class="admin-empty-hint">Yüklənir...</div></div>' +
-        '<div class="admin-section-title">Bugünkü liderlər (top 50)</div>' +
+        '<div class="admin-section-title">Liderlər (top 50)</div>' +
         '<div class="shop-tabs" id="adminLeaderTabs"></div>' +
         '<div id="adminLeaderList"></div>' +
+        '<button class="admin-history-btn" id="adminPdfBtn">📄 PDF Yüklə</button>' +
         '<div class="admin-section-title">Oyunçu axtarışı</div>' +
         '<div class="admin-search-row"><input id="adminSearchInput" placeholder="Ad və ya #ID axtar..."><button id="adminSearchBtn">Axtar</button></div>' +
         '<div id="adminSearchResults"></div>';
       document.getElementById("adminSearchBtn").addEventListener("click", doAdminSearch);
       document.getElementById("adminSearchInput").addEventListener("keydown", function(e){ if(e.key === "Enter") doAdminSearch(); });
+      document.getElementById("adminPdfBtn").addEventListener("click", exportAdminStatsPdf);
+      renderAdminPeriodRow();
       loadAdminDashboard();
     } else if(adminPanelActiveTab === "flagged"){
       el.innerHTML = '<div id="adminFlaggedList" class="admin-empty-hint">Yüklənir...</div>';
@@ -5846,10 +5876,11 @@
   }
 
   // ================= ÜMUMİ STATİSTİKA (dashboard) =================
-  // Bakı sabit UTC+4-dür (DST yoxdur) — "bu gün"ün başlanğıcı həmişə eyni düsturla tapılır.
-  function bakuTodayStartISO(){
-    return new Date(getTodayStr() + "T00:00:00+04:00").toISOString();
+  // Bakı sabit UTC+4-dür (DST yoxdur) — istənilən tarixin günün başlanğıcı həmişə eyni düsturla tapılır.
+  function bakuDateStartISO(dateStr){
+    return new Date(dateStr + "T00:00:00+04:00").toISOString();
   }
+  function bakuTodayStartISO(){ return bakuDateStartISO(getTodayStr()); }
 
   var adminDashCache = {online:[], newPlayers:[], deltas:[], modeCounts:{}, activeToday:[]};
   var adminLeaderMetric = "goldEarned";
@@ -5861,27 +5892,93 @@
     {id:"active", label:"🎮 Ən aktiv", field:"gamesCount", unit:" oyun"}
   ];
 
+  // ===== Dövr seçimi: Bu gün / Bu ay / Bu il / Xüsusi aralıq =====
+  var adminStatsPeriod = "today";
+  var adminStatsRange = {start: getTodayStr(), end: getTodayStr()};
+  var ADMIN_PERIODS = [
+    {id:"today", label:"Bu gün"},
+    {id:"month", label:"Bu ay"},
+    {id:"year", label:"Bu il"},
+    {id:"custom", label:"Xüsusi aralıq"}
+  ];
+
+  function computeStatsRange(period){
+    var today = getTodayStr();
+    var parts = today.split("-");
+    if(period === "today") return {start: today, end: today};
+    if(period === "month") return {start: parts[0] + "-" + parts[1] + "-01", end: today};
+    if(period === "year") return {start: parts[0] + "-01-01", end: today};
+    return adminStatsRange; // "custom" — artıq təyin olunmuş qalır
+  }
+
+  function renderAdminPeriodRow(){
+    var el = document.getElementById("adminPeriodRow");
+    if(!el) return;
+    el.innerHTML = ADMIN_PERIODS.map(function(p){
+      return '<button class="shop-tab-btn' + (p.id === adminStatsPeriod ? " active" : "") + '" data-period="' + p.id + '">' + p.label + '</button>';
+    }).join("");
+    el.querySelectorAll("button").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var period = this.getAttribute("data-period");
+        adminStatsPeriod = period;
+        var customBox = document.getElementById("adminPeriodCustom");
+        if(period === "custom"){
+          customBox.style.display = "flex";
+          document.getElementById("adminRangeStart").value = adminStatsRange.start;
+          document.getElementById("adminRangeEnd").value = adminStatsRange.end;
+          renderAdminPeriodRow();
+          return; // "Tətbiq et" düyməsi basılana qədər gözlə
+        }
+        customBox.style.display = "none";
+        adminStatsRange = computeStatsRange(period);
+        renderAdminPeriodRow();
+        renderAdminPeriodLabel();
+        loadAdminDashboard();
+      });
+    });
+    var applyBtn = document.getElementById("adminRangeApply");
+    if(applyBtn){
+      applyBtn.onclick = function(){
+        var s = document.getElementById("adminRangeStart").value;
+        var e = document.getElementById("adminRangeEnd").value;
+        if(!s || !e || s > e){ showToast("⚠️ Düzgün tarix aralığı seç"); return; }
+        adminStatsRange = {start: s, end: e};
+        renderAdminPeriodLabel();
+        loadAdminDashboard();
+      };
+    }
+    renderAdminPeriodLabel();
+  }
+
+  function renderAdminPeriodLabel(){
+    var el = document.getElementById("adminPeriodLabel");
+    if(!el) return;
+    el.textContent = "📆 " + (adminStatsRange.start === adminStatsRange.end
+      ? adminStatsRange.start
+      : (adminStatsRange.start + " — " + adminStatsRange.end));
+  }
+
   function loadAdminDashboard(){
     if(!isAdminUser() || !supabaseClient) return;
     var gridEl = document.getElementById("adminDashGrid");
-    var modesEl = document.getElementById("adminDashModes");
     if(gridEl) gridEl.innerHTML = '<div class="admin-empty-hint">Yüklənir...</div>';
-    var todayStart = bakuTodayStartISO();
+    var rangeStartISO = bakuDateStartISO(adminStatsRange.start);
+    var rangeEndExclusiveISO = bakuDateStartISO(addDaysToDateStr(adminStatsRange.end, 1));
     var onlineSince = new Date(Date.now() - PRESENCE_ONLINE_THRESHOLD_MS).toISOString();
 
     Promise.all([
       supabaseClient.from("profiles").select("id,name,player_number,avatar_url,country_flag,active_frame,level,last_seen").gte("last_seen", onlineSince).order("last_seen", {ascending:false}).limit(200),
       supabaseClient.from("profiles").select("id", {count:"exact", head:true}),
-      supabaseClient.from("profiles").select("id", {count:"exact", head:true}).gte("last_seen", todayStart),
-      supabaseClient.from("profiles").select("id,name,player_number,avatar_url,country_flag,active_frame,level,created_at", {count:"exact"}).gte("created_at", todayStart).order("created_at", {ascending:false}).limit(50),
-      supabaseClient.from("game_history").select("user_id,mode").gte("created_at", todayStart).limit(10000),
-      supabaseClient.rpc("admin_daily_deltas")
+      supabaseClient.from("profiles").select("id", {count:"exact", head:true}).gte("last_seen", rangeStartISO).lt("last_seen", rangeEndExclusiveISO),
+      supabaseClient.from("profiles").select("id,name,player_number,avatar_url,country_flag,active_frame,level,created_at", {count:"exact"}).gte("created_at", rangeStartISO).lt("created_at", rangeEndExclusiveISO).order("created_at", {ascending:false}).limit(50),
+      supabaseClient.from("game_history").select("user_id,mode").gte("created_at", rangeStartISO).lt("created_at", rangeEndExclusiveISO).limit(10000),
+      supabaseClient.rpc("admin_range_deltas", {start_date: adminStatsRange.start, end_date: adminStatsRange.end})
     ]).then(function(results){
       var online = results[0].data || [];
       var totalCount = results[1].count || 0;
-      var activeTodayCount = results[2].count || 0;
+      var activeCount = results[2].count || 0;
       var newPlayers = results[3].data || [];
-      var newTodayCount = results[3].count || 0;
+      var newCount = results[3].count || 0;
       var gameRows = results[4].data || [];
       var deltas = results[5].data || [];
 
@@ -5897,8 +5994,13 @@
       adminDashCache.deltas = deltas;
       adminDashCache.modeCounts = modeCounts;
       adminDashCache.gamesByUser = gamesByUser;
+      adminDashCache.totalCount = totalCount;
+      adminDashCache.activeCount = activeCount;
+      adminDashCache.newCount = newCount;
+      adminDashCache.onlineCount = online.length;
+      adminDashCache.gamesTotal = gameRows.length;
 
-      renderAdminDashCards(online.length, totalCount, activeTodayCount, newTodayCount);
+      renderAdminDashCards(online.length, totalCount, activeCount, newCount);
       renderAdminDashModes(modeCounts, gameRows.length);
       renderAdminLeaderTabs();
       renderAdminLeaderList();
@@ -5909,10 +6011,10 @@
     var el = document.getElementById("adminDashGrid");
     if(!el) return;
     var cards = [
-      {id:"online", icon:"🟢", label:"Onlayn oyunçu", val:onlineCount},
+      {id:"online", icon:"🟢", label:"Onlayn (indi)", val:onlineCount},
       {id:"total", icon:"👥", label:"Qeydiyyatlı (cəmi)", val:totalCount},
-      {id:"activeToday", icon:"📅", label:"Bu gün aktiv", val:activeTodayCount},
-      {id:"newToday", icon:"✨", label:"Bu gün yeni", val:newTodayCount}
+      {id:"activeToday", icon:"📅", label:"Aktiv (dövrdə)", val:activeTodayCount},
+      {id:"newToday", icon:"✨", label:"Yeni qeydiyyat (dövrdə)", val:newTodayCount}
     ];
     el.innerHTML = cards.map(function(c){
       return '<div class="admin-dash-card" data-id="' + c.id + '"><div class="adc-icon">' + c.icon + '</div><div class="adc-val">' + c.val + '</div><div class="adc-lbl">' + c.label + '</div></div>';
@@ -5933,7 +6035,7 @@
     if(!el) return;
     if(!adminDashExpandedId){ el.innerHTML = ""; return; }
     var list = adminDashExpandedId === "online" ? adminDashCache.online : adminDashCache.newPlayers;
-    var title = adminDashExpandedId === "online" ? "🟢 Hazırda onlayn olanlar" : "✨ Bu gün qeydiyyatdan keçənlər";
+    var title = adminDashExpandedId === "online" ? "🟢 Hazırda onlayn olanlar" : "✨ Seçilmiş dövrdə qeydiyyatdan keçənlər";
     if(!list.length){ el.innerHTML = '<div class="admin-empty-hint">' + title + ' — heç kim yoxdur</div>'; return; }
     el.innerHTML = '<div class="admin-section-title">' + title + '</div>' +
       list.map(function(p){
@@ -5955,6 +6057,64 @@
       return '<div class="admin-mode-row"><span>' + (AZ_MODE_LABELS[m] || m) + '</span><span>' + (modeCounts[m] || 0) + '</span></div>';
     }).join("");
     el.innerHTML = rowsHtml + '<div class="admin-mode-row admin-mode-total"><span>Cəmi</span><span>' + total + '</span></div>';
+  }
+
+  // Seçilmiş dövrün TAM hesabatını (bütün 5 lider cədvəli + xülasə) çap-dostu gizli bir
+  // konteynerə qurub window.print() çağırır — oyunçu "Faylı PDF kimi saxla" seçərək PDF alır.
+  // Xarici kitabxana (jsPDF və s.) əlavə etmədən, brauzerin öz native print-to-PDF-i istifadə olunur.
+  function exportAdminStatsPdf(){
+    var printEl = document.getElementById("adminPrintReport");
+    if(!printEl){
+      printEl = document.createElement("div");
+      printEl.id = "adminPrintReport";
+      document.body.appendChild(printEl);
+    }
+    var range = adminStatsRange;
+    var rangeLabel = range.start === range.end ? range.start : (range.start + " — " + range.end);
+    var modesHtml = ["endless", "arcade", "battle", "dungeon"].map(function(m){
+      return '<tr><td>' + (AZ_MODE_LABELS[m] || m) + '</td><td>' + (adminDashCache.modeCounts[m] || 0) + '</td></tr>';
+    }).join("");
+    var leaderTablesHtml = ADMIN_LEADER_METRICS.map(function(metric){
+      var rows;
+      if(metric.id === "active"){
+        var byUser = adminDashCache.gamesByUser || {};
+        var ids = Object.keys(byUser).sort(function(a,b){ return byUser[b] - byUser[a]; }).slice(0, 50);
+        var deltaById = {};
+        (adminDashCache.deltas || []).forEach(function(d){ deltaById[d.user_id] = d; });
+        rows = ids.map(function(id){
+          var d = deltaById[id];
+          return {name: d ? d.name : "Oyunçu", player_number: d ? d.player_number : 0, val: byUser[id]};
+        });
+      } else {
+        rows = (adminDashCache.deltas || []).filter(function(d){ return (d[metric.field]||0) > 0; })
+          .sort(function(a,b){ return (b[metric.field]||0) - (a[metric.field]||0); }).slice(0, 50)
+          .map(function(d){ return {name:d.name, player_number:d.player_number, val:d[metric.field]||0}; });
+      }
+      if(!rows.length) return '<h3>' + metric.label + '</h3><p class="apr-empty">Bu dövr üçün məlumat yoxdur</p>';
+      var rowsHtml = rows.map(function(r, i){
+        return '<tr><td>' + (i+1) + '</td><td>' + escapeHtml(r.name || "Oyunçu") + ' #' + (r.player_number||0) + '</td><td>' + r.val + metric.unit + '</td></tr>';
+      }).join("");
+      return '<h3>' + metric.label + '</h3><table><thead><tr><th>#</th><th>Oyunçu</th><th>Dəyər</th></tr></thead><tbody>' + rowsHtml + '</tbody></table>';
+    }).join("");
+
+    printEl.innerHTML =
+      '<h1>🎮 Rəngli Kublar — Statistika Hesabatı</h1>' +
+      '<p><b>Dövr:</b> ' + escapeHtml(rangeLabel) + ' &nbsp;&nbsp; <b>Hazırlanıb:</b> ' + new Date().toLocaleString("az-AZ") + '</p>' +
+      '<table><tbody>' +
+        '<tr><td>Qeydiyyatlı oyunçu (cəmi)</td><td>' + (adminDashCache.totalCount||0) + '</td></tr>' +
+        '<tr><td>Aktiv oyunçu (dövrdə)</td><td>' + (adminDashCache.activeCount||0) + '</td></tr>' +
+        '<tr><td>Yeni qeydiyyat (dövrdə)</td><td>' + (adminDashCache.newCount||0) + '</td></tr>' +
+        '<tr><td>Onlayn (hesabat anında)</td><td>' + (adminDashCache.onlineCount||0) + '</td></tr>' +
+        '<tr><td>Cəmi oyun sayı (dövrdə)</td><td>' + (adminDashCache.gamesTotal||0) + '</td></tr>' +
+      '</tbody></table>' +
+      '<h2>Oyun sayı (rejimə görə)</h2>' +
+      '<table><thead><tr><th>Rejim</th><th>Say</th></tr></thead><tbody>' + modesHtml + '</tbody></table>' +
+      '<h2>Liderlər (top 50 hər metrikada)</h2>' +
+      leaderTablesHtml;
+
+    document.body.classList.add("printing-stats");
+    window.print();
+    setTimeout(function(){ document.body.classList.remove("printing-stats"); }, 500);
   }
 
   function renderAdminLeaderTabs(){
