@@ -2317,9 +2317,11 @@
     pendingFriendRequestsCount = 0;
     unreadMessagesTotal = 0;
     unseenGiftsTotal = 0;
+    unseenSystemMsgTotal = 0;
     conversationsCache = [];
     if(messagesInboxChannel){ supabaseClient.removeChannel(messagesInboxChannel); messagesInboxChannel = null; }
     if(giftsInboxChannel){ supabaseClient.removeChannel(giftsInboxChannel); giftsInboxChannel = null; }
+    if(systemMsgInboxChannel){ supabaseClient.removeChannel(systemMsgInboxChannel); systemMsgInboxChannel = null; }
     if(matchmakingChannel){ supabaseClient.removeChannel(matchmakingChannel); matchmakingChannel = null; }
     matchmakingActive = false;
     chatPeerId = null;
@@ -3777,10 +3779,12 @@
         checkUnreadMessagesBadge();
         checkUnseenGiftsBadge();
         checkUnseenDungeonRewardsBadge();
+        checkUnseenSystemMsgBadge();
         checkUnseenReportsBadge();
         subscribeBattleInvites();
         subscribeIncomingMessages();
         subscribeIncomingGifts();
+        subscribeIncomingSystemMessages();
         subscribeIncomingReports();
         return;
       }
@@ -3789,10 +3793,12 @@
       checkUnreadMessagesBadge();
       checkUnseenGiftsBadge();
       checkUnseenDungeonRewardsBadge();
+      checkUnseenSystemMsgBadge();
       checkUnseenReportsBadge();
       subscribeBattleInvites();
       subscribeIncomingMessages();
       subscribeIncomingGifts();
+      subscribeIncomingSystemMessages();
       subscribeIncomingReports();
     });
   }
@@ -5144,6 +5150,7 @@
   var reportsInboxChannel = null;
   var reportsCache = [];
   var reportProfilesCache = {};
+  var systemMsgInboxChannel = null;
 
   function openMailbox(){
     if(!cloudUserId){ showToast("⚠️ Əvvəlcə Google ilə daxil olmalısan"); return; }
@@ -5171,7 +5178,7 @@
     var tabsEl = document.getElementById("mailboxTabs");
     var tabs = [{id:"messages", label:"💬 Mesajlar"}, {id:"system", label:"🔔 Sistem"}, {id:"gifts", label:"🎁 Hədiyyələr"}];
     tabsEl.innerHTML = tabs.map(function(t){
-      var showDot = (t.id === "messages" && unreadMessagesTotal > 0) || (t.id === "system" && unseenDungeonRewardsTotal > 0) || (t.id === "gifts" && unseenGiftsTotal > 0);
+      var showDot = (t.id === "messages" && unreadMessagesTotal > 0) || (t.id === "system" && (unseenDungeonRewardsTotal > 0 || unseenSystemMsgTotal > 0)) || (t.id === "gifts" && unseenGiftsTotal > 0);
       return '<button class="shop-tab-btn' + (t.id === mailboxActiveTab ? " active" : "") + '" data-id="' + t.id + '" style="position:relative">' + t.label + (showDot ? '<span class="friend-tab-dot"></span>' : "") + '</button>';
     }).join("");
     tabsEl.querySelectorAll("button").forEach(function(btn){
@@ -5203,30 +5210,48 @@
   // şəkli ilə, mükafat götürülür. =====
   var unseenDungeonRewardsTotal = 0;
   var dungeonRewardsCache = {};
+  var unseenSystemMsgTotal = 0;
+  var systemMsgCache = {};
   var DUNGEON_LB_CATEGORY_LABELS = {daily:"🌞 Günün Lideri", best:"⚔️ Zindan Lideri"};
 
   // Hər zindan mükafatı (dungeon_daily_rewards-dəki hər sətir) AYRICA bir "mesaj"dır — siyahıda
   // qapalı sətir kimi görünür, oyunçu üstünə basıb AÇMALI və mükafatı ORADAN götürməlidir (bax
   // openDungeonRewardMessage). Heç vaxt bir mesajın içində 2 mükafat birləşdirilmir.
+  // "🔔 Sistem" tabı İKİ mənbəni BİRLƏŞDİRİR: zindan mükafatları (dungeon_daily_rewards) VƏ
+  // admin bildirişləri (system_messages, bax insertSystemMessage) — hər ikisi eyni siyahıda,
+  // created_at-a görə qarışıq sıralanır, amma AYRI cache-lərdə saxlanılıb AYRI detail
+  // şablonları ilə açılır (dungeonMailRowHtml/dungeonRewardDetailHtml vs systemMsgRowHtml/
+  // systemMsgDetailHtml), eyni modal qabığını (#dungeonRewardModal) paylaşaraq.
   function loadDungeonMail(){
     if(!supabaseClient || !cloudUserId) return;
     var el = document.getElementById("dungeonMailList");
     if(el) el.innerHTML = '<div class="empty-hint">Yüklənir...</div>';
-    supabaseClient.from("dungeon_daily_rewards").select("id,date,category,rank,score,games_played,gold,cubes_per_color,color_ids,claimed,created_at")
-      .eq("user_id", cloudUserId).order("created_at", {ascending:false}).limit(60)
-      .then(function(res){
-        el = document.getElementById("dungeonMailList");
-        if(!el) return;
-        if(res.error){ el.innerHTML = '<div class="empty-hint">⚠️ ' + escapeHtml(res.error.message) + '</div>'; return; }
-        var rows = res.data || [];
-        dungeonRewardsCache = {};
-        rows.forEach(function(r){ dungeonRewardsCache[r.id] = r; });
-        if(!rows.length){ el.innerHTML = '<div class="empty-hint">Hələ zindan mesajı yoxdur</div>'; return; }
-        el.innerHTML = rows.map(dungeonMailRowHtml).join("");
-        el.querySelectorAll(".dungeon-mail-row").forEach(function(row){
-          row.addEventListener("click", function(){ openDungeonRewardMessage(this.getAttribute("data-id")); });
-        });
+    Promise.all([
+      supabaseClient.from("dungeon_daily_rewards").select("id,date,category,rank,score,games_played,gold,cubes_per_color,color_ids,claimed,created_at")
+        .eq("user_id", cloudUserId).order("created_at", {ascending:false}).limit(60),
+      supabaseClient.from("system_messages").select("id,icon,title,body,gold,keys,cubes_per_color,seen,created_at")
+        .eq("user_id", cloudUserId).order("created_at", {ascending:false}).limit(60)
+    ]).then(function(results){
+      el = document.getElementById("dungeonMailList");
+      if(!el) return;
+      var dungeonRes = results[0], sysRes = results[1];
+      if(dungeonRes.error && sysRes.error){ el.innerHTML = '<div class="empty-hint">⚠️ ' + escapeHtml(dungeonRes.error.message) + '</div>'; return; }
+      var dungeonRows = (dungeonRes.data || []).map(function(r){ r._kind = "dungeon"; return r; });
+      var sysRows = (sysRes.data || []).map(function(m){ m._kind = "sysmsg"; return m; });
+      dungeonRewardsCache = {};
+      dungeonRows.forEach(function(r){ dungeonRewardsCache[r.id] = r; });
+      systemMsgCache = {};
+      sysRows.forEach(function(m){ systemMsgCache[m.id] = m; });
+      var rows = dungeonRows.concat(sysRows).sort(function(a,b){ return new Date(b.created_at) - new Date(a.created_at); });
+      if(!rows.length){ el.innerHTML = '<div class="empty-hint">Hələ mesaj yoxdur</div>'; return; }
+      el.innerHTML = rows.map(function(r){ return r._kind === "sysmsg" ? systemMsgRowHtml(r) : dungeonMailRowHtml(r); }).join("");
+      el.querySelectorAll(".dungeon-mail-row").forEach(function(row){
+        row.addEventListener("click", function(){ openDungeonRewardMessage(this.getAttribute("data-id")); });
       });
+      el.querySelectorAll(".system-mail-row").forEach(function(row){
+        row.addEventListener("click", function(){ openSystemMessage(this.getAttribute("data-id")); });
+      });
+    });
   }
 
   function formatDungeonLetterTime(iso){
@@ -5279,6 +5304,55 @@
       '<div class="dungeon-letter-rewards">' + rewardsHtml + '</div>' +
       '<div class="dungeon-letter-time">' + formatDungeonLetterTime(r.created_at) + '</div>' +
       (r.claimed ? '<span class="dr-claimed-lbl">✅ Alınıb</span>' : '<button class="achievement-claim-btn dr-claim-btn" data-id="' + escapeHtml(r.id) + '" style="width:100%">🎁 Mükafatları al</button>');
+  }
+
+  // Admin bildirişi — qapalı sətir. Mükafat götürmə addımı YOXDUR (qızıl/açar/kub admin
+  // tərəfindən artıq birbaşa profilə əlavə edilib), sadəcə oxunma vəziyyəti (seen) izlənir.
+  function systemMsgRowHtml(m){
+    var body = m.body || "";
+    var preview = body.length > 60 ? body.slice(0, 60) + "…" : body;
+    return '<div class="convo-row system-mail-row" data-id="' + escapeHtml(m.id) + '">' +
+      '<div class="dungeon-mail-row-icon dungeon-mail-row-icon-fallback">' + (m.icon || "🔔") + '</div>' +
+      '<div class="convo-row-info"><div class="convo-row-name">' + escapeHtml(m.title) + '</div>' +
+      '<div class="convo-row-preview' + (!m.seen ? " unread" : "") + '">' + escapeHtml(preview) + '</div></div>' +
+      (!m.seen ? '<div class="convo-unread-dot"></div>' : '') +
+      '</div>';
+  }
+
+  function systemMsgDetailHtml(m){
+    var chips = "";
+    if(m.gold) chips += '<div class="cp-need-chip"><div class="cp-need-swatch dungeon-gold-swatch">🪙</div><div class="cp-need-count">' + m.gold + '</div></div>';
+    if(m.keys) chips += '<div class="cp-need-chip"><div class="cp-need-swatch">🔑</div><div class="cp-need-count">' + m.keys + '</div></div>';
+    if(m.cubes_per_color){
+      Object.keys(m.cubes_per_color).forEach(function(cid){
+        var n = m.cubes_per_color[cid];
+        if(!n) return;
+        var col = MENU_BG_COLORS.find(function(c){ return c.id === cid; });
+        chips += '<div class="cp-need-chip"><div class="cp-need-swatch" style="background:' + (col ? col.hex : "#999") + '"></div><div class="cp-need-count">' + n + '</div></div>';
+      });
+    }
+    return '<div class="dungeon-letter-badge"><div class="dungeon-mail-row-icon-fallback" style="width:72px;height:72px;font-size:34px">' + (m.icon || "🔔") + '</div></div>' +
+      '<div class="dungeon-letter-head">' + escapeHtml(m.title) + '</div>' +
+      '<div class="dungeon-letter-body">' + escapeHtml(m.body) + '</div>' +
+      (chips ? '<div class="dungeon-letter-rewards">' + chips + '</div>' : '') +
+      '<div class="dungeon-letter-time">' + formatDungeonLetterTime(m.created_at) + '</div>' +
+      '<button class="achievement-claim-btn" id="sysMsgCloseBtn" style="width:100%">Bağla</button>';
+  }
+
+  function openSystemMessage(id){
+    var m = systemMsgCache[id];
+    if(!m) return;
+    var body = document.getElementById("dungeonRewardModalBody");
+    body.innerHTML = systemMsgDetailHtml(m);
+    var closeBtn = body.querySelector("#sysMsgCloseBtn");
+    if(closeBtn) closeBtn.addEventListener("click", closeDungeonRewardMessage);
+    document.getElementById("dungeonRewardModal").classList.add("show");
+    if(!m.seen && supabaseClient){
+      supabaseClient.from("system_messages").update({seen:true}).eq("id", id).then(function(){
+        m.seen = true;
+        checkUnseenSystemMsgBadge();
+      });
+    }
   }
 
   function openDungeonRewardMessage(rewardId){
@@ -5461,6 +5535,18 @@
       });
   }
 
+  function checkUnseenSystemMsgBadge(){
+    if(!supabaseClient || !cloudUserId) return;
+    supabaseClient.from("system_messages").select("id", {count:"exact", head:true})
+      .eq("user_id", cloudUserId).eq("seen", false)
+      .then(function(res){
+        if(res.error) return;
+        unseenSystemMsgTotal = res.count || 0;
+        refreshMailboxBtnDot();
+        if(mailboxScreen.style.display !== "none") renderMailboxTabs();
+      });
+  }
+
   function loadMailboxGifts(){
     if(!supabaseClient || !cloudUserId) return;
     var el = document.getElementById("mailboxGiftsList");
@@ -5504,7 +5590,7 @@
   function refreshMailboxBtnDot(){
     var dot = document.getElementById("mailboxBtnDot");
     if(!dot) return;
-    dot.style.display = (unreadMessagesTotal > 0 || unseenGiftsTotal > 0 || unseenDungeonRewardsTotal > 0) ? "" : "none";
+    dot.style.display = (unreadMessagesTotal > 0 || unseenGiftsTotal > 0 || unseenDungeonRewardsTotal > 0 || unseenSystemMsgTotal > 0) ? "" : "none";
   }
 
   function refreshAdminPanelBtnDot(){
@@ -5549,6 +5635,31 @@
             subtitle: reportedName + " — " + r.reason,
             onClick: openAdminPanelToReports
           });
+        });
+      })
+      .subscribe();
+  }
+
+  function openMailboxToSystem(){
+    openMailbox();
+    mailboxActiveTab = "system";
+    renderMailboxTabs();
+    renderMailboxContent();
+  }
+
+  function subscribeIncomingSystemMessages(){
+    if(!supabaseClient || !cloudUserId) return;
+    if(systemMsgInboxChannel){ supabaseClient.removeChannel(systemMsgInboxChannel); systemMsgInboxChannel = null; }
+    systemMsgInboxChannel = supabaseClient.channel("system-msg-inbox-" + cloudUserId)
+      .on("postgres_changes", {event:"INSERT", schema:"public", table:"system_messages", filter:"user_id=eq." + cloudUserId}, function(payload){
+        var m = payload.new;
+        checkUnseenSystemMsgBadge();
+        if(mailboxScreen.style.display !== "none" && mailboxActiveTab === "system") loadDungeonMail();
+        showTopNotification({
+          icon: m.icon || "🔔",
+          title: m.title,
+          subtitle: m.body,
+          onClick: openMailboxToSystem
         });
       })
       .subscribe();
@@ -5814,12 +5925,43 @@
     adminSendBanUpdate(playerId, patch, "⛔ Oyunçu " + hours + " saatlıq banlandı");
   }
 
+  // Admin panelin oyunçu hesabına birbaşa etdiyi müdaxilələr (ban/unban/mükafat/şəkil silmə)
+  // haqqında oyunçuya "🔔 Sistem" poçt qutusuna düşən bir bildiriş yazır. system_messages
+  // cədvəlinə YALNIZ admin yaza bilir (bax system_messages_migration.sql RLS).
+  function insertSystemMessage(userId, msg){
+    if(!supabaseClient || !userId) return;
+    supabaseClient.from("system_messages").insert({
+      user_id: userId,
+      icon: msg.icon || "🔔",
+      title: msg.title,
+      body: msg.body,
+      gold: msg.gold || null,
+      keys: msg.keys || null,
+      cubes_per_color: msg.cubesPerColor || null
+    }).then(function(res){
+      if(res.error) console.warn("system message insert failed", res.error);
+    });
+  }
+
   function adminSendBanUpdate(playerId, patch, successMsg){
     supabaseClient.from("profiles").update(patch).eq("id", playerId).select().then(function(res){
       if(res.error || !res.data || !res.data.length){ showToast("⚠️ Əməliyyat uğursuz oldu: " + (res.error ? res.error.message : "")); return; }
       showToast(successMsg);
       adminCurrentPlayerRow = res.data[0];
       renderAdminPlayerDetail(document.getElementById("adminPanelContent"));
+      var isUnban = !patch.banned_permanent && !patch.banned_until && !patch.ban_reason;
+      var title, body;
+      if(isUnban){
+        title = "✅ Bloklama ləğv edildi";
+        body = "Hesabınızın bloku admin tərəfindən ləğv edildi.";
+      } else if(patch.banned_permanent){
+        title = "⛔ Hesabınız daimi bloklandı";
+        body = "Hesabınız daimi olaraq bloklandı." + (patch.ban_reason ? " Səbəb: " + patch.ban_reason : "");
+      } else {
+        title = "⛔ Hesabınız bloklandı";
+        body = "Hesabınız " + new Date(patch.banned_until).toLocaleString("az-AZ") + " tarixinə qədər bloklandı." + (patch.ban_reason ? " Səbəb: " + patch.ban_reason : "");
+      }
+      insertSystemMessage(playerId, {icon: isUnban ? "✅" : "⛔", title: title, body: body});
     });
   }
 
@@ -5839,6 +5981,7 @@
         showToast("🗑️ Profil şəkli silindi");
         adminCurrentPlayerRow = res2.data[0];
         renderAdminPlayerDetail(document.getElementById("adminPanelContent"));
+        insertSystemMessage(playerId, {icon:"🗑️", title:"🗑️ Profil şəkliniz silindi", body:"Profil şəkliniz admin tərəfindən silindi (uyğunsuz məzmun ola bilər)."});
         // DİQQƏT: render YUXARIDA #adminBanReason-u TAMAMİLƏ YENİDƏN qurur — ona görə səbəbi
         // YALNIZ render-dən SONRA doldurmaq olar, əks halda təzə (boş) input onu dərhal əvəz edər.
         var reasonInput = document.getElementById("adminBanReason");
@@ -5871,6 +6014,11 @@
         showToast("🎁 Göndərildi!");
         adminCurrentPlayerRow = res2.data[0];
         renderAdminPlayerDetail(document.getElementById("adminPanelContent"));
+        insertSystemMessage(playerId, {
+          icon: "🎁", title: "🎁 Hesabınıza mükafat əlavə edildi",
+          body: "Admin tərəfindən hesabınıza əlavə edildi.",
+          gold: gold, keys: keys, cubesPerColor: anyCube ? cubes : null
+        });
       });
     });
   }
