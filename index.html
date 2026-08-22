@@ -3836,6 +3836,7 @@
         checkUnseenGiftsBadge();
         checkUnseenDungeonRewardsBadge();
         checkUnseenSystemMsgBadge();
+        applyPendingGrantMessages();
         checkUnseenReportsBadge();
         subscribeBattleInvites();
         subscribeIncomingMessages();
@@ -3850,6 +3851,7 @@
       checkUnseenGiftsBadge();
       checkUnseenDungeonRewardsBadge();
       checkUnseenSystemMsgBadge();
+      applyPendingGrantMessages();
       checkUnseenReportsBadge();
       subscribeBattleInvites();
       subscribeIncomingMessages();
@@ -5283,7 +5285,7 @@
     Promise.all([
       supabaseClient.from("dungeon_daily_rewards").select("id,date,category,rank,score,games_played,gold,cubes_per_color,color_ids,claimed,created_at")
         .eq("user_id", cloudUserId).order("created_at", {ascending:false}).limit(60),
-      supabaseClient.from("system_messages").select("id,icon,title,body,gold,keys,cubes_per_color,seen,created_at")
+      supabaseClient.from("system_messages").select("id,icon,title,body,gold,keys,cubes_per_color,seen,applied,created_at")
         .eq("user_id", cloudUserId).order("created_at", {ascending:false}).limit(60)
     ]).then(function(results){
       el = document.getElementById("dungeonMailList");
@@ -5295,7 +5297,7 @@
       dungeonRewardsCache = {};
       dungeonRows.forEach(function(r){ dungeonRewardsCache[r.id] = r; });
       systemMsgCache = {};
-      sysRows.forEach(function(m){ systemMsgCache[m.id] = m; });
+      sysRows.forEach(function(m){ systemMsgCache[m.id] = m; applyGrantMessage(m); });
       var rows = dungeonRows.concat(sysRows).sort(function(a,b){ return new Date(b.created_at) - new Date(a.created_at); });
       if(!rows.length){ el.innerHTML = '<div class="empty-hint">Hələ mesaj yoxdur</div>'; return; }
       el.innerHTML = rows.map(function(r){ return r._kind === "sysmsg" ? systemMsgRowHtml(r) : dungeonMailRowHtml(r); }).join("");
@@ -5393,6 +5395,43 @@
       '<button class="achievement-claim-btn" id="sysMsgCloseBtn" style="width:100%">Bağla</button>';
   }
 
+  // Admin bir "🎁 mükafat" bildirişi (gold/keys/cubes_per_color daşıyan system_messages sətri)
+  // göndərəndə, resursları BURADA — oyunçunun ÖZ client-i — profilinə əlavə edir (bax
+  // adminGrantResources-dakı geniş qeyd, niyə admin bunu birbaşa etmir). "applied" sahəsi
+  // ŞƏRTLİ UPDATE (eq("applied", false)) ilə qorunur ki, eyni mesaj (realtime + poçt qutusu
+  // yenilənməsi kimi) iki yerdən eyni vaxtda gəlsə belə TƏKRAR əlavə olunmasın.
+  function applyGrantMessage(m){
+    if(!m || m.applied || m._kind !== "sysmsg") return;
+    if(!m.gold && !m.keys && !m.cubes_per_color) return; // sadəcə məlumatlandırıcı mesajdır, tətbiq ediləcək resurs yoxdur
+    if(!supabaseClient || !cloudUserId) return;
+    supabaseClient.from("system_messages").update({applied:true}).eq("id", m.id).eq("applied", false).select().then(function(res){
+      if(res.error || !res.data || !res.data.length) return; // artıq başqa yerdən tətbiq olunub — TƏKRAR ƏLAVƏ ETMƏ
+      m.applied = true;
+      if(m.gold) addGold(m.gold);
+      if(m.keys) profile.keys = (profile.keys||0) + m.keys;
+      if(m.cubes_per_color){
+        profile.cubeInventory = profile.cubeInventory || {};
+        Object.keys(m.cubes_per_color).forEach(function(cid){
+          profile.cubeInventory[cid] = (profile.cubeInventory[cid]||0) + m.cubes_per_color[cid];
+        });
+      }
+      saveProfile();
+      renderProfile();
+    });
+  }
+
+  // Girişdə (bax onGoogleSignedIn) çağırılır — oyunçu poçt qutusunu heç açmasa belə, admin-in
+  // göndərdiyi (hələ tətbiq olunmamış) mükafatlar arxa planda tətbiq olunsun deyə.
+  function applyPendingGrantMessages(){
+    if(!supabaseClient || !cloudUserId) return;
+    supabaseClient.from("system_messages").select("id,gold,keys,cubes_per_color,applied")
+      .eq("user_id", cloudUserId).eq("applied", false)
+      .then(function(res){
+        if(res.error || !res.data) return;
+        res.data.forEach(function(m){ m._kind = "sysmsg"; applyGrantMessage(m); });
+      });
+  }
+
   function openSystemMessage(id){
     var m = systemMsgCache[id];
     if(!m) return;
@@ -5405,6 +5444,7 @@
       supabaseClient.from("system_messages").update({seen:true}).eq("id", id).then(function(){
         m.seen = true;
         checkUnseenSystemMsgBadge();
+        applyPendingGrantMessages();
       });
     }
   }
@@ -5732,6 +5772,7 @@
       .on("postgres_changes", {event:"INSERT", schema:"public", table:"system_messages", filter:"user_id=eq." + cloudUserId}, function(payload){
         var m = payload.new;
         checkUnseenSystemMsgBadge();
+        applyPendingGrantMessages();
         if(mailboxScreen.style.display !== "none" && mailboxActiveTab === "system") loadDungeonMail();
         showTopNotification({
           icon: m.icon || "🔔",
@@ -6007,8 +6048,8 @@
   // haqqında oyunçuya "🔔 Sistem" poçt qutusuna düşən bir bildiriş yazır. system_messages
   // cədvəlinə YALNIZ admin yaza bilir (bax system_messages_migration.sql RLS).
   function insertSystemMessage(userId, msg){
-    if(!supabaseClient || !userId) return;
-    supabaseClient.from("system_messages").insert({
+    if(!supabaseClient || !userId) return Promise.resolve({error:{message:"no client"}});
+    return supabaseClient.from("system_messages").insert({
       user_id: userId,
       icon: msg.icon || "🔔",
       title: msg.title,
@@ -6018,6 +6059,7 @@
       cubes_per_color: msg.cubesPerColor || null
     }).then(function(res){
       if(res.error) console.warn("system message insert failed", res.error);
+      return res;
     });
   }
 
@@ -6068,6 +6110,16 @@
     });
   }
 
+  // DİQQƏT (yarış şərti düzəlişi): əvvəllər bura birbaşa profiles.gold/save_data-nı oxuyub-
+  // yazırdı (read-then-write). Amma oyunçunun ÖZ client-i (uploadProfileToCloud) aktiv oyun
+  // zamanı hər 2 saniyədən bir EYNİ sütunları TAM əvəz edir ("gold: profile.gold",
+  // "save_data: profile") — bu, admin-in yazısından sonra gəlsə, admin-in əlavəsini SƏSSİZCƏ
+  // silirdi. Bunu "atomik" SQL ilə DÜZƏLTMƏK olmaz, çünki problem admin-in yazı üsulunda deyil,
+  // oyunçunun İKİNCİ (tam əvəzləyici) yazısındadır. Ona görə admin artıq save_data/gold-a
+  // BİRBAŞA TOXUNMUR — mükafatı YALNIZ system_messages-ə yazır, faktiki əlavə etməni isə
+  // OYUNÇUNUN ÖZ client-i yerinə yetirir (bax applyGrantMessage) öz TƏK yazıcısı olduğu
+  // save_data-ya, normal saveProfile() yolu ilə — beləliklə HEÇ BİR xarici yazıcı yarışmır.
+  // Bu, artıq mövcud olan "achievements_unlocked" pattern-i ilə EYNİDİR (bax uploadProfileToCloud).
   function adminGrantResources(playerId){
     if(!isAdminUser() || !supabaseClient) return;
     var gold = parseInt(document.getElementById("adminGrantGold").value, 10) || 0;
@@ -6079,25 +6131,13 @@
       if(v > 0){ cubes[inp.getAttribute("data-cube")] = v; anyCube = true; }
     });
     if(gold <= 0 && keys <= 0 && !anyCube){ showToast("⚠️ Heç bir məbləğ daxil edilməyib"); return; }
-    supabaseClient.from("profiles").select("gold,save_data").eq("id", playerId).maybeSingle().then(function(res){
-      if(res.error || !res.data){ showToast("⚠️ Profil oxunmadı"); return; }
-      var sd = res.data.save_data || {};
-      sd.gold = (sd.gold || 0) + gold;
-      sd.keys = (sd.keys || 0) + keys;
-      sd.cubeInventory = sd.cubeInventory || {};
-      Object.keys(cubes).forEach(function(cid){ sd.cubeInventory[cid] = (sd.cubeInventory[cid] || 0) + cubes[cid]; });
-      var newGoldCol = (res.data.gold || 0) + gold;
-      supabaseClient.from("profiles").update({gold: newGoldCol, save_data: sd}).eq("id", playerId).select().then(function(res2){
-        if(res2.error || !res2.data || !res2.data.length){ showToast("⚠️ Göndərilmədi: " + (res2.error ? res2.error.message : "")); return; }
-        showToast("🎁 Göndərildi!");
-        adminCurrentPlayerRow = res2.data[0];
-        renderAdminPlayerDetail(document.getElementById("adminPanelContent"));
-        insertSystemMessage(playerId, {
-          icon: "🎁", title: "🎁 Hesabınıza mükafat əlavə edildi",
-          body: "Admin tərəfindən hesabınıza əlavə edildi.",
-          gold: gold, keys: keys, cubesPerColor: anyCube ? cubes : null
-        });
-      });
+    insertSystemMessage(playerId, {
+      icon: "🎁", title: "🎁 Hesabınıza mükafat əlavə edildi",
+      body: "Admin tərəfindən hesabınıza əlavə edildi.",
+      gold: gold || null, keys: keys || null, cubesPerColor: anyCube ? cubes : null
+    }).then(function(res){
+      if(res.error){ showToast("⚠️ Göndərilmədi: " + res.error.message); return; }
+      showToast("🎁 Göndərildi! Oyunçu bunu daxil olduqda alacaq");
     });
   }
 
