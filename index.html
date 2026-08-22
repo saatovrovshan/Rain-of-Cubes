@@ -3828,6 +3828,7 @@
         if(googleName && (!profile.name || profile.name === "Oyunçu")) profile.name = googleName;
         if(googlePhoto && !profile.photoDataUrl) profile.photoDataUrl = googlePhoto;
         renderProfile();
+        if(profileScreen && profileScreen.style.display !== "none") renderProfileScreen();
         cloudSyncEnabled = true;
         uploadProfileToCloud();
         checkFriendRequestsBadge();
@@ -7055,6 +7056,12 @@
   // əsaslanan realtime hadisələrinə TAM etibar etmək əvəzinə (şəbəkə problemi ilə buraxıla bilər)
   // birbaşa SELECT ilə yoxlanılır. Rəqib BATTLE_OPPONENT_TIMEOUT_MS-dən çox susubsa (oyundan
   // çıxıb/bağlantı itirilib) qalan oyunçuya avtomatik qələbə verilir.
+  // DİQQƏT (bax audit): sadəcə "rəqib susub" görməklə birbaşa endBattle(null,true) çağırmaq
+  // TƏHLÜKƏLİ idi — hər iki oyunçu EYNİ ANDA (məs. paylaşılan şəbəkə kəsilməsi) bir-birini
+  // "susub" sayıb HƏR İKİSİ özünə qələbə yaza bilərdi (client-side, server yoxlamasız). İndi
+  // qələbəni ŞƏRTLİ (compare-and-swap) DB yazısı ilə "iddia" edirik — YALNIZ sətir hələ
+  // "finished" olmayıbsa yazı keçir (Postgres bunu atomik təmin edir). İki tərəf eyni anda
+  // cəhd etsə, YALNIZ biri uğurlu olur; uğursuz olan real (DB-də artıq yazılmış) nəticəyə tabe olur.
   function checkOpponentBattleTimeout(){
     if(!supabaseClient || !battleId || battleEnded) return;
     var pingField = battleIsPlayer1 ? "player2_last_ping" : "player1_last_ping";
@@ -7065,8 +7072,26 @@
       if(!lastPing) return; // rəqib hələ ilk sinxronizasiyasını göndərməyib (döyüş yenicə başlayıb)
       var elapsedMs = Date.now() - new Date(lastPing).getTime();
       if(elapsedMs > BATTLE_OPPONENT_TIMEOUT_MS){
+        claimForfeitWin();
+      }
+    });
+  }
+
+  function claimForfeitWin(){
+    if(battleEnded || !supabaseClient || !battleId) return;
+    var updateFields = {status:"finished", ended_at: new Date().toISOString()};
+    updateFields[battleIsPlayer1 ? "player1_score" : "player2_score"] = sessionXpEarned;
+    supabaseClient.from("battles").update(updateFields).eq("id", battleId).neq("status", "finished").select().then(function(res){
+      if(battleEnded) return;
+      if(!res.error && res.data && res.data.length){
+        // Uğurla iddia etdim — DB-yə artıq yazılıb, endBattle bunu TƏKRAR yazmayacaq (finalScores verilib)
         showToast("⚡ Rəqib bağlantını itirdi — sən qalib gəldin!");
-        endBattle(null, true);
+        endBattle(res.data[0], true);
+      } else {
+        // Rəqib eyni anda özü bitirib (yarışı UDUZDUM) — HƏQİQİ, artıq yazılmış nəticəyə tabe ol
+        supabaseClient.from("battles").select("*").eq("id", battleId).maybeSingle().then(function(res2){
+          if(!battleEnded && res2.data) endBattle(res2.data);
+        });
       }
     });
   }
@@ -7118,7 +7143,11 @@
     accumulatePlayTime();
     var myScore, oppScore;
     if(finalScores){
-      myScore = battleIsPlayer1 ? finalScores.player1_score : finalScores.player2_score;
+      // ÖZ xalım üçün DB-dəki köhnəlmiş (son 1san.-lıq sinxron) dəyərə DEYİL, canlı
+      // sessionXpEarned-ə etibar edirik — rəqibin xalı üçünsə DB-dəki (onun YAZDIĞI) dəyər
+      // etibarlıdır. Bax audit qeydi: köhnə kod hər ikisini DB-dən oxuyurdu, öz xalım bəzən
+      // son saniyənin xalını əks etdirmirdi.
+      myScore = sessionXpEarned;
       oppScore = battleIsPlayer1 ? finalScores.player2_score : finalScores.player1_score;
     } else {
       myScore = sessionXpEarned;
@@ -7930,9 +7959,26 @@
 
   // Oyun açılanda (və bulud profili yükləndikdən sonra YENİDƏN) çağırılır: gündəlik sayğacı
   // və 7 günlük dövrü yeniləyir. Yeni gün aşkarlanıbsa true qaytarır (avtomatik açılış üçün).
+  // Bax audit qeydi: checkDailyLogin() HƏM bootda (lokal profillə), HƏM bulud profili gələndən
+  // sonra (onGoogleSignedIn) çağırılır. Bulud sorğusu bootdan gecikə bilər — həmin arada bulud
+  // HƏLƏ "dünənki" lastLoginDate göstərir, ona görə bulud profili YERİNƏ QOYULANDA (profile =
+  // migrateProfile(...)) "yeni gün" YENİDƏN aşkarlanır və açar/streak/gün-indeksi İKİNCİ DƏFƏ
+  // verilirdi — hər gün, hər bulud oyunçusu üçün. dailyLoginSnapshot bunun qarşısını alır: bu
+  // sessiyada artıq verilibsə, TƏKRAR hesablamaq əvəzinə eyni (bir dəfəlik) nəticə tətbiq olunur.
+  var dailyLoginSnapshot = null;
   function checkDailyLogin(){
     var todayStr = getTodayStr();
     if(profile.lastLoginDate === todayStr) return false;
+    if(dailyLoginSnapshot && dailyLoginSnapshot.date === todayStr){
+      profile.rewardDayIndex = dailyLoginSnapshot.rewardDayIndex;
+      profile.loginStreak = dailyLoginSnapshot.loginStreak;
+      profile.dailyClaimedToday = dailyLoginSnapshot.dailyClaimedToday;
+      profile.totalLoginDays = dailyLoginSnapshot.totalLoginDays;
+      profile.keys = dailyLoginSnapshot.keys;
+      profile.lastLoginDate = todayStr;
+      saveProfile();
+      return false;
+    }
     if(profile.lastLoginDate){
       var diff = daysBetweenStr(profile.lastLoginDate, todayStr);
       profile.rewardDayIndex = (diff === 1) ? ((profile.rewardDayIndex + 1) % 7) : 0;
@@ -7946,6 +7992,10 @@
     profile.keys = (profile.keys||0) + 1;
     profile.lastLoginDate = todayStr;
     saveProfile();
+    dailyLoginSnapshot = {
+      date: todayStr, rewardDayIndex: profile.rewardDayIndex, loginStreak: profile.loginStreak,
+      dailyClaimedToday: profile.dailyClaimedToday, totalLoginDays: profile.totalLoginDays, keys: profile.keys
+    };
     return true;
   }
 
@@ -9469,6 +9519,7 @@
           var t2 = record.accumTime - fastDuration;
           var progress2 = t2 / normalPhaseDuration;
           if(progress2 >= 1){
+            record.caught = true; // gec çatan toxunuşun eyni kubiku TƏKRAR emal etməsinin qarşısını alır (bax onCubeTap-ın ilk qapısı)
             var idx = fieldCubes.indexOf(record);
             if(idx>=0) fieldCubes.splice(idx,1);
             if(el.parentNode) el.parentNode.removeChild(el);
@@ -12095,7 +12146,7 @@
       var pctLine = isOpened
         ? '✅ Tamamlandı'
         : isDone
-          ? '💰 ' + cardOpenPrice(t) + ' <span class=gold-icon-emoji></span> ilə aç'
+          ? cardOpenPrice(t) + ' <span class=gold-icon-emoji></span> ilə aç'
           : (!readyToBuild ? "🔒 Kilidli" : progress.pct + "%");
       var artHtml = t.art ? buildCardArtImg(t.art) : renderCardThumb(t);
       var artStateClass = t.art ? (isDone ? " card-tile-art-full" : " card-tile-art-pale") : "";
@@ -12217,7 +12268,7 @@
     }
 
     var price = cardOpenPrice(template);
-    document.getElementById("cpayPriceLabel").innerHTML = "💰 " + price + " <span class=gold-icon-emoji></span> ilə aç";
+    document.getElementById("cpayPriceLabel").innerHTML = price + " <span class=gold-icon-emoji></span> ilə aç";
     document.getElementById("cardPayOverlay").classList.add("show");
   }
   function closeCardPayPopup(){
