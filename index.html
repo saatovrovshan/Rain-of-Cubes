@@ -3583,6 +3583,8 @@
   var battleDurationSec = 60;
   var battleTimerInterval = null;
   var battleScoreSyncInterval = null;
+  var battleOpponentTimeoutInterval = null; // rəqibin son "last_ping"-ini periodik yoxlayır — bax checkOpponentBattleTimeout
+  var BATTLE_OPPONENT_TIMEOUT_MS = 5000;
   var battleChannel = null;
   var battleEndsAt = 0;
   var battleEnded = false;
@@ -6971,14 +6973,18 @@
       }
       clearInterval(battleScoreSyncInterval);
       battleScoreSyncInterval = setInterval(syncMyBattleScore, 1000);
+      clearInterval(battleOpponentTimeoutInterval);
+      battleOpponentTimeoutInterval = setInterval(checkOpponentBattleTimeout, 1000);
     });
   }
 
   function syncMyBattleScore(){
     if(!supabaseClient || !battleId) return;
-    var field = battleIsPlayer1 ? "player1_score" : "player2_score";
+    var scoreField = battleIsPlayer1 ? "player1_score" : "player2_score";
+    var pingField = battleIsPlayer1 ? "player1_last_ping" : "player2_last_ping";
     var update = {};
-    update[field] = sessionXpEarned;
+    update[scoreField] = sessionXpEarned;
+    update[pingField] = new Date().toISOString();
     supabaseClient.from("battles").update(update).eq("id", battleId).then(function(res){
       if(res.error) console.error("Battle sync xətası:", res.error);
     });
@@ -6986,6 +6992,26 @@
     if(battleOpponentEliminated && !battleEliminated && !battleEnded && sessionXpEarned > battleOpponentFrozenScore){
       endBattle();
     }
+  }
+
+  // Rəqibin son sinxronizasiya vaxtını ("last_ping") periodik yoxlayır — server-tərəfli, WAL-a
+  // əsaslanan realtime hadisələrinə TAM etibar etmək əvəzinə (şəbəkə problemi ilə buraxıla bilər)
+  // birbaşa SELECT ilə yoxlanılır. Rəqib BATTLE_OPPONENT_TIMEOUT_MS-dən çox susubsa (oyundan
+  // çıxıb/bağlantı itirilib) qalan oyunçuya avtomatik qələbə verilir.
+  function checkOpponentBattleTimeout(){
+    if(!supabaseClient || !battleId || battleEnded) return;
+    var pingField = battleIsPlayer1 ? "player2_last_ping" : "player1_last_ping";
+    supabaseClient.from("battles").select(pingField + ",status").eq("id", battleId).maybeSingle().then(function(res){
+      if(res.error || !res.data || battleEnded) return;
+      if(res.data.status === "finished") return; // artıq bitib — endBattle real-time kanalından gələcək
+      var lastPing = res.data[pingField];
+      if(!lastPing) return; // rəqib hələ ilk sinxronizasiyasını göndərməyib (döyüş yenicə başlayıb)
+      var elapsedMs = Date.now() - new Date(lastPing).getTime();
+      if(elapsedMs > BATTLE_OPPONENT_TIMEOUT_MS){
+        showToast("⚡ Rəqib bağlantını itirdi — sən qalib gəldin!");
+        endBattle(null, true);
+      }
+    });
   }
 
   function subscribeBattleChannel(){
@@ -7017,7 +7043,9 @@
 
   // finalScores verilirsə (rəqib artıq bitirib, real-time-dan gəlib) — sadəcə göstər, yenidən yazma.
   // verilmirsə (mənim vaxtım/canım bitib) — öz son xalımı yaz, sətri "finished" et ki rəqib də bitirsin.
-  function endBattle(finalScores){
+  // forfeitWin=true — rəqib bağlantını itirdiyi üçün (bax checkOpponentBattleTimeout) xal
+  // müqayisəsindən ASILI OLMAYARAQ mütləq qələbə verilir.
+  function endBattle(finalScores, forfeitWin){
     if(battleEnded) return;
     battleEnded = true;
     spawning = false;
@@ -7028,6 +7056,7 @@
     stopGameMusic();
     clearInterval(battleTimerInterval);
     clearInterval(battleScoreSyncInterval);
+    clearInterval(battleOpponentTimeoutInterval);
     document.getElementById("battleWaitOverlay").classList.remove("show");
     accumulatePlayTime();
     var myScore, oppScore;
@@ -7046,28 +7075,31 @@
         });
       }
     }
+    var iWon = forfeitWin || myScore > oppScore;
+    var isDraw = !forfeitWin && myScore === oppScore;
     var titleEl = document.getElementById("battleResultTitle");
     var statsEl = document.getElementById("battleResultStats");
     var rankedExtra = "";
     if(battleIsRanked){
-      var mult = myScore > oppScore ? 3 : (myScore < oppScore ? 1.5 : 2);
+      var mult = iWon ? 3 : (isDraw ? 2 : 1.5);
       var bonusXp = Math.round(sessionXpEarned * (mult - 1));
       if(bonusXp > 0) addXp(bonusXp);
-      if(myScore > oppScore){
+      if(iWon){
         addGold(RANKED_WIN_GOLD_BONUS);
         rankedExtra = "<br>⚔️ +" + RANKED_WIN_GOLD_BONUS + " qızıl, " + mult + "x xal";
       } else {
         rankedExtra = "<br>⚔️ " + mult + "x xal";
       }
     }
-    if(myScore > oppScore) titleEl.textContent = "🏆 Sən qalib gəldin!";
-    else if(myScore < oppScore) titleEl.textContent = "💔 Rəqib qalib gəldi";
-    else titleEl.textContent = "🤝 Bərabərə";
+    if(forfeitWin) titleEl.textContent = "🏆 Sən qalib gəldin! (Rəqib bağlantını itirdi)";
+    else if(iWon) titleEl.textContent = "🏆 Sən qalib gəldin!";
+    else if(isDraw) titleEl.textContent = "🤝 Bərabərə";
+    else titleEl.textContent = "💔 Rəqib qalib gəldi";
     statsEl.innerHTML = "Sənin xalın: <b>" + myScore + "</b><br>Rəqibin xalı: <b>" + oppScore + "</b>" + rankedExtra;
     // "Dostlarla oyun" nailiyyətləri yalnız dost-dəvətli döyüşləri sayır, pullu reytinqli oyunları yox
     if(!battleIsRanked){
       profile.friendBattlesPlayed = (profile.friendBattlesPlayed||0) + 1;
-      if(myScore > oppScore) profile.friendBattlesWon = (profile.friendBattlesWon||0) + 1;
+      if(iWon) profile.friendBattlesWon = (profile.friendBattlesWon||0) + 1;
     }
     battleResultOverlay.classList.add("show");
     battleTimerBadge.style.display = "none";
@@ -10983,6 +11015,7 @@
   function cleanupBattleState(){
     clearInterval(battleTimerInterval);
     clearInterval(battleScoreSyncInterval);
+    clearInterval(battleOpponentTimeoutInterval);
     clearBattleCountdownTimeouts();
     if(battleChannel && supabaseClient){ supabaseClient.removeChannel(battleChannel); battleChannel = null; }
     battleId = null;
