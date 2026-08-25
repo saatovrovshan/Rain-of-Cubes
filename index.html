@@ -9188,7 +9188,7 @@
       limitMsgEl.style.display = "none";
       return;
     }
-    var remaining = Math.max(0, DUNGEON_DAILY_LIMIT - getTodayDungeonStats().played);
+    var remaining = Math.max(0, DUNGEON_DAILY_LIMIT - getTodayDungeonStats().attempts);
     if(remaining > 0){
       btn.style.display = "";
       btn.textContent = "🔄 Yenidən başla (" + remaining + "/" + DUNGEON_DAILY_LIMIT + " qalıb)";
@@ -11006,11 +11006,23 @@
     // BİRBAŞA çağırır, startDungeonGame()-in gündəlik limit yoxlamasından keçmədən — bu, limit
     // bitdikdən sonra da yenidən başlamağa imkan verən bugün idi. Buna görə limit yoxlaması
     // BURADA, startGame()-in özündə təkrarlanır ki, HANSI düymədən çağırılırsa çağırılsın işləsin.
-    if(gameMode === "dungeon" && getTodayDungeonStats().played >= DUNGEON_DAILY_LIMIT){
-      showToast("⚠️ Bugünkü " + DUNGEON_DAILY_LIMIT + " zindan hüququn bitib. Sabah yenidən cəhd et!");
-      returnToMenu();
-      openDungeon();
-      return;
+    if(gameMode === "dungeon"){
+      var dungeonStats = getTodayDungeonStats();
+      if(dungeonStats.attempts >= DUNGEON_DAILY_LIMIT){
+        showToast("⚠️ Bugünkü " + DUNGEON_DAILY_LIMIT + " zindan hüququn bitib. Sabah yenidən cəhd et!");
+        returnToMenu();
+        openDungeon();
+        return;
+      }
+      // Cəhd BURADA (oyun başlayan kimi) hesablanır, oyun BİTƏNDƏ (submitDungeonScore) YOX —
+      // əks halda pauza verib menyuya qayıtmaq/tab-ı bağlamaq həmin cəhdi "istifadə edilməmiş"
+      // saydırıb məhdudiyyəti dövr etməyə imkan verirdi (bax istifadəçi bildirişi). "played"
+      // (tamamlanmış oyun sayı, bonus pilləsi/liderbord üçün) buna TOXUNULMUR, YALNIZ
+      // submitDungeonScore-da, oyun HƏQİQƏTƏN bitəndə artır.
+      if(!profile.dungeonScores) profile.dungeonScores = {};
+      dungeonStats.attempts += 1;
+      profile.dungeonScores[getTodayStr()] = dungeonStats;
+      saveProfile();
     }
     ensureAudio();
     stopMenuBgAnim();
@@ -12990,7 +13002,8 @@
   function getTodayDungeonStats(){
     var today = getTodayStr();
     var rec = profile.dungeonScores && profile.dungeonScores[today];
-    if(!rec || typeof rec !== "object") rec = {played:0, total:0, best:0};
+    if(!rec || typeof rec !== "object") rec = {played:0, total:0, best:0, attempts:0};
+    if(typeof rec.attempts !== "number") rec.attempts = rec.played; // köhnə qeydlər üçün geriyə uyğunluq
     return rec;
   }
 
@@ -13067,7 +13080,7 @@
     } else {
       myScoreEl.style.display = "none";
     }
-    var remaining = Math.max(0, DUNGEON_DAILY_LIMIT - stats.played);
+    var remaining = Math.max(0, DUNGEON_DAILY_LIMIT - stats.attempts);
     var playBtn = document.getElementById("dungeonPlayBtn");
     if(remaining <= 0){
       playBtn.disabled = true;
@@ -13100,7 +13113,7 @@
 
   function startDungeonGame(){
     var stats = getTodayDungeonStats();
-    if(stats.played >= DUNGEON_DAILY_LIMIT){
+    if(stats.attempts >= DUNGEON_DAILY_LIMIT){
       showToast("⚠️ Bugünkü " + DUNGEON_DAILY_LIMIT + " zindan hüququn bitib. Sabah yenidən cəhd et!");
       return;
     }
@@ -13118,7 +13131,8 @@
     var today = getTodayStr();
     if(!profile.dungeonScores) profile.dungeonScores = {};
     var rec = getTodayDungeonStats();
-    rec.played += 1;
+    rec.played += 1; // TAMAMLANMIŞ oyun sayı (bonus pilləsi/liderbord üçün) — "attempts" (gündəlik
+    // hüquq limiti) artıq startGame()-də, oyun başlayanda artırılıb, burada TƏKRAR artırılmır
     rec.total += score;
     rec.best = Math.max(rec.best, score);
     profile.dungeonScores[today] = rec;
@@ -13149,7 +13163,7 @@
         if(res.error) console.error("Zindan xəta:", res.error);
       });
     }
-    var remaining = Math.max(0, DUNGEON_DAILY_LIMIT - rec.played);
+    var remaining = Math.max(0, DUNGEON_DAILY_LIMIT - rec.attempts);
     showToast("⚔️ Zindan xalın: " + score + " · +" + tier.gold + " 🪙 +" + cubesPer + "x hər rəngdən kub · qalan oyun: " + remaining + "/" + DUNGEON_DAILY_LIMIT);
   }
 
