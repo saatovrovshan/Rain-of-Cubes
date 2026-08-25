@@ -1353,6 +1353,7 @@
   .admin-grant-cube .agc-swatch{width:18px;height:18px;border-radius:5px}
   .admin-grant-cube input{width:100%;text-align:center;padding:5px 2px;border-radius:6px;border:2px solid var(--board-cell);font-size:11px;font-family:inherit}
   .admin-grant-submit{width:100%;background:var(--gold);color:#5a3d00;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:900;cursor:pointer}
+  .admin-grant-submit:disabled{background:#d9d2c4;color:#a99;cursor:not-allowed}
   .admin-flag-row{background:var(--panel);border-radius:12px;padding:10px 12px;margin-bottom:8px;cursor:pointer}
   .admin-flag-row-top{display:flex;justify-content:space-between;font-size:12px;font-weight:800;color:var(--ink)}
   .admin-flag-reason{font-size:11px;color:#c0392b;font-weight:700;margin-top:2px}
@@ -6010,6 +6011,13 @@
     });
     document.getElementById("adminCustomBanBtn").addEventListener("click", function(){ adminApplyCustomBan(p.id); });
     document.getElementById("adminGrantSubmit").addEventListener("click", function(){ adminGrantResources(p.id); });
+    // Damalardan hər hansı biri 0-dan böyükdürsə düymə aktivdir, hamısı boş/0-dırsa sönükdür —
+    // yazdıqca CANLI yenilənir (bax updateAdminGrantSubmitState). Göndərişdən sonra damalar
+    // sıfırlanıb düymə "✅ Göndərildi" göstərib təbii olaraq yenidən sönür (bax adminGrantResources).
+    el.querySelectorAll("#adminGrantGold, #adminGrantKeys, .admin-grant-cubes input[data-cube]").forEach(function(inp){
+      inp.addEventListener("input", updateAdminGrantSubmitState);
+    });
+    updateAdminGrantSubmitState();
     document.getElementById("adminHistoryLoadBtn").addEventListener("click", function(){ loadAdminGameHistory(p.id); });
     var photoDeleteBtn = document.getElementById("adminPhotoDeleteBtn");
     if(photoDeleteBtn) photoDeleteBtn.addEventListener("click", function(){ adminDeletePhoto(p.id); });
@@ -6131,14 +6139,42 @@
       if(v > 0){ cubes[inp.getAttribute("data-cube")] = v; anyCube = true; }
     });
     if(gold <= 0 && keys <= 0 && !anyCube){ showToast("⚠️ Heç bir məbləğ daxil edilməyib"); return; }
+    var submitBtn = document.getElementById("adminGrantSubmit");
+    if(submitBtn) submitBtn.disabled = true; // göndəriş gedərkən təkrar basılmasının qarşısını al
     insertSystemMessage(playerId, {
       icon: "🎁", title: "🎁 Hesabınıza mükafat əlavə edildi",
       body: "Admin tərəfindən hesabınıza əlavə edildi.",
       gold: gold || null, keys: keys || null, cubesPerColor: anyCube ? cubes : null
     }).then(function(res){
-      if(res.error){ showToast("⚠️ Göndərilmədi: " + res.error.message); return; }
+      if(res.error){
+        showToast("⚠️ Göndərilmədi: " + res.error.message);
+        updateAdminGrantSubmitState(); // xəta olduqda damalar dəyişməyib, düymə əvvəlki halına qayıtsın
+        return;
+      }
       showToast("🎁 Göndərildi! Oyunçu bunu daxil olduqda alacaq");
+      var goldInput = document.getElementById("adminGrantGold");
+      var keysInput = document.getElementById("adminGrantKeys");
+      if(goldInput) goldInput.value = "0";
+      if(keysInput) keysInput.value = "0";
+      document.querySelectorAll('.admin-grant-cubes input[data-cube]').forEach(function(inp){ inp.value = "0"; });
+      if(submitBtn){ submitBtn.textContent = "✅ Göndərildi"; submitBtn.disabled = true; }
     });
+  }
+
+  // "Resurs göndər" düyməsi damalardan heç biri 0-dan böyük deyilsə sönükdür — həm ilk
+  // render-də, həm hər yazı zamanı (bax renderAdminPlayerDetail-dəki "input" dinləyiciləri)
+  // çağırılır. Oyunçu yeni dəyər yazmağa başlayanda "✅ Göndərildi" mətni də əvvəlki halına qayıdır.
+  function updateAdminGrantSubmitState(){
+    var btn = document.getElementById("adminGrantSubmit");
+    if(!btn) return;
+    var gold = parseInt((document.getElementById("adminGrantGold")||{}).value, 10) || 0;
+    var keys = parseInt((document.getElementById("adminGrantKeys")||{}).value, 10) || 0;
+    var anyCube = Array.from(document.querySelectorAll('.admin-grant-cubes input[data-cube]')).some(function(inp){
+      return (parseInt(inp.value, 10) || 0) > 0;
+    });
+    var hasAny = gold > 0 || keys > 0 || anyCube;
+    if(btn.textContent === "✅ Göndərildi") btn.textContent = "🎁 Göndər";
+    btn.disabled = !hasAny;
   }
 
   // ================= ÜMUMİ STATİSTİKA (dashboard) =================
