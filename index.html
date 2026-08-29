@@ -11,14 +11,37 @@
     --green:#6bbf59; --yellow:#f4c542; --purple:#a463d6; --orange:#ff9f43;
     --pink:#ff6b9d; --cyan:#00d2d3; --gold:#ffd700; --brown:#a35a29;
     --mono-black:#3a3a3a; --mono-gray:#9ea0a5; --mono-white:#eef0f2;
+
+    /* ===== Dizayn tokenləri (Phase 2 — YENİ, mövcud rənglərə TOXUNULMUR) =====
+       Bunlar faylda artıq ən çox təkrarlanan dəyərləri (radius/kölgə/interval/animasiya sürəti)
+       adlandırır ki, gələcək redizayn işi TƏSADÜFİ yeni ədədlər əvəzinə bu ORTAQ miqyasdan
+       istifadə etsin. Heç bir mövcud qayda bu tokenləri İNDİ istifadə etməyə MƏCBUR deyil —
+       sonrakı fazalar (menyu/mağaza/modal) tədricən bunlara keçəcək. */
+    --radius-xs:6px; --radius-sm:8px; --radius-md:10px; --radius-lg:14px; --radius-xl:20px; --radius-pill:999px;
+    --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px; --space-6:24px;
+    --shadow-card:0 2px 8px rgba(0,0,0,.18);
+    --shadow-panel:0 20px 50px rgba(0,0,0,.45);
+    --shadow-btn-highlight:inset 0 2px 0 rgba(255,255,255,.32);
+    --ease-pop:cubic-bezier(.34,1.56,.64,1);
+    --dur-fast:150ms; --dur-base:220ms; --dur-slow:300ms;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
   html,body{margin:0;padding:0;height:100%;background:#3a332c;font-family:"Segoe UI",Arial,sans-serif;overscroll-behavior:none;user-select:none;-webkit-user-select:none}
   #app{max-width:480px;margin:0 auto;height:100vh;height:100dvh;background:var(--bg);display:flex;flex-direction:column;position:relative;overflow:hidden;box-shadow:0 0 40px rgba(0,0,0,.5)}
 
-  #menuScreen,#shopScreen,#profileScreen,#achievementsScreen,#arcadeScreen,#friendsScreen,#chatScreen,#leaderboardScreen,#mailboxScreen,#bagScreen,#cardsScreen,#dungeonScreen,#adminPanelScreen{position:absolute;inset:0;z-index:100;background:linear-gradient(180deg,#faf8ef,#f0e6d6);display:flex;flex-direction:column;padding:0;text-align:center;overflow-y:auto}
+  /* ===== İkon sistemi baza qaydaları (Phase 1) ===== */
+  .icon-sprite{position:absolute;width:0;height:0;overflow:hidden}
+  .icon{width:1em;height:1em;display:inline-block;vertical-align:-0.15em;fill:currentColor;flex-shrink:0}
+
+  /* ===== Ekran/modal açılış animasiyası (Phase 2) — SIRF ƏLAVƏ CSS, JS-ə TOXUNULMUR.
+     Mövcud display:none/flex və .show class keçidləri EYNİ QALIR, animasiya sadəcə həmin
+     keçidlərin üstünə "minir" (dəyişən display/classList hər dəfə animasiyanı təzədən işə salır). */
+  @keyframes screenPopIn{from{opacity:0;transform:scale(.97) translateY(6px)} to{opacity:1;transform:scale(1) translateY(0)}}
+  @keyframes modalPopIn{from{opacity:0;transform:scale(.92)} to{opacity:1;transform:scale(1)}}
+
+  #menuScreen,#shopScreen,#profileScreen,#achievementsScreen,#arcadeScreen,#friendsScreen,#chatScreen,#leaderboardScreen,#mailboxScreen,#bagScreen,#cardsScreen,#dungeonScreen,#adminPanelScreen{position:absolute;inset:0;z-index:100;background:linear-gradient(180deg,#faf8ef,#f0e6d6);display:flex;flex-direction:column;padding:0;text-align:center;overflow-y:auto;animation:screenPopIn var(--dur-base) var(--ease-pop) both}
   #menuScreen{justify-content:flex-start;align-items:center;padding:16px 16px 10px}
-  #shopScreen{padding:16px;display:none}
+  #shopScreen{padding:0;display:none}
   #adminPanelScreen{display:none}
   #bagScreen{padding:16px;display:none;align-items:stretch}
   #profileScreen{padding:16px;display:none;align-items:stretch;--profile-accent:#6bbf59;--profile-accent2:#4a90d9}
@@ -151,47 +174,55 @@
   #profileScreen.profile-palette-amethyst,#playerCardModal .modal-panel.profile-palette-amethyst{--profile-accent:#9b5de5;--profile-accent2:#c77dff}
   #profileScreen.profile-palette-emerald,#playerCardModal .modal-panel.profile-palette-emerald{--profile-accent:#1f9d55;--profile-accent2:#5be07e}
   #achievementsScreen{padding:16px;display:none;align-items:stretch}
-  #arcadeScreen{padding:16px;display:none;align-items:stretch}
+  #arcadeScreen{padding:0;display:none;align-items:stretch}
   #dungeonScreen{padding:0;display:none;align-items:stretch}
   #chatScreen{padding:0;display:none;align-items:stretch;overflow-y:hidden}
-  #leaderboardScreen{padding:16px;display:none;align-items:stretch}
-  #mailboxScreen{padding:16px;display:none;align-items:stretch}
-  .shop-sticky-top{position:sticky;top:0;z-index:10;background:#faf8ef}
+  #leaderboardScreen{padding:0;display:none;align-items:stretch}
+  #mailboxScreen{padding:0;display:none;align-items:stretch}
+  .shop-sticky-top{position:sticky;top:0;z-index:10;background:#faf8ef;padding:16px 16px 0}
+  #chatScreen .shop-sticky-top{padding:0}
   .shop-header{display:flex;align-items:center;justify-content:space-between;padding-bottom:10px;border-bottom:2px solid var(--board-cell)}
   .shop-tabs{display:flex;flex-wrap:wrap;gap:6px;padding:10px 0}
-  .shop-sort-btn{background:var(--panel);color:var(--ink);border:2px solid transparent;border-radius:14px;padding:7px 14px;font-size:11px;font-weight:800;cursor:pointer;margin-bottom:8px}
-  .shop-sort-btn:active{border-color:var(--green)}
-  .shop-tab-btn{flex:1 1 auto;min-width:76px;text-align:center;background:var(--panel);color:var(--ink);border:2px solid transparent;border-radius:16px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
-  .shop-tab-btn.active{background:var(--green);color:#fff;box-shadow:0 3px 0 #4a9e3f}
+  .shop-sort-btn{background:var(--panel);color:var(--ink);border:2px solid transparent;border-radius:var(--radius-lg);padding:7px 14px;font-size:11px;font-weight:800;cursor:pointer;margin-bottom:8px;box-shadow:var(--shadow-card);transition:transform .12s var(--ease-pop)}
+  .shop-sort-btn:active{border-color:var(--green);transform:scale(.96)}
+  .shop-tab-btn{flex:1 1 auto;min-width:76px;text-align:center;background:var(--panel);color:var(--ink);border:2px solid transparent;border-radius:var(--radius-pill);padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;box-shadow:var(--shadow-card);transition:transform .14s var(--ease-pop),box-shadow .14s,background .14s}
+  .shop-tab-btn.active{background:var(--green);color:#fff;box-shadow:0 3px 0 #4a9e3f;transform:translateY(-1px)}
+  .shop-tab-btn:active{transform:scale(.95)}
   .shop-header h2{margin:0;font-size:22px;color:var(--ink)}
   #chatPeerName{cursor:pointer}
-  .achievements-total-badge{font-size:13px;font-weight:800;color:var(--ink);background:var(--panel);border-radius:12px;padding:6px 12px;flex-shrink:0}
+  .achievements-total-badge{font-size:13px;font-weight:800;color:var(--ink);background:var(--panel);border-radius:var(--radius-lg);padding:6px 12px;flex-shrink:0;box-shadow:var(--shadow-card)}
   .shop-gold{display:flex;align-items:center;gap:6px;font-size:18px;font-weight:800;color:var(--gold)}
-  .shop-back{background:var(--board);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer}
+  .shop-back{background:var(--board);color:#fff;border:none;border-radius:var(--radius-sm);padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;transition:transform .12s var(--ease-pop)}
+  .shop-back:active{transform:scale(.94)}
   .shop-section{width:100%;margin-bottom:14px}
+  #shopContent,#mailboxContent,#friendsContent{padding:0 16px 16px}
   .shop-section-title{font-size:13px;font-weight:800;color:var(--ink);text-align:left;margin-bottom:8px;padding-left:6px;border-left:4px solid var(--green)}
   .shop-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .shop-item{background:var(--panel);border-radius:12px;padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:5px;border:2px solid transparent;transition:border-color .2s;position:relative}
-  .shop-item.owned{border-color:var(--green)}
-  .shop-item.locked{opacity:.55}
-  .shop-item-lock-badge{position:absolute;top:6px;right:6px;font-size:12px;background:rgba(0,0,0,.5);color:#fff;border-radius:8px;padding:2px 6px;font-weight:800}
-  .shop-item-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:24px;background:var(--board-cell)}
+  .shop-item{background:var(--panel);border-radius:var(--radius-lg);padding:14px 10px;display:flex;flex-direction:column;align-items:center;gap:6px;border:2px solid transparent;transition:border-color .2s,transform .12s var(--ease-pop);position:relative;box-shadow:var(--shadow-card)}
+  .shop-item.owned{border-color:var(--green);background:linear-gradient(180deg,rgba(107,191,89,.14),var(--panel) 45%)}
+  .shop-item.locked{opacity:.6}
+  .shop-item-lock-badge{position:absolute;top:6px;right:6px;font-size:11px;background:rgba(0,0,0,.55);color:#fff;border-radius:var(--radius-sm);padding:3px 7px;font-weight:800;display:flex;align-items:center;gap:2px}
+  .shop-item-lock-badge .icon{width:.9em;height:.9em}
+  .shop-item-icon{width:48px;height:48px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;font-size:25px;background:linear-gradient(160deg,#f4ecdd,var(--board-cell));box-shadow:inset 0 1px 0 rgba(255,255,255,.5),inset 0 -2px 4px rgba(0,0,0,.08)}
   .shop-item-name{font-size:12px;font-weight:700;color:var(--ink)}
   .shop-item-desc{font-size:9px;color:#a99;line-height:1.3;text-align:center;min-height:22px}
-  .shop-item-btn{background:var(--green);color:#fff;border:none;border-radius:8px;padding:5px 14px;font-size:11px;font-weight:700;cursor:pointer;margin-top:auto}
-  .shop-item-btn:disabled{background:#ccc;cursor:not-allowed}
-  .shop-item-btn.owned-btn{background:var(--blue)}
-  .shop-item-btn.disabled-btn{background:#b9ac9d}
+  .shop-item-btn{background:var(--green);color:#fff;border:none;border-radius:var(--radius-pill);padding:6px 16px;font-size:11px;font-weight:700;cursor:pointer;margin-top:auto;box-shadow:0 2px 0 #4a9e3f;transition:transform .1s}
+  .shop-item-btn:active:not(:disabled){transform:translateY(2px);box-shadow:0 0 0 #4a9e3f}
+  .shop-item-btn:disabled{background:#ccc;cursor:not-allowed;box-shadow:none}
+  .shop-item-btn.owned-btn{background:var(--blue);box-shadow:0 2px 0 #2f6fb0}
+  .shop-item-btn.disabled-btn{background:#b9ac9d;box-shadow:none}
   .shop-item-owned{font-size:10px;font-weight:700;color:var(--ink);opacity:.65}
 
   .menu-topbar{display:flex;align-items:center;gap:8px;width:100%;margin-bottom:14px}
-  .menu-level-chip{flex:1;min-width:0;display:flex;align-items:center;gap:8px;background:var(--panel);border-radius:14px;padding:6px 10px 6px 6px;cursor:pointer;border:2px solid transparent;transition:border-color .15s,transform .1s;position:relative}
-  .menu-level-chip:active{transform:translateY(1px)}
+  .menu-level-chip{flex:1;min-width:0;display:flex;align-items:center;gap:8px;background:var(--panel);border-radius:var(--radius-lg);padding:6px 10px 6px 6px;cursor:pointer;border:2px solid transparent;transition:border-color .15s,transform .1s var(--ease-pop),box-shadow .15s;position:relative;box-shadow:var(--shadow-card)}
+  .menu-level-chip:active{transform:translateY(1px) scale(.985)}
   .menu-avatar-wrap{position:relative;flex-shrink:0}
   .menu-topbar-info{flex:1;min-width:0;text-align:left}
   .menu-topbar-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
-  .menu-currency-pill{display:flex;align-items:center;gap:5px;background:linear-gradient(160deg,#5a4636,#3d2f24);color:#ffd966;border-radius:20px;padding:8px 12px;font-size:13px;font-weight:800;box-shadow:inset 0 1px 0 rgba(255,255,255,.15),0 2px 4px rgba(0,0,0,.25);white-space:nowrap}
-  #menuScreen .menu-settings-btn{position:static;background:linear-gradient(160deg,#5a4636,#3d2f24);color:#fff;border-radius:12px;padding:9px 11px}
+  .menu-currency-pill{display:flex;align-items:center;gap:5px;background:linear-gradient(160deg,#5a4636,#3d2f24);color:#ffd966;border-radius:var(--radius-pill);padding:8px 12px;font-size:13px;font-weight:800;box-shadow:inset 0 1px 0 rgba(255,255,255,.15),var(--shadow-card);white-space:nowrap;transition:transform .12s var(--ease-pop)}
+  .menu-currency-pill:active,.menu-keys-pill:active{transform:scale(.94)}
+  #menuScreen .menu-settings-btn{position:static;background:linear-gradient(160deg,#5a4636,#3d2f24);color:#fff;border-radius:var(--radius-md);padding:9px 11px;transition:transform .12s var(--ease-pop)}
+  #menuScreen .menu-settings-btn:active{transform:scale(.9) rotate(-12deg)}
 
   .menu-title-wrap{text-align:center;margin-bottom:10px}
   .menu-title{margin:2px 0 4px;line-height:1}
@@ -213,14 +244,16 @@
   .loading-bar-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--green),var(--blue));border-radius:6px;transition:width .15s linear}
   .loading-pct{font-size:13px;font-weight:800;color:#e8e0d0;font-variant-numeric:tabular-nums}
 
-  .menu-stats{background:var(--panel);border-radius:12px;padding:12px 16px;display:flex;gap:16px;width:100%;box-sizing:border-box;justify-content:center;margin-bottom:8px}
+  .menu-stats{background:var(--panel);border-radius:var(--radius-lg);padding:12px 16px;display:flex;gap:16px;width:100%;box-sizing:border-box;justify-content:center;margin-bottom:8px;box-shadow:var(--shadow-card)}
   .menu-stat{text-align:center;flex:1}
   .menu-stat .num{font-size:19px;font-weight:800;color:var(--ink)}
   .menu-stat .lbl{font-size:9px;color:#a99;font-weight:700;text-transform:uppercase}
 
-  .menu-play-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;background:linear-gradient(160deg,#8fe066,var(--green));color:#fff;border:none;border-radius:20px;padding:16px;font-size:22px;font-weight:900;cursor:pointer;box-shadow:inset 0 2px 0 rgba(255,255,255,.35),0 5px 0 #4a9e3f,0 9px 16px rgba(0,0,0,.25);transition:transform .1s;margin:10px 0 14px}
+  .menu-play-btn{position:relative;width:100%;display:flex;align-items:center;justify-content:center;gap:10px;background:linear-gradient(160deg,#8fe066,var(--green));color:#fff;border:none;border-radius:22px;padding:18px;font-size:23px;font-weight:900;cursor:pointer;box-shadow:inset 0 2px 0 rgba(255,255,255,.35),0 5px 0 #4a9e3f,0 9px 20px rgba(0,0,0,.28);transition:transform .1s;margin:12px 0 14px;z-index:1}
+  .menu-play-btn::before{content:"";position:absolute;inset:-10px;border-radius:30px;background:radial-gradient(ellipse at center,rgba(143,224,102,.55),transparent 70%);opacity:.4;z-index:-1;animation:playGlow 2.4s ease-in-out infinite}
   .menu-play-btn:active{transform:translateY(3px);box-shadow:inset 0 2px 0 rgba(255,255,255,.35),0 2px 0 #4a9e3f,0 4px 8px rgba(0,0,0,.25)}
-  .mp-icon{font-size:20px}
+  @keyframes playGlow{0%,100%{opacity:.28;transform:scale(.97)}50%{opacity:.62;transform:scale(1.05)}}
+  .mp-icon{font-size:20px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.2))}
   .mp-text{display:flex;flex-direction:column;align-items:flex-start;line-height:1.15}
   .mp-text small{font-size:11px;font-weight:700;opacity:.85}
 
@@ -247,9 +280,9 @@
   /* Ana menyunun altındakı ikon sırası: Mağaza/Nailiyyətlər/Dostlar/Liderbord/Çanta/Poçt qutusu —
      yazısız, sırf ikon, yan-yana. Digər menu-btn-lərdən fərqli olaraq mətn daşımır. */
   .menu-bottom-icons{display:flex;justify-content:center;align-items:center;gap:12px;width:100%;margin-top:14px;padding-top:10px;border-top:1px solid rgba(0,0,0,.08)}
-  .menu-icon-btn{position:relative;flex-shrink:0;background:var(--panel);border:none;border-radius:14px;width:50px;height:50px;font-size:22px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.12),0 4px 8px rgba(0,0,0,.15)}
-  .menu-icon-btn:active{transform:translateY(3px);box-shadow:0 0 0 rgba(0,0,0,.12)}
-  .menu-icon-dot{position:absolute;top:2px;right:2px;width:10px;height:10px;border-radius:50%;background:var(--red);border:2px solid var(--bg);animation:dailyDotPulse 1s ease-in-out infinite alternate}
+  .menu-icon-btn{position:relative;flex-shrink:0;background:var(--panel);color:var(--ink);border:none;border-radius:var(--radius-lg);width:50px;height:50px;font-size:21px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.12),0 4px 8px rgba(0,0,0,.15);transition:transform .12s var(--ease-pop),box-shadow .12s}
+  .menu-icon-btn:active{transform:translateY(3px) scale(.96);box-shadow:0 0 0 rgba(0,0,0,.12)}
+  .menu-icon-dot{position:absolute;top:2px;right:2px;width:10px;height:10px;border-radius:50%;background:var(--red);border:2px solid var(--bg);animation:dailyDotPulse 1s ease-in-out infinite alternate;box-shadow:0 0 0 2px rgba(242,84,91,.25)}
   .menu-btn.arcade-btn{background:var(--cyan);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 4px 0 #00a3a4,0 6px 10px rgba(0,0,0,.2)}
   .menu-btn.arcade-btn:active{box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 1px 0 #00a3a4,0 2px 4px rgba(0,0,0,.2)}
   .menu-btn.friends-btn{background:#5b6fd6;box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 4px 0 #3d4fae,0 6px 10px rgba(0,0,0,.2)}
@@ -278,13 +311,13 @@
   .daily-missions-progress{font-size:10px;font-weight:700;color:#a99;margin-top:1px}
   .daily-missions-red-dot{width:9px;height:9px;border-radius:50%;background:var(--red);flex-shrink:0;animation:dailyDotPulse 1s ease-in-out infinite alternate}
 
-  .menu-hint-card{width:100%;display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:14px;padding:10px 12px;margin-top:14px;text-align:left}
+  .menu-hint-card{width:100%;display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:var(--radius-lg);padding:10px 12px;margin-top:14px;text-align:left;box-shadow:var(--shadow-card)}
   .menu-hint-icon{flex-shrink:0;width:36px;height:36px;border-radius:10px;background:linear-gradient(160deg,#e0d2b8,#c9b795);display:flex;align-items:center;justify-content:center;font-size:18px}
   .menu-hint-body{min-width:0}
   .menu-hint-title{font-size:12px;font-weight:800;color:var(--ink)}
   .menu-hint-text{font-size:10px;color:#a99;font-weight:600;line-height:1.4}
 
-  .arcade-level-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:14px 8px}
+  .arcade-level-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:14px 24px 24px}
   .arcade-level-card{background:var(--panel);border-radius:10px;padding:8px 4px 10px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;border:2px solid transparent;transition:transform .1s}
   .arcade-level-card:active{transform:scale(.94)}
   .arcade-level-card.locked{opacity:.4;cursor:not-allowed}
@@ -342,7 +375,8 @@
   .sound-toggle.off{opacity:.5;border-color:transparent}
 
   .profile-edit{background:var(--panel);border-radius:12px;padding:12px;display:flex;align-items:center;gap:10px;margin-top:4px}
-  .name-save-btn{background:var(--profile-accent,var(--green));color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:12px;font-weight:800;cursor:pointer;flex-shrink:0}
+  .name-save-btn{background:var(--profile-accent,var(--green));color:#fff;border:none;border-radius:var(--radius-md);padding:9px 16px;font-size:12px;font-weight:800;cursor:pointer;flex-shrink:0;box-shadow:0 3px 0 rgba(0,0,0,.18);transition:transform .1s}
+  .name-save-btn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.18)}
   .name-ticket-hint{background:rgba(242,84,91,.12);border:1px solid rgba(242,84,91,.4);border-radius:10px;padding:8px 10px;font-size:11px;font-weight:700;color:var(--red);margin-top:6px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
   .name-ticket-shop-btn{background:var(--red);color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:800;cursor:pointer}
   /* Qızıl ikonu: TƏK mənbə burada — gələcəkdə ikonu dəyişmək üçün YALNIZ bu background-image
@@ -462,7 +496,8 @@
 
   .profile-photo-section{display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:6px}
   .photo-actions{display:flex;gap:8px}
-  .photo-upload-btn,.photo-remove-btn{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:11px;font-weight:700;cursor:pointer;display:inline-block}
+  .photo-upload-btn,.photo-remove-btn{background:var(--blue);color:#fff;border:none;border-radius:var(--radius-pill);padding:7px 14px;font-size:11px;font-weight:700;cursor:pointer;display:inline-block;transition:transform .12s var(--ease-pop)}
+  .photo-upload-btn:active,.photo-remove-btn:active{transform:scale(.94)}
   .photo-remove-btn{background:var(--red)}
   .flag-picker{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;background:var(--panel);border-radius:10px;padding:10px}
   .flag-btn{background:transparent;border:2px solid transparent;border-radius:6px;padding:6px 4px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;min-height:34px}
@@ -472,12 +507,14 @@
   .flag-current-btn{background:var(--panel);border:2px solid transparent;border-radius:10px;padding:8px 18px;cursor:pointer;line-height:1;display:inline-flex;align-items:center;gap:10px}
   .flag-current-btn img{width:44px;height:30px;object-fit:cover;border-radius:4px;box-shadow:0 0 0 1px rgba(0,0,0,.15);display:block}
   .flag-current-btn .flag-current-label{font-size:12px;font-weight:700;color:var(--ink)}
-  .modal-overlay{position:absolute;inset:0;background:rgba(58,51,44,.92);display:flex;align-items:center;justify-content:center;z-index:150;opacity:0;pointer-events:none;transition:opacity .3s ease;padding:24px}
+  .modal-overlay{position:absolute;inset:0;background:rgba(58,51,44,.92);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;z-index:150;opacity:0;pointer-events:none;transition:opacity .3s ease;padding:24px}
   .modal-overlay.show{opacity:1;pointer-events:auto}
-  .modal-panel{position:relative;background:var(--bg);border-radius:14px;padding:16px;width:100%;max-width:400px;max-height:80vh;overflow-y:auto;text-align:left}
-  .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-  .modal-header h3{margin:0;font-size:16px;color:var(--ink)}
-  .modal-close{background:var(--red);color:#fff;border:none;border-radius:50%;width:28px;height:28px;font-size:14px;cursor:pointer;flex-shrink:0}
+  .modal-panel{position:relative;background:var(--bg);border-radius:var(--radius-xl);padding:18px;width:100%;max-width:400px;max-height:80vh;overflow-y:auto;text-align:left;box-shadow:var(--shadow-panel)}
+  .modal-overlay.show .modal-panel{animation:modalPopIn var(--dur-base) var(--ease-pop) both}
+  .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px}
+  .modal-header h3{margin:0;font-size:16px;color:var(--ink);display:flex;align-items:center;gap:8px}
+  .modal-close{background:var(--red);color:#fff;border:none;border-radius:50%;width:28px;height:28px;font-size:14px;cursor:pointer;flex-shrink:0;box-shadow:0 2px 0 #c23941;transition:transform .12s var(--ease-pop)}
+  .modal-close:active{transform:scale(.88) rotate(90deg);box-shadow:0 0 0 #c23941}
   .menu-settings-btn{position:absolute;top:16px;right:16px;font-size:18px;padding:8px 11px;z-index:5}
   .xp-progress-body{flex:1;min-width:0}
   .menu-player-name{font-size:13px;font-weight:800;color:var(--ink);text-align:left;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -521,7 +558,7 @@
   .profile-edit label{font-size:12px;font-weight:700;color:var(--ink)}
   .profile-edit input{flex:1;border:2px solid var(--board-cell);border-radius:8px;padding:8px 10px;font-size:19px;font-weight:800;font-family:inherit;min-width:0;text-align:center;color:var(--ink)}
   .profile-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
-  .profile-stat{background:var(--panel);border-radius:12px;padding:14px 8px;text-align:center}
+  .profile-stat{background:var(--panel);border-radius:var(--radius-lg);padding:14px 8px;text-align:center;box-shadow:var(--shadow-card);transition:transform .12s var(--ease-pop)}
   .profile-stat .pnum{font-size:19px;font-weight:800;color:var(--ink)}
   .profile-stat .plbl{font-size:9px;color:#a99;font-weight:700;text-transform:uppercase;margin-top:3px}
   .profile-section-title{font-size:13px;font-weight:800;color:var(--ink);text-align:left;margin:18px 0 8px;padding-left:6px;border-left:4px solid var(--profile-accent,var(--orange))}
@@ -543,7 +580,7 @@
   .records-list,.achievements-list{display:flex;flex-direction:column;gap:6px}
 
   .bag-list{display:flex;flex-direction:column;gap:8px;padding:14px}
-  .bag-row{display:flex;align-items:center;gap:12px;background:var(--panel);border-radius:12px;padding:10px 14px}
+  .bag-row{display:flex;align-items:center;gap:12px;background:var(--panel);border-radius:var(--radius-lg);padding:10px 14px;box-shadow:var(--shadow-card)}
   .bag-row-icon{font-size:24px;flex-shrink:0}
   .bag-row-info{flex:1;text-align:left;min-width:0}
   .bag-row-name{font-size:13px;font-weight:800;color:var(--ink)}
@@ -581,26 +618,26 @@
   .wheel-spin-btn{background:var(--green);color:#fff;border:none;border-radius:12px;padding:14px 36px;font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 4px 0 #4a9e3f,0 6px 12px rgba(0,0,0,.2);margin-bottom:20px}
   .wheel-spin-btn:active{transform:translateY(3px);box-shadow:0 1px 0 #4a9e3f,0 2px 4px rgba(0,0,0,.2)}
   .wheel-spin-btn:disabled{background:#b9ac9d;box-shadow:none;cursor:not-allowed}
-  .menu-keys-pill{display:flex;align-items:center;gap:5px;background:linear-gradient(160deg,#7a4fa0,#5a3578);color:#f3e6ff;border-radius:20px;padding:8px 12px;font-size:13px;font-weight:800;box-shadow:inset 0 1px 0 rgba(255,255,255,.15),0 2px 4px rgba(0,0,0,.25);white-space:nowrap}
-  .shop-keys-pill{display:flex;align-items:center;gap:4px;background:#5a3578;color:#f3e6ff;border-radius:14px;padding:4px 10px;font-size:11px;font-weight:800}
-  .record-row{display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;color:var(--ink)}
+  .menu-keys-pill{display:flex;align-items:center;gap:5px;background:linear-gradient(160deg,#7a4fa0,#5a3578);color:#f3e6ff;border-radius:var(--radius-pill);padding:8px 12px;font-size:13px;font-weight:800;box-shadow:inset 0 1px 0 rgba(255,255,255,.15),var(--shadow-card);white-space:nowrap;transition:transform .12s var(--ease-pop)}
+  .shop-keys-pill{display:flex;align-items:center;gap:4px;background:linear-gradient(160deg,#7a4fa0,#5a3578);color:#f3e6ff;border-radius:var(--radius-pill);padding:4px 10px;font-size:11px;font-weight:800;box-shadow:var(--shadow-card)}
+  .record-row{display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:var(--radius-md);padding:8px 12px;font-size:12px;font-weight:700;color:var(--ink);box-shadow:var(--shadow-card)}
   .record-row .rank{width:22px;height:22px;border-radius:50%;background:var(--board);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
   .record-row .rscore{flex:1;text-align:left}
   .record-row .rmeta{font-size:10px;color:#a99;font-weight:600}
   .empty-hint{font-size:11px;color:#a99;text-align:left;padding:4px 6px}
-  #friendsScreen{padding:16px;display:none;align-items:stretch}
+  #friendsScreen{padding:0;display:none;align-items:stretch}
   .friend-search-bar{display:flex;gap:6px;padding:10px 0}
   .friend-search-bar input{flex:1;min-width:0;border:2px solid var(--board-cell);border-radius:8px;padding:9px 12px;font-size:13px;background:#fff;color:var(--ink)}
   .friend-search-btn{background:var(--green);color:#fff;border:none;border-radius:8px;padding:0 16px;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0}
   .friend-list{display:flex;flex-direction:column;gap:8px}
-  .friend-row{display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:12px;padding:10px 12px;cursor:pointer;border:2px solid transparent;box-shadow:0 2px 0 rgba(0,0,0,.06);transition:border-color .15s,transform .1s}
-  .friend-row:active{transform:translateY(1px)}
+  .friend-row{display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:var(--radius-lg);padding:10px 12px;cursor:pointer;border:2px solid transparent;box-shadow:var(--shadow-card);transition:border-color .15s,transform .12s var(--ease-pop)}
+  .friend-row:active{transform:translateY(1px) scale(.99)}
   .friend-row:hover{border-color:var(--green)}
   .friend-row-info{flex:1;min-width:0;text-align:left}
   .friend-row-name{font-size:13px;font-weight:800;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .friend-row-meta{font-size:10px;color:#a99;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .friend-row-id{font-size:10px;color:#c3b8a8;font-weight:600}
-  .friend-action-btn{background:var(--green);color:#fff;border:none;border-radius:8px;padding:7px 12px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;white-space:nowrap;box-shadow:0 3px 0 #4a9e3f;transition:transform .1s}
+  .friend-action-btn{background:var(--green);color:#fff;border:none;border-radius:var(--radius-md);padding:7px 12px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;white-space:nowrap;box-shadow:0 3px 0 #4a9e3f;transition:transform .1s}
   .friend-action-btn:active{transform:translateY(2px);box-shadow:0 1px 0 #4a9e3f}
   .friend-action-btn.reject{background:var(--red);box-shadow:0 3px 0 #c23840}
   .friend-action-btn.reject:active{box-shadow:0 1px 0 #c23840}
@@ -663,7 +700,7 @@
   .gift-cost{font-size:10px;font-weight:700;color:#c98a00}
   .player-gift-list,.gift-history-list{display:flex;flex-direction:column;gap:8px;margin-top:8px;max-height:260px;overflow-y:auto}
   .gift-history-list.full-width{max-height:none;overflow-y:visible;width:100%}
-  .gift-history-row{display:flex;gap:10px;align-items:flex-start;background:var(--panel);border-radius:10px;padding:8px 10px;text-align:left}
+  .gift-history-row{display:flex;gap:10px;align-items:flex-start;background:var(--panel);border-radius:var(--radius-md);padding:9px 11px;text-align:left;box-shadow:var(--shadow-card)}
   .gift-sender-link{cursor:pointer;text-decoration:underline;text-decoration-style:dotted}
   .own-gift-row{cursor:pointer}
   .own-gift-row:active{opacity:.7}
@@ -712,9 +749,10 @@
   .gift-reveal-note{font-size:12px;color:var(--ink);font-style:italic;margin-top:8px;padding:0 6px}
 
   .lb-list{display:flex;flex-direction:column;gap:6px;padding-top:6px}
-  .lb-row{display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:12px;padding:8px 12px;cursor:pointer;border:2px solid transparent;box-shadow:0 2px 0 rgba(0,0,0,.06);transition:border-color .15s,transform .1s}
+  #leaderboardScreen .lb-list{padding:6px 16px 16px}
+  .lb-row{display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:var(--radius-lg);padding:9px 12px;cursor:pointer;border:2px solid transparent;box-shadow:var(--shadow-card);transition:border-color .15s,transform .12s var(--ease-pop),box-shadow .15s}
   .lb-row:hover{border-color:var(--gold)}
-  .lb-row:active{transform:translateY(1px)}
+  .lb-row:active{transform:translateY(1px) scale(.99)}
   .lb-rank{width:30px;flex-shrink:0;font-size:13px;font-weight:800;color:var(--ink);text-align:center;display:flex;flex-direction:column;align-items:center;gap:1px}
   .lb-rank-change{font-size:9px;font-weight:800;line-height:1}
   .lb-rank-change.up{color:var(--green)}
@@ -722,7 +760,7 @@
   .lb-row.top1 .lb-rank{color:#c98a00;font-size:16px}
   .lb-row.top2 .lb-rank{color:#8a8f98;font-size:15px}
   .lb-row.top3 .lb-rank{color:#b56a34;font-size:15px}
-  .lb-row.top1{background:linear-gradient(90deg,rgba(255,215,0,.22),var(--panel) 60%)}
+  .lb-row.top1{background:linear-gradient(90deg,rgba(255,215,0,.22),var(--panel) 60%);box-shadow:0 4px 14px rgba(255,197,0,.28),var(--shadow-card);transform:scale(1.02)}
   .lb-row.top2{background:linear-gradient(90deg,rgba(180,190,200,.25),var(--panel) 60%)}
   .lb-row.top3{background:linear-gradient(90deg,rgba(205,127,50,.2),var(--panel) 60%)}
   .lb-info{flex:1;min-width:0;text-align:left}
@@ -782,7 +820,7 @@
   .player-card-stat{text-align:center}
   .player-card-stat .pnum{font-size:18px;font-weight:800;color:var(--ink)}
   .player-card-stat .plbl{font-size:9px;color:#a99;font-weight:700;text-transform:uppercase}
-  .achievement-row{display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:8px;padding:8px 10px;opacity:.45}
+  .achievement-row{display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:var(--radius-md);padding:9px 12px;opacity:.5;box-shadow:var(--shadow-card);transition:opacity .2s}
   .achievement-row.unlocked{opacity:1;background:#e8f5e9}
   .achievement-icon{font-size:20px;width:30px;text-align:center;flex-shrink:0}
   .achievement-info{flex:1;text-align:left;min-width:0}
@@ -790,9 +828,9 @@
   .achievement-desc{font-size:9px;color:#a99}
   .achievement-row.claimable{background:#fff6db;border:2px solid var(--gold);animation:achievementClaimPulse 1s ease-in-out infinite alternate}
   @keyframes achievementClaimPulse{from{box-shadow:0 0 0 rgba(255,215,0,0)}to{box-shadow:0 0 10px 2px rgba(255,215,0,.7)}}
-  .achievement-claim-btn{background:var(--gold);color:#7a5a00;border:none;border-radius:8px;padding:7px 12px;font-size:11px;font-weight:800;cursor:pointer;flex-shrink:0;box-shadow:0 3px 0 #c9a200}
+  .achievement-claim-btn{background:var(--gold);color:#7a5a00;border:none;border-radius:var(--radius-pill);padding:7px 14px;font-size:11px;font-weight:800;cursor:pointer;flex-shrink:0;box-shadow:0 3px 0 #c9a200}
   .achievement-claim-btn:active{transform:translateY(2px);box-shadow:0 1px 0 #c9a200}
-  .achievement-category{background:var(--panel);border-radius:12px;padding:4px;margin-bottom:8px}
+  .achievement-category{background:var(--panel);border-radius:var(--radius-lg);padding:4px;margin-bottom:8px;box-shadow:var(--shadow-card)}
   .achievement-category-toggle{display:flex;align-items:center;gap:8px;width:100%;background:none;border:none;padding:10px 8px;cursor:pointer;font-family:inherit;box-sizing:border-box}
   .achievement-category-icon{font-size:18px;flex-shrink:0}
   .achievement-category-title{font-size:13px;font-weight:800;color:var(--ink);text-align:left;flex:1}
@@ -1432,6 +1470,142 @@
 </style>
 </head>
 <body>
+<!-- ===== İKON SİSTEMİ (Phase 1) =====
+     Hər ikon BİR yerdə (bu sprite) təyin olunur, hər yerdə <use href="#icon-X"> ilə istinad
+     edilir — eyni "tək mənbə, çox istinad" prinsipi bu sessiyada qızıl sikkə ikonu üçün artıq
+     sınanıb (bax .gold-icon-emoji). Gələcəkdə bir ikonu dəyişmək YALNIZ bu <symbol>-un daxilini
+     redaktə etməyi tələb edir, istifadə olunduğu heç bir yerə toxunmadan.
+     Üslub: dolğun (filled), yumşaq küncli, "duotone" (əsas rəng + opacity ilə vurğu detalı) —
+     oyunun mövcud isti/dəyirmi estetikasına uyğun, incə xətt-ikon YOX. currentColor istifadə
+     edir ki, istənilən kontekstdə (ağ, tünd, rəngli düymə üzərində) düzgün rəngə düşsün. -->
+<svg class="icon-sprite" aria-hidden="true">
+  <symbol id="icon-shop" viewBox="0 0 24 24">
+    <path d="M11 3 20 12l-8 8-9-9V4a1 1 0 0 1 1-1Z"/>
+    <circle cx="7.6" cy="7.6" r="1.9" opacity=".35"/>
+  </symbol>
+  <symbol id="icon-profile" viewBox="0 0 24 24">
+    <circle cx="12" cy="7.6" r="4"/>
+    <path d="M4 21a8 8 0 0 1 16 0Z"/>
+  </symbol>
+  <symbol id="icon-friends" viewBox="0 0 24 24">
+    <path d="M13.2 20a5.5 5.5 0 0 1 9.3-3.9 6 6 0 0 1 .9 3.9Z" opacity=".5"/>
+    <circle cx="17" cy="8" r="2.6" opacity=".5"/>
+    <path d="M3 20a6 6 0 0 1 12 0Z"/>
+    <circle cx="9" cy="7" r="3.2"/>
+  </symbol>
+  <symbol id="icon-leaderboard" viewBox="0 0 24 24">
+    <rect x="3" y="13" width="5" height="8" rx="1.5" opacity=".5"/>
+    <rect x="16" y="10" width="5" height="11" rx="1.5" opacity=".5"/>
+    <rect x="9.5" y="7" width="5" height="14" rx="1.5"/>
+  </symbol>
+  <symbol id="icon-bag" viewBox="0 0 24 24">
+    <rect x="5" y="8" width="14" height="13" rx="4"/>
+    <path d="M8.5 8V5.5a1.5 1.5 0 0 1 3 0V8M12.5 8V5.5a1.5 1.5 0 0 1 3 0V8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+    <rect x="5" y="8" width="14" height="3" rx="1.5" opacity=".5"/>
+    <rect x="9" y="13" width="6" height="4" rx="1.5" opacity=".4"/>
+  </symbol>
+  <!-- Zərfin qatlanma xətti HƏQİQİ deşik kimi (evenodd) çəkilir — eyni currentColor üzərində
+       opacity overlay GÖRÜNMÜR (iki eyni-rəng təbəqə blend olanda fərq yaratmır), ona görə
+       arxa fonun özü "boşluqdan" göründüyü etibarlı üsul seçildi. -->
+  <symbol id="icon-mail" viewBox="0 0 24 24">
+    <path fill-rule="evenodd" d="M2.5 6h19a1.5 1.5 0 0 1 1.5 1.5v9a1.5 1.5 0 0 1-1.5 1.5h-19A1.5 1.5 0 0 1 1 16.5v-9A1.5 1.5 0 0 1 2.5 6ZM3.5 7.5 12 14l8.5-6.5Z"/>
+  </symbol>
+  <symbol id="icon-cards" viewBox="0 0 24 24">
+    <rect x="3" y="5" width="12" height="16" rx="2.5" opacity=".45" transform="rotate(-10 9 13)"/>
+    <rect x="8" y="4" width="12" height="16" rx="2.5"/>
+    <circle cx="14" cy="9" r="1.6" opacity=".45"/>
+  </symbol>
+  <symbol id="icon-trophy" viewBox="0 0 24 24">
+    <path d="M7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+    <path d="M7 4h10v6a5 5 0 0 1-10 0V4Z"/>
+    <rect x="9" y="9.6" width="6" height="2" rx="1" opacity=".4"/>
+    <rect x="10.5" y="15" width="3" height="3.4"/>
+    <rect x="8" y="19" width="8" height="2" rx="1"/>
+  </symbol>
+  <symbol id="icon-settings" viewBox="0 0 24 24">
+    <rect x="3" y="5.3" width="18" height="2.6" rx="1.3" opacity=".3"/>
+    <circle cx="8" cy="6.6" r="3.1"/>
+    <rect x="3" y="10.7" width="18" height="2.6" rx="1.3" opacity=".3"/>
+    <circle cx="16" cy="12" r="3.1"/>
+    <rect x="3" y="16.1" width="18" height="2.6" rx="1.3" opacity=".3"/>
+    <circle cx="10" cy="17.4" r="3.1"/>
+  </symbol>
+  <symbol id="icon-back" viewBox="0 0 24 24">
+    <path d="M14 5 7 12l7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+  <symbol id="icon-close" viewBox="0 0 24 24">
+    <path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="icon-lock" viewBox="0 0 24 24">
+    <path d="M8 10V7.5a4 4 0 1 1 8 0V10" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+    <rect x="5.5" y="10" width="13" height="10" rx="3"/>
+    <circle cx="12" cy="14.5" r="1.6" opacity=".4"/>
+  </symbol>
+  <symbol id="icon-dungeon" viewBox="0 0 24 24">
+    <path d="M20 20 7 7 5 9l13 13 3 1-1-3Z" opacity=".55"/>
+    <rect x="4.3" y="4.6" width="5.4" height="2.4" rx="1" transform="rotate(-45 7 5.8)" opacity=".55"/>
+    <path d="M4 20 17 7l2 2-13 13-3 1 1-3Z"/>
+    <rect x="14.3" y="4.6" width="5.4" height="2.4" rx="1" transform="rotate(45 17 5.8)"/>
+  </symbol>
+  <!-- Halqa (ring) evenodd ilə HƏQİQİ deşik kimi çəkilir (iki dairənin fərqi) — spitsalar bu
+       boşluğu keçərək iki tərəfə uzanır, ona görə hər zaman görünür, kontekstdən asılı olmadan. -->
+  <symbol id="icon-wheel" viewBox="0 0 24 24">
+    <path fill-rule="evenodd" d="M12 2.3a9.7 9.7 0 1 0 0 19.4 9.7 9.7 0 0 0 0-19.4Zm0 4.2a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11Z"/>
+    <g fill="currentColor">
+      <rect x="11" y="1.3" width="2" height="5.8" rx="1"/>
+      <rect x="11" y="16.9" width="2" height="5.8" rx="1"/>
+      <rect x="1.3" y="11" width="5.8" height="2" rx="1"/>
+      <rect x="16.9" y="11" width="5.8" height="2" rx="1"/>
+    </g>
+  </symbol>
+  <symbol id="icon-gift" viewBox="0 0 24 24">
+    <ellipse cx="8.5" cy="5.5" rx="2.6" ry="2" transform="rotate(-25 8.5 5.5)"/>
+    <ellipse cx="15.5" cy="5.5" rx="2.6" ry="2" transform="rotate(25 15.5 5.5)"/>
+    <rect x="3" y="7" width="18" height="4" rx="1.5"/>
+    <rect x="4" y="10" width="16" height="10" rx="2"/>
+    <rect x="11" y="7" width="2" height="13" opacity=".4"/>
+  </symbol>
+  <symbol id="icon-crown" viewBox="0 0 24 24">
+    <path d="M4 9l3 3 5-6 5 6 3-3-2 10H6L4 9Z"/>
+    <circle cx="7" cy="8" r="1.3" opacity=".65"/>
+    <circle cx="12" cy="5.5" r="1.3" opacity=".65"/>
+    <circle cx="17" cy="8" r="1.3" opacity=".65"/>
+  </symbol>
+  <symbol id="icon-arcade" viewBox="0 0 24 24">
+    <rect x="11" y="6" width="2" height="9" rx="1"/>
+    <rect x="6" y="15" width="12" height="6" rx="2.5"/>
+    <circle cx="12" cy="6" r="3.2"/>
+  </symbol>
+  <symbol id="icon-key" viewBox="0 0 24 24">
+    <path fill-rule="evenodd" d="M12,12 a5,5 0 1,0 -10,0 a5,5 0 1,0 10,0 Z M9.4,12 a2.4,2.4 0 1,0 -4.8,0 a2.4,2.4 0 1,0 4.8,0 Z"/>
+    <rect x="11.5" y="10.8" width="10" height="2.4" rx="1.2"/>
+    <rect x="16.5" y="13.2" width="2.2" height="3.4" rx="1"/>
+    <rect x="19.5" y="13.2" width="2" height="2.4" rx="1"/>
+  </symbol>
+  <symbol id="icon-play" viewBox="0 0 24 24">
+    <path d="M6 3.5a1.5 1.5 0 0 1 2.28-1.28l12 8.5a1.5 1.5 0 0 1 0 2.56l-12 8.5A1.5 1.5 0 0 1 6 20.5Z"/>
+  </symbol>
+  <symbol id="icon-list" viewBox="0 0 24 24">
+    <rect x="2" y="4" width="4" height="4" rx="1"/>
+    <rect x="8" y="4.5" width="14" height="3" rx="1.5"/>
+    <rect x="2" y="10" width="4" height="4" rx="1"/>
+    <rect x="8" y="10.5" width="14" height="3" rx="1.5"/>
+    <rect x="2" y="16" width="4" height="4" rx="1"/>
+    <rect x="8" y="16.5" width="14" height="3" rx="1.5"/>
+  </symbol>
+  <symbol id="icon-music" viewBox="0 0 24 24">
+    <circle cx="7" cy="17" r="3.2"/>
+    <circle cx="16" cy="15" r="3.2"/>
+    <rect x="8.6" y="4" width="2" height="13.5" rx="1"/>
+    <rect x="17.6" y="2" width="2" height="13.5" rx="1"/>
+    <path d="M8.6 4 19.6 2v3.4L8.6 7.4Z"/>
+  </symbol>
+  <symbol id="icon-bell" viewBox="0 0 24 24">
+    <path d="M12 2.5a2 2 0 0 1 2 2v.7a6.5 6.5 0 0 1 4.5 6.2v3.4l1.8 2.7a1 1 0 0 1-.83 1.5H4.53a1 1 0 0 1-.83-1.5l1.8-2.7V11.4A6.5 6.5 0 0 1 10 5.2v-.7a2 2 0 0 1 2-2Z"/>
+    <path d="M9 19.5a3 3 0 0 0 6 0Z"/>
+  </symbol>
+</svg>
+
 <div id="app">
 
   <div id="loadingScreen">
@@ -1469,9 +1643,9 @@
         <span class="menu-presence-dot" id="menuPresenceDot" style="display:none"></span>
       </div>
       <div class="menu-topbar-right">
-        <div class="menu-keys-pill" id="wheelBtnCurrency" role="button" title="Mükafat çarxına keç">🔑 <span id="menuKeys">0</span></div>
+        <div class="menu-keys-pill" id="wheelBtnCurrency" role="button" title="Mükafat çarxına keç"><svg class="icon"><use href="#icon-key"/></svg> <span id="menuKeys">0</span></div>
         <div class="menu-currency-pill" id="shopBtnCurrency" role="button" title="Mağazaya keç"><span class=gold-icon-emoji></span> <span id="menuGold">0</span></div>
-        <button class="icon-btn menu-settings-btn" id="settingsBtn" title="Parametrlər">⚙️</button>
+        <button class="icon-btn menu-settings-btn" id="settingsBtn" title="Parametrlər"><svg class="icon"><use href="#icon-settings"/></svg></button>
       </div>
     </div>
 
@@ -1502,20 +1676,20 @@
       </div>
     </div>
 
-    <button class="menu-play-btn" id="startBtn"><span class="mp-icon">▶</span><span class="mp-text">OYNA<small>⭐ <span id="playBtnBestScore">0</span> xal<span id="playBtnRank"></span></small></span></button>
+    <button class="menu-play-btn" id="startBtn"><span class="mp-icon"><svg class="icon"><use href="#icon-play"/></svg></span><span class="mp-text">OYNA<small>⭐ <span id="playBtnBestScore">0</span> xal<span id="playBtnRank"></span></small></span></button>
 
-    <button class="menu-btn arcade-btn menu-btn-full" id="arcadeBtn"><span class="menu-btn-icon">🕹️</span><span class="menu-btn-text"><b>Arkada</b><small>⭐ <span id="arcadeBtnStars">0</span> ulduz • <span id="arcadeBtnLevel">1</span>-ci səviyyə</small></span></button>
+    <button class="menu-btn arcade-btn menu-btn-full" id="arcadeBtn"><span class="menu-btn-icon"><svg class="icon"><use href="#icon-arcade"/></svg></span><span class="menu-btn-text"><b>Arkada</b><small>⭐ <span id="arcadeBtnStars">0</span> ulduz • <span id="arcadeBtnLevel">1</span>-ci səviyyə</small></span></button>
 
     <div class="menu-grid">
-      <button class="menu-btn daily-btn" id="dailyBtn"><span class="menu-btn-icon">🎁</span><span class="menu-btn-text"><b>Gündəlik Mükafat</b><small>Hər gün bir hədiyyə</small></span><span class="menu-badge" id="dailyBtnDot" style="display:none"></span></button>
-      <button class="menu-btn dungeon-btn" id="dungeonBtn"><span class="menu-btn-icon">⚔️</span><span class="menu-btn-text"><b>Gündəlik Zindan</b><small id="dungeonBtnSub">Bugünkü sınaq</small></span><span class="menu-badge" id="dungeonBtnDot" style="display:none"></span></button>
-      <button class="menu-btn ranked-btn" id="rankedBtn"><span class="menu-btn-icon">👑</span><span class="menu-btn-text"><b>Reytinqli Oyun</b><small>Çevrimçi yarış</small></span><span class="ranked-btn-price">500 <span class=gold-icon-emoji></span></span></button>
-      <button class="menu-btn wheel-btn" id="wheelBtn" style="grid-column:1/-1"><span class="menu-btn-icon">🎡</span><span class="menu-btn-text"><b>Mükafat Çarxı</b><small>Açarla çevir</small></span></button>
+      <button class="menu-btn daily-btn" id="dailyBtn"><span class="menu-btn-icon"><svg class="icon"><use href="#icon-gift"/></svg></span><span class="menu-btn-text"><b>Gündəlik Mükafat</b><small>Hər gün bir hədiyyə</small></span><span class="menu-badge" id="dailyBtnDot" style="display:none"></span></button>
+      <button class="menu-btn dungeon-btn" id="dungeonBtn"><span class="menu-btn-icon"><svg class="icon"><use href="#icon-dungeon"/></svg></span><span class="menu-btn-text"><b>Gündəlik Zindan</b><small id="dungeonBtnSub">Bugünkü sınaq</small></span><span class="menu-badge" id="dungeonBtnDot" style="display:none"></span></button>
+      <button class="menu-btn ranked-btn" id="rankedBtn"><span class="menu-btn-icon"><svg class="icon"><use href="#icon-crown"/></svg></span><span class="menu-btn-text"><b>Reytinqli Oyun</b><small>Çevrimçi yarış</small></span><span class="ranked-btn-price">500 <span class=gold-icon-emoji></span></span></button>
+      <button class="menu-btn wheel-btn" id="wheelBtn" style="grid-column:1/-1"><span class="menu-btn-icon"><svg class="icon"><use href="#icon-wheel"/></svg></span><span class="menu-btn-text"><b>Mükafat Çarxı</b><small>Açarla çevir</small></span></button>
     </div>
 
     <div class="daily-missions-panel">
       <button type="button" class="menu-btn daily-missions-toggle" id="dailyMissionsToggle">
-        <span class="menu-btn-icon">📋</span>
+        <span class="menu-btn-icon"><svg class="icon"><use href="#icon-list"/></svg></span>
         <span class="menu-btn-text"><b>Günlük Tapşırıqlar</b><small id="dailyMissionsHint">Hər gün 4+1 tapşırıq</small></span>
         <span class="menu-badge" id="dailyMissionsDot" style="display:none"></span>
         <span class="settings-accordion-arrow daily-missions-arrow" id="dailyMissionsArrow">▾</span>
@@ -1531,18 +1705,18 @@
       </div>
     </div>
     <div class="sound-toggles">
-      <button class="sound-toggle" id="musicToggleMenu">🎵 Musiqi</button>
-      <button class="sound-toggle" id="sfxToggleMenu">🔔 Səs effekti</button>
+      <button class="sound-toggle" id="musicToggleMenu"><svg class="icon"><use href="#icon-music"/></svg> Musiqi</button>
+      <button class="sound-toggle" id="sfxToggleMenu"><svg class="icon"><use href="#icon-bell"/></svg> Səs effekti</button>
     </div>
 
     <div class="menu-bottom-icons">
-      <button class="menu-icon-btn" id="shopBtn" title="Mağaza">🛒</button>
-      <button class="menu-icon-btn" id="achievementsBtn" title="Nailiyyətlər">🎖️<span class="menu-icon-dot" id="achievementsBtnDot" style="display:none"></span></button>
-      <button class="menu-icon-btn" id="friendsBtn" title="Dostlar">👥<span class="menu-icon-dot" id="friendsBtnDot" style="display:none"></span></button>
-      <button class="menu-icon-btn" id="leaderboardBtn" title="Liderbord">🏆</button>
-      <button class="menu-icon-btn" id="bagBtn" title="Çanta">🎒</button>
-      <button class="menu-icon-btn" id="mailboxBtn" title="Poçt qutusu">📬<span class="menu-icon-dot" id="mailboxBtnDot" style="display:none"></span></button>
-      <button class="menu-icon-btn" id="cardsBtn" title="Kartlar">🃏</button>
+      <button class="menu-icon-btn" id="shopBtn" title="Mağaza"><svg class="icon"><use href="#icon-shop"/></svg></button>
+      <button class="menu-icon-btn" id="achievementsBtn" title="Nailiyyətlər"><svg class="icon"><use href="#icon-trophy"/></svg><span class="menu-icon-dot" id="achievementsBtnDot" style="display:none"></span></button>
+      <button class="menu-icon-btn" id="friendsBtn" title="Dostlar"><svg class="icon"><use href="#icon-friends"/></svg><span class="menu-icon-dot" id="friendsBtnDot" style="display:none"></span></button>
+      <button class="menu-icon-btn" id="leaderboardBtn" title="Liderbord"><svg class="icon"><use href="#icon-leaderboard"/></svg></button>
+      <button class="menu-icon-btn" id="bagBtn" title="Çanta"><svg class="icon"><use href="#icon-bag"/></svg></button>
+      <button class="menu-icon-btn" id="mailboxBtn" title="Poçt qutusu"><svg class="icon"><use href="#icon-mail"/></svg><span class="menu-icon-dot" id="mailboxBtnDot" style="display:none"></span></button>
+      <button class="menu-icon-btn" id="cardsBtn" title="Kartlar"><svg class="icon"><use href="#icon-cards"/></svg></button>
       <button class="menu-icon-btn" id="adminPanelBtn" title="Admin Panel" style="display:none">🛠️<span class="menu-icon-dot" id="adminPanelBtnDot" style="display:none"></span></button>
     </div>
   </div>
@@ -1551,8 +1725,8 @@
     <div class="shop-sticky-top">
       <div class="shop-header">
         <button class="shop-back" id="shopBack">← Geri</button>
-        <h2>🛒 Mağaza</h2>
-        <div class="shop-keys-pill">🔑 <span id="shopKeysVal">0</span></div>
+        <h2><svg class="icon"><use href="#icon-shop"/></svg> Mağaza</h2>
+        <div class="shop-keys-pill"><svg class="icon"><use href="#icon-key"/></svg> <span id="shopKeysVal">0</span></div>
         <div class="shop-gold"><span class=gold-icon-emoji></span> <span id="shopGoldVal">0</span></div>
       </div>
       <div class="shop-tabs" id="shopTabs"></div>
@@ -1564,7 +1738,7 @@
   <div id="profileScreen">
     <div class="shop-header">
       <button class="shop-back" id="profileBack">← Geri</button>
-      <h2>👤 Profil</h2>
+      <h2><svg class="icon"><use href="#icon-profile"/></svg> Profil</h2>
     </div>
     <div class="profile-photo-section">
       <div class="ppic ppic-lg" id="profilePhotoBig"></div>
@@ -1606,24 +1780,24 @@
     </div>
 
     <div id="profileTitlesWrap" style="display:none">
-      <div class="profile-section-title">🏆 Kuboklar</div>
+      <div class="profile-section-title"><svg class="icon"><use href="#icon-trophy"/></svg> Kuboklar</div>
       <div class="profile-titles-row" id="profileTitlesRow"></div>
     </div>
     <div id="profileMedalsWrap" style="display:none">
-      <div class="profile-section-title">🎖️ Medallar</div>
+      <div class="profile-section-title"><svg class="icon"><use href="#icon-trophy"/></svg> Medallar</div>
       <div class="profile-titles-row" id="profileMedalsRow"></div>
     </div>
 
     <div class="profile-section-title">🏆 Rekordlar (ən yaxşı 10)</div>
     <div class="records-list" id="recordsList"></div>
 
-    <div class="profile-section-title" style="position:relative">🎁 Aldığı hədiyyələr<span class="gift-total-badge" id="profileGiftTotalBadge">0</span></div>
+    <div class="profile-section-title" style="position:relative"><svg class="icon"><use href="#icon-gift"/></svg> Aldığı hədiyyələr<span class="gift-total-badge" id="profileGiftTotalBadge">0</span></div>
     <div class="player-gift-list" id="profileGiftList"></div>
     <button class="menu-return" id="profileGiftsAllBtn" style="display:none;margin-top:6px;padding:8px;font-size:11px;width:100%">Hamısına bax</button>
 
     <div id="profileCardsWrap" style="display:none">
       <button type="button" class="profile-cards-toggle" id="profileCardsToggle">
-        <span class="profile-cards-label">🃏 Kartlar</span>
+        <span class="profile-cards-label"><svg class="icon"><use href="#icon-cards"/></svg> Kartlar</span>
         <span class="profile-cards-count" style="font-size:11px;color:#a99;font-weight:700"></span>
         <span class="settings-accordion-arrow" id="profileCardsArrow">▾</span>
       </button>
@@ -1634,7 +1808,7 @@
   <div class="modal-overlay" id="giftActionModal">
     <div class="modal-panel" style="text-align:center">
       <div class="modal-header">
-        <h3>🎁 Hədiyyə</h3>
+        <h3><svg class="icon"><use href="#icon-gift"/></svg> Hədiyyə</h3>
         <button class="modal-close" id="giftActionModalClose">✕</button>
       </div>
       <button class="friend-action-btn" id="giftActionHideBtn" style="width:100%;padding:12px;margin-bottom:8px">🙈 Gizlət</button>
@@ -1645,7 +1819,7 @@
   <div id="achievementsScreen">
     <div class="shop-header">
       <button class="shop-back" id="achievementsBack">← Geri</button>
-      <h2>🎖️ Nailiyyətlər</h2>
+      <h2><svg class="icon"><use href="#icon-trophy"/></svg> Nailiyyətlər</h2>
       <div class="achievements-total-badge" id="achievementsTotalBadge">0/0</div>
     </div>
     <div class="achievements-list" id="achievementsList"></div>
@@ -1654,7 +1828,7 @@
   <div id="bagScreen">
     <div class="shop-header">
       <button class="shop-back" id="bagBack">← Geri</button>
-      <h2>🎒 Çanta</h2>
+      <h2><svg class="icon"><use href="#icon-bag"/></svg> Çanta</h2>
     </div>
     <div class="bag-list" id="bagList"></div>
   </div>
@@ -1662,7 +1836,7 @@
   <div id="cardsScreen">
     <div class="shop-header">
       <button class="shop-back" id="cardsBack">← Geri</button>
-      <h2>🃏 Kubik Kartları</h2>
+      <h2><svg class="icon"><use href="#icon-cards"/></svg> Kubik Kartları</h2>
       <div id="cardCountHeader" class="card-count-badge card-count-badge-sm"></div>
     </div>
     <div id="cardPicker"></div>
@@ -1719,7 +1893,7 @@
   <div class="modal-overlay" id="wheelScreen">
     <div class="modal-panel" style="text-align:center">
       <div class="modal-header">
-        <h3>🎡 Mükafat Çarxı</h3>
+        <h3><svg class="icon"><use href="#icon-wheel"/></svg> Mükafat Çarxı</h3>
         <button class="modal-close" id="wheelBack">✕</button>
       </div>
       <div class="wheel-keys-row">🔑 <span id="wheelKeysVal">0</span> açar</div>
@@ -1737,7 +1911,7 @@
     <div class="shop-sticky-top">
       <div class="shop-header">
         <button class="shop-back" id="friendsBack">← Geri</button>
-        <h2>👥 Dostlar</h2>
+        <h2><svg class="icon"><use href="#icon-friends"/></svg> Dostlar</h2>
       </div>
       <div class="shop-tabs" id="friendsTabs"></div>
     </div>
@@ -1764,7 +1938,7 @@
     <div class="shop-sticky-top">
       <div class="shop-header">
         <button class="shop-back" id="leaderboardBack">← Geri</button>
-        <h2>🏆 Reytinq Cədvəli</h2>
+        <h2><svg class="icon"><use href="#icon-leaderboard"/></svg> Reytinq Cədvəli</h2>
       </div>
       <div class="shop-tabs" id="leaderboardTabs"></div>
     </div>
@@ -1775,7 +1949,7 @@
     <div class="shop-sticky-top">
       <div class="shop-header">
         <button class="shop-back" id="mailboxBack">← Geri</button>
-        <h2>📬 Poçt qutusu</h2>
+        <h2><svg class="icon"><use href="#icon-mail"/></svg> Poçt qutusu</h2>
       </div>
       <div class="shop-tabs" id="mailboxTabs"></div>
     </div>
@@ -1825,7 +1999,7 @@
   <div class="modal-overlay" id="dailyScreen">
     <div class="modal-panel" id="dailyModalPanel">
       <div class="modal-header">
-        <h3>🎁 Gündəlik Mükafat</h3>
+        <h3><svg class="icon"><use href="#icon-gift"/></svg> Gündəlik Mükafat</h3>
         <button class="modal-close" id="dailyBack">✕</button>
       </div>
       <div class="daily-days" id="dailyDays"></div>
@@ -2022,7 +2196,7 @@
   <div class="modal-overlay" id="settingsModalOverlay">
     <div class="modal-panel">
       <div class="modal-header">
-        <h3>⚙️ Parametrlər</h3>
+        <h3><svg class="icon"><use href="#icon-settings"/></svg> Parametrlər</h3>
         <button class="modal-close" id="settingsModalClose">✕</button>
       </div>
       <button type="button" class="settings-accordion-toggle" id="musicAccordionToggle">
@@ -2056,7 +2230,7 @@
   <div class="modal-overlay" id="playerCardModal">
     <div class="modal-panel" id="playerCardPanel" style="text-align:center">
       <div class="modal-header">
-        <h3>👤 Profil</h3>
+        <h3><svg class="icon"><use href="#icon-profile"/></svg> Profil</h3>
         <button class="modal-close" id="playerCardClose">✕</button>
       </div>
       <div class="ppic ppic-lg" id="playerCardPhoto" style="margin:0 auto"></div>
@@ -2102,7 +2276,7 @@
 
       <div id="playerCardCardsWrap" style="display:none">
         <button type="button" class="profile-cards-toggle" id="playerCardCardsToggle">
-          <span class="profile-cards-label">🃏 Kartlar</span>
+          <span class="profile-cards-label"><svg class="icon"><use href="#icon-cards"/></svg> Kartlar</span>
           <span class="profile-cards-count" style="font-size:11px;color:#a99;font-weight:700"></span>
           <span class="settings-accordion-arrow" id="playerCardCardsArrow">▾</span>
         </button>
@@ -2114,7 +2288,7 @@
   <div class="modal-overlay" id="battleTypeModal">
     <div class="modal-panel" style="text-align:center;max-width:300px">
       <div class="modal-header">
-        <h3>⚔️ Oyun dəvəti</h3>
+        <h3><svg class="icon"><use href="#icon-dungeon"/></svg> Oyun dəvəti</h3>
         <button class="modal-close" id="battleTypeModalClose">✕</button>
       </div>
       <div style="display:flex;flex-direction:column;gap:10px">
@@ -2127,7 +2301,7 @@
   <div class="modal-overlay" id="giftHistoryModal">
     <div class="modal-panel">
       <div class="modal-header">
-        <h3>🎁 Bütün hədiyyələr</h3>
+        <h3><svg class="icon"><use href="#icon-gift"/></svg> Bütün hədiyyələr</h3>
         <button class="modal-close" id="giftHistoryClose">✕</button>
       </div>
       <div class="gift-history-list" id="giftHistoryList"></div>
@@ -2184,7 +2358,7 @@
   <div class="modal-overlay" id="giftModalOverlay">
     <div class="modal-panel">
       <div class="modal-header">
-        <h3>🎁 Hədiyyə göndər</h3>
+        <h3><svg class="icon"><use href="#icon-gift"/></svg> Hədiyyə göndər</h3>
         <button class="modal-close" id="giftModalClose">✕</button>
       </div>
       <div style="font-size:12px;color:var(--ink);margin-bottom:4px" id="giftModalTarget"></div>
@@ -2236,7 +2410,7 @@
   <div class="modal-overlay" id="battleInviteModal">
     <div class="modal-panel" style="text-align:center">
       <div class="modal-header">
-        <h3>🎮 Oyun Dəvəti</h3>
+        <h3><svg class="icon"><use href="#icon-dungeon"/></svg> Oyun Dəvəti</h3>
       </div>
       <div class="ppic ppic-lg" id="battleInvitePhoto" style="margin:0 auto"></div>
       <div class="menu-player-name" id="battleInviteName" style="text-align:center;font-size:16px;margin:8px 0 16px">Oyunçu</div>
@@ -3431,7 +3605,7 @@
       var claimable = complete && !claimed;
       return '<div class="achievement-row' + (claimed ? " unlocked" : "") + (claimable ? " claimable" : "") + '">' +
         (claimable ? '<span class="daily-missions-red-dot"></span>' : '') +
-        '<div class="achievement-icon">' + (claimed ? "✅" : "📋") + '</div>' +
+        '<div class="achievement-icon">' + (claimed ? "✅" : "<svg class='icon'><use href='#icon-list'/></svg>") + '</div>' +
         '<div class="achievement-info"><div class="achievement-name">' + t.desc + '</div>' +
         '<div class="daily-missions-progress">' + Math.min(Math.floor(progress), t.n) + '/' + t.n + '</div></div>' +
         (claimable ? '<button class="achievement-claim-btn" data-daily-id="' + id + '">+' + t.gold + ' <span class=gold-icon-emoji></span> +' + t.xp + ' xp</button>' : '') +
@@ -3443,7 +3617,7 @@
     var metaDoneCount = dm.picks.filter(function(id){ return dm.claimed[id]; }).length;
     var metaRowHtml = '<div class="achievement-row daily-missions-meta-row' + (dm.metaClaimed ? " unlocked" : "") + (metaClaimable ? " claimable" : "") + '">' +
       (metaClaimable ? '<span class="daily-missions-red-dot"></span>' : '') +
-      '<div class="achievement-icon">' + (dm.metaClaimed ? "🏆" : "🎁") + '</div>' +
+      '<div class="achievement-icon">' + (dm.metaClaimed ? "<svg class='icon'><use href='#icon-trophy'/></svg>" : "<svg class='icon'><use href='#icon-gift'/></svg>") + '</div>' +
       '<div class="achievement-info"><div class="achievement-name">Bütün 4 tapşırığı tamamla</div>' +
       '<div class="daily-missions-progress">' + metaDoneCount + '/4</div></div>' +
       (metaClaimable ? '<button class="achievement-claim-btn" id="dailyMetaClaimBtn">+' + DAILY_META_GOLD + ' <span class=gold-icon-emoji></span> +' + DAILY_META_XP + ' xp +2🎲 +1🔑</button>' : '') +
@@ -6782,7 +6956,13 @@
             if(delta !== 0) displayMap[r.id] = delta;
           }
         });
-        if(toUpsert.length){
+        // Gündəlik snapshotu YALNIZ giriş etmiş oyunçu yaza bilər — leaderboard_rank_changes-in
+        // RLS insert/update policy-ləri auth.uid() tələb edir, anon rolunda isə yalnız SELECT
+        // grant-ı var. Qonaq (daxil olmamış) baxışda upsert-i buraxırıq ki, konsol hər liderbord
+        // açılışında 42501 "permission denied" xətası ilə dolmasın. Qonaqlar yenə də giriş etmiş
+        // oyunçuların hesabladığı +/- fərqləri GÖRÜR (yuxarıdakı select işləyir), sadəcə özləri
+        // yeni snapshot əlavə etmir — bu, mövcud "yazı = authenticated" dizayn niyyəti ilə üst-üstə düşür.
+        if(toUpsert.length && cloudUserId){
           supabaseClient.from("leaderboard_rank_changes").upsert(toUpsert, {onConflict:"category,player_id"}).then(function(upRes){
             if(upRes.error) console.error("Liderbord sıra dəyişikliyi saxlanmadı:", upRes.error);
           });
@@ -7946,7 +8126,7 @@
         var claimed = !!profile.claimedAchievements[a.id];
         var claimable = unlocked && !claimed;
         return '<div class="achievement-row' + (unlocked ? " unlocked" : "") + (claimable ? " claimable" : "") + '">' +
-          '<div class="achievement-icon">' + (unlocked ? a.icon : "🔒") + '</div>' +
+          '<div class="achievement-icon">' + (unlocked ? a.icon : "<svg class='icon'><use href='#icon-lock'/></svg>") + '</div>' +
           '<div class="achievement-info"><div class="achievement-name">' + a.name + '</div><div class="achievement-desc">' + a.desc + '</div></div>' +
           (claimable ? '<button class="achievement-claim-btn" data-id="' + a.id + '">+' + ACHIEVEMENT_GOLD_REWARD + ' <span class=gold-icon-emoji></span></button>' : '') +
           '</div>';
@@ -10322,7 +10502,7 @@
     // Level-kilidli satın almalar: item.requiredLevel təyin olunubsa və hələ sahib deyilsə, kilidli göstərilir
     var locked = !!item.requiredLevel && !owned && (profile.level || 1) < item.requiredLevel;
     var btnText;
-    if(locked){ btnText = "🔒 Sv. " + item.requiredLevel; }
+    if(locked){ btnText = "<svg class='icon'><use href='#icon-lock'/></svg> Sv. " + item.requiredLevel; }
     else if(!owned){ btnText = item.price + " <span class=gold-icon-emoji></span>"; }
     else if(item.type === "unlock"){ btnText = isActive ? "Aktiv" : "Deaktiv"; }
     else if(item.type === "sticker"){ btnText = "✅ Sahibsiniz"; }
@@ -10333,7 +10513,7 @@
     else if(isActive){ btnClass += " owned-btn"; }
     if(locked){ div.classList.add("locked"); }
     var disabled = locked || (owned && item.type === "sticker") || (!owned && profile.gold < item.price) ? "disabled" : "";
-    var lockBadgeHtml = locked ? '<div class="shop-item-lock-badge">🔒 Sv.' + item.requiredLevel + '</div>' : "";
+    var lockBadgeHtml = locked ? '<div class="shop-item-lock-badge"><svg class="icon"><use href="#icon-lock"/></svg> Sv.' + item.requiredLevel + '</div>' : "";
     var ownedCountHtml = "";
     if(item.type === "consumable" || item.type === "xpboost"){
       var ownedCount = profile.inventory[item.id] || 0;
