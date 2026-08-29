@@ -373,7 +373,8 @@
   .sound-toggle.off{opacity:.5;border-color:transparent}
 
   .profile-edit{background:var(--panel);border-radius:12px;padding:12px;display:flex;align-items:center;gap:10px;margin-top:4px}
-  .name-save-btn{background:var(--profile-accent,var(--green));color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:12px;font-weight:800;cursor:pointer;flex-shrink:0}
+  .name-save-btn{background:var(--profile-accent,var(--green));color:#fff;border:none;border-radius:var(--radius-md);padding:9px 16px;font-size:12px;font-weight:800;cursor:pointer;flex-shrink:0;box-shadow:0 3px 0 rgba(0,0,0,.18);transition:transform .1s}
+  .name-save-btn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.18)}
   .name-ticket-hint{background:rgba(242,84,91,.12);border:1px solid rgba(242,84,91,.4);border-radius:10px;padding:8px 10px;font-size:11px;font-weight:700;color:var(--red);margin-top:6px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
   .name-ticket-shop-btn{background:var(--red);color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:800;cursor:pointer}
   /* Qızıl ikonu: TƏK mənbə burada — gələcəkdə ikonu dəyişmək üçün YALNIZ bu background-image
@@ -493,7 +494,8 @@
 
   .profile-photo-section{display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:6px}
   .photo-actions{display:flex;gap:8px}
-  .photo-upload-btn,.photo-remove-btn{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:11px;font-weight:700;cursor:pointer;display:inline-block}
+  .photo-upload-btn,.photo-remove-btn{background:var(--blue);color:#fff;border:none;border-radius:var(--radius-pill);padding:7px 14px;font-size:11px;font-weight:700;cursor:pointer;display:inline-block;transition:transform .12s var(--ease-pop)}
+  .photo-upload-btn:active,.photo-remove-btn:active{transform:scale(.94)}
   .photo-remove-btn{background:var(--red)}
   .flag-picker{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;background:var(--panel);border-radius:10px;padding:10px}
   .flag-btn{background:transparent;border:2px solid transparent;border-radius:6px;padding:6px 4px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;min-height:34px}
@@ -633,7 +635,7 @@
   .friend-row-name{font-size:13px;font-weight:800;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .friend-row-meta{font-size:10px;color:#a99;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .friend-row-id{font-size:10px;color:#c3b8a8;font-weight:600}
-  .friend-action-btn{background:var(--green);color:#fff;border:none;border-radius:8px;padding:7px 12px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;white-space:nowrap;box-shadow:0 3px 0 #4a9e3f;transition:transform .1s}
+  .friend-action-btn{background:var(--green);color:#fff;border:none;border-radius:var(--radius-md);padding:7px 12px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;white-space:nowrap;box-shadow:0 3px 0 #4a9e3f;transition:transform .1s}
   .friend-action-btn:active{transform:translateY(2px);box-shadow:0 1px 0 #4a9e3f}
   .friend-action-btn.reject{background:var(--red);box-shadow:0 3px 0 #c23840}
   .friend-action-btn.reject:active{box-shadow:0 1px 0 #c23840}
