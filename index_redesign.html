@@ -189,7 +189,7 @@
   .shop-tab-btn:active{transform:scale(.95)}
   .shop-header h2{margin:0;font-size:22px;color:var(--ink)}
   #chatPeerName{cursor:pointer}
-  .achievements-total-badge{font-size:13px;font-weight:800;color:var(--ink);background:var(--panel);border-radius:12px;padding:6px 12px;flex-shrink:0}
+  .achievements-total-badge{font-size:13px;font-weight:800;color:var(--ink);background:var(--panel);border-radius:var(--radius-lg);padding:6px 12px;flex-shrink:0;box-shadow:var(--shadow-card)}
   .shop-gold{display:flex;align-items:center;gap:6px;font-size:18px;font-weight:800;color:var(--gold)}
   .shop-back{background:var(--board);color:#fff;border:none;border-radius:var(--radius-sm);padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;transition:transform .12s var(--ease-pop)}
   .shop-back:active{transform:scale(.94)}
@@ -553,7 +553,7 @@
   .profile-edit label{font-size:12px;font-weight:700;color:var(--ink)}
   .profile-edit input{flex:1;border:2px solid var(--board-cell);border-radius:8px;padding:8px 10px;font-size:19px;font-weight:800;font-family:inherit;min-width:0;text-align:center;color:var(--ink)}
   .profile-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
-  .profile-stat{background:var(--panel);border-radius:12px;padding:14px 8px;text-align:center}
+  .profile-stat{background:var(--panel);border-radius:var(--radius-lg);padding:14px 8px;text-align:center;box-shadow:var(--shadow-card);transition:transform .12s var(--ease-pop)}
   .profile-stat .pnum{font-size:19px;font-weight:800;color:var(--ink)}
   .profile-stat .plbl{font-size:9px;color:#a99;font-weight:700;text-transform:uppercase;margin-top:3px}
   .profile-section-title{font-size:13px;font-weight:800;color:var(--ink);text-align:left;margin:18px 0 8px;padding-left:6px;border-left:4px solid var(--profile-accent,var(--orange))}
@@ -575,7 +575,7 @@
   .records-list,.achievements-list{display:flex;flex-direction:column;gap:6px}
 
   .bag-list{display:flex;flex-direction:column;gap:8px;padding:14px}
-  .bag-row{display:flex;align-items:center;gap:12px;background:var(--panel);border-radius:12px;padding:10px 14px}
+  .bag-row{display:flex;align-items:center;gap:12px;background:var(--panel);border-radius:var(--radius-lg);padding:10px 14px;box-shadow:var(--shadow-card)}
   .bag-row-icon{font-size:24px;flex-shrink:0}
   .bag-row-info{flex:1;text-align:left;min-width:0}
   .bag-row-name{font-size:13px;font-weight:800;color:var(--ink)}
@@ -615,7 +615,7 @@
   .wheel-spin-btn:disabled{background:#b9ac9d;box-shadow:none;cursor:not-allowed}
   .menu-keys-pill{display:flex;align-items:center;gap:5px;background:linear-gradient(160deg,#7a4fa0,#5a3578);color:#f3e6ff;border-radius:var(--radius-pill);padding:8px 12px;font-size:13px;font-weight:800;box-shadow:inset 0 1px 0 rgba(255,255,255,.15),var(--shadow-card);white-space:nowrap;transition:transform .12s var(--ease-pop)}
   .shop-keys-pill{display:flex;align-items:center;gap:4px;background:linear-gradient(160deg,#7a4fa0,#5a3578);color:#f3e6ff;border-radius:var(--radius-pill);padding:4px 10px;font-size:11px;font-weight:800;box-shadow:var(--shadow-card)}
-  .record-row{display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;color:var(--ink)}
+  .record-row{display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:var(--radius-md);padding:8px 12px;font-size:12px;font-weight:700;color:var(--ink);box-shadow:var(--shadow-card)}
   .record-row .rank{width:22px;height:22px;border-radius:50%;background:var(--board);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
   .record-row .rscore{flex:1;text-align:left}
   .record-row .rmeta{font-size:10px;color:#a99;font-weight:600}
@@ -625,8 +625,8 @@
   .friend-search-bar input{flex:1;min-width:0;border:2px solid var(--board-cell);border-radius:8px;padding:9px 12px;font-size:13px;background:#fff;color:var(--ink)}
   .friend-search-btn{background:var(--green);color:#fff;border:none;border-radius:8px;padding:0 16px;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0}
   .friend-list{display:flex;flex-direction:column;gap:8px}
-  .friend-row{display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:12px;padding:10px 12px;cursor:pointer;border:2px solid transparent;box-shadow:0 2px 0 rgba(0,0,0,.06);transition:border-color .15s,transform .1s}
-  .friend-row:active{transform:translateY(1px)}
+  .friend-row{display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:var(--radius-lg);padding:10px 12px;cursor:pointer;border:2px solid transparent;box-shadow:var(--shadow-card);transition:border-color .15s,transform .12s var(--ease-pop)}
+  .friend-row:active{transform:translateY(1px) scale(.99)}
   .friend-row:hover{border-color:var(--green)}
   .friend-row-info{flex:1;min-width:0;text-align:left}
   .friend-row-name{font-size:13px;font-weight:800;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -695,7 +695,7 @@
   .gift-cost{font-size:10px;font-weight:700;color:#c98a00}
   .player-gift-list,.gift-history-list{display:flex;flex-direction:column;gap:8px;margin-top:8px;max-height:260px;overflow-y:auto}
   .gift-history-list.full-width{max-height:none;overflow-y:visible;width:100%}
-  .gift-history-row{display:flex;gap:10px;align-items:flex-start;background:var(--panel);border-radius:10px;padding:8px 10px;text-align:left}
+  .gift-history-row{display:flex;gap:10px;align-items:flex-start;background:var(--panel);border-radius:var(--radius-md);padding:9px 11px;text-align:left;box-shadow:var(--shadow-card)}
   .gift-sender-link{cursor:pointer;text-decoration:underline;text-decoration-style:dotted}
   .own-gift-row{cursor:pointer}
   .own-gift-row:active{opacity:.7}
@@ -744,9 +744,9 @@
   .gift-reveal-note{font-size:12px;color:var(--ink);font-style:italic;margin-top:8px;padding:0 6px}
 
   .lb-list{display:flex;flex-direction:column;gap:6px;padding-top:6px}
-  .lb-row{display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:12px;padding:8px 12px;cursor:pointer;border:2px solid transparent;box-shadow:0 2px 0 rgba(0,0,0,.06);transition:border-color .15s,transform .1s}
+  .lb-row{display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:var(--radius-lg);padding:9px 12px;cursor:pointer;border:2px solid transparent;box-shadow:var(--shadow-card);transition:border-color .15s,transform .12s var(--ease-pop),box-shadow .15s}
   .lb-row:hover{border-color:var(--gold)}
-  .lb-row:active{transform:translateY(1px)}
+  .lb-row:active{transform:translateY(1px) scale(.99)}
   .lb-rank{width:30px;flex-shrink:0;font-size:13px;font-weight:800;color:var(--ink);text-align:center;display:flex;flex-direction:column;align-items:center;gap:1px}
   .lb-rank-change{font-size:9px;font-weight:800;line-height:1}
   .lb-rank-change.up{color:var(--green)}
@@ -754,7 +754,7 @@
   .lb-row.top1 .lb-rank{color:#c98a00;font-size:16px}
   .lb-row.top2 .lb-rank{color:#8a8f98;font-size:15px}
   .lb-row.top3 .lb-rank{color:#b56a34;font-size:15px}
-  .lb-row.top1{background:linear-gradient(90deg,rgba(255,215,0,.22),var(--panel) 60%)}
+  .lb-row.top1{background:linear-gradient(90deg,rgba(255,215,0,.22),var(--panel) 60%);box-shadow:0 4px 14px rgba(255,197,0,.28),var(--shadow-card);transform:scale(1.02)}
   .lb-row.top2{background:linear-gradient(90deg,rgba(180,190,200,.25),var(--panel) 60%)}
   .lb-row.top3{background:linear-gradient(90deg,rgba(205,127,50,.2),var(--panel) 60%)}
   .lb-info{flex:1;min-width:0;text-align:left}
@@ -814,7 +814,7 @@
   .player-card-stat{text-align:center}
   .player-card-stat .pnum{font-size:18px;font-weight:800;color:var(--ink)}
   .player-card-stat .plbl{font-size:9px;color:#a99;font-weight:700;text-transform:uppercase}
-  .achievement-row{display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:8px;padding:8px 10px;opacity:.45}
+  .achievement-row{display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:var(--radius-md);padding:9px 12px;opacity:.5;box-shadow:var(--shadow-card);transition:opacity .2s}
   .achievement-row.unlocked{opacity:1;background:#e8f5e9}
   .achievement-icon{font-size:20px;width:30px;text-align:center;flex-shrink:0}
   .achievement-info{flex:1;text-align:left;min-width:0}
@@ -822,9 +822,9 @@
   .achievement-desc{font-size:9px;color:#a99}
   .achievement-row.claimable{background:#fff6db;border:2px solid var(--gold);animation:achievementClaimPulse 1s ease-in-out infinite alternate}
   @keyframes achievementClaimPulse{from{box-shadow:0 0 0 rgba(255,215,0,0)}to{box-shadow:0 0 10px 2px rgba(255,215,0,.7)}}
-  .achievement-claim-btn{background:var(--gold);color:#7a5a00;border:none;border-radius:8px;padding:7px 12px;font-size:11px;font-weight:800;cursor:pointer;flex-shrink:0;box-shadow:0 3px 0 #c9a200}
+  .achievement-claim-btn{background:var(--gold);color:#7a5a00;border:none;border-radius:var(--radius-pill);padding:7px 14px;font-size:11px;font-weight:800;cursor:pointer;flex-shrink:0;box-shadow:0 3px 0 #c9a200}
   .achievement-claim-btn:active{transform:translateY(2px);box-shadow:0 1px 0 #c9a200}
-  .achievement-category{background:var(--panel);border-radius:12px;padding:4px;margin-bottom:8px}
+  .achievement-category{background:var(--panel);border-radius:var(--radius-lg);padding:4px;margin-bottom:8px;box-shadow:var(--shadow-card)}
   .achievement-category-toggle{display:flex;align-items:center;gap:8px;width:100%;background:none;border:none;padding:10px 8px;cursor:pointer;font-family:inherit;box-sizing:border-box}
   .achievement-category-icon{font-size:18px;flex-shrink:0}
   .achievement-category-title{font-size:13px;font-weight:800;color:var(--ink);text-align:left;flex:1}
@@ -1732,7 +1732,7 @@
   <div id="profileScreen">
     <div class="shop-header">
       <button class="shop-back" id="profileBack">← Geri</button>
-      <h2>👤 Profil</h2>
+      <h2><svg class="icon"><use href="#icon-profile"/></svg> Profil</h2>
     </div>
     <div class="profile-photo-section">
       <div class="ppic ppic-lg" id="profilePhotoBig"></div>
@@ -1774,24 +1774,24 @@
     </div>
 
     <div id="profileTitlesWrap" style="display:none">
-      <div class="profile-section-title">🏆 Kuboklar</div>
+      <div class="profile-section-title"><svg class="icon"><use href="#icon-trophy"/></svg> Kuboklar</div>
       <div class="profile-titles-row" id="profileTitlesRow"></div>
     </div>
     <div id="profileMedalsWrap" style="display:none">
-      <div class="profile-section-title">🎖️ Medallar</div>
+      <div class="profile-section-title"><svg class="icon"><use href="#icon-trophy"/></svg> Medallar</div>
       <div class="profile-titles-row" id="profileMedalsRow"></div>
     </div>
 
     <div class="profile-section-title">🏆 Rekordlar (ən yaxşı 10)</div>
     <div class="records-list" id="recordsList"></div>
 
-    <div class="profile-section-title" style="position:relative">🎁 Aldığı hədiyyələr<span class="gift-total-badge" id="profileGiftTotalBadge">0</span></div>
+    <div class="profile-section-title" style="position:relative"><svg class="icon"><use href="#icon-gift"/></svg> Aldığı hədiyyələr<span class="gift-total-badge" id="profileGiftTotalBadge">0</span></div>
     <div class="player-gift-list" id="profileGiftList"></div>
     <button class="menu-return" id="profileGiftsAllBtn" style="display:none;margin-top:6px;padding:8px;font-size:11px;width:100%">Hamısına bax</button>
 
     <div id="profileCardsWrap" style="display:none">
       <button type="button" class="profile-cards-toggle" id="profileCardsToggle">
-        <span class="profile-cards-label">🃏 Kartlar</span>
+        <span class="profile-cards-label"><svg class="icon"><use href="#icon-cards"/></svg> Kartlar</span>
         <span class="profile-cards-count" style="font-size:11px;color:#a99;font-weight:700"></span>
         <span class="settings-accordion-arrow" id="profileCardsArrow">▾</span>
       </button>
@@ -1813,7 +1813,7 @@
   <div id="achievementsScreen">
     <div class="shop-header">
       <button class="shop-back" id="achievementsBack">← Geri</button>
-      <h2>🎖️ Nailiyyətlər</h2>
+      <h2><svg class="icon"><use href="#icon-trophy"/></svg> Nailiyyətlər</h2>
       <div class="achievements-total-badge" id="achievementsTotalBadge">0/0</div>
     </div>
     <div class="achievements-list" id="achievementsList"></div>
@@ -1822,7 +1822,7 @@
   <div id="bagScreen">
     <div class="shop-header">
       <button class="shop-back" id="bagBack">← Geri</button>
-      <h2>🎒 Çanta</h2>
+      <h2><svg class="icon"><use href="#icon-bag"/></svg> Çanta</h2>
     </div>
     <div class="bag-list" id="bagList"></div>
   </div>
@@ -1830,7 +1830,7 @@
   <div id="cardsScreen">
     <div class="shop-header">
       <button class="shop-back" id="cardsBack">← Geri</button>
-      <h2>🃏 Kubik Kartları</h2>
+      <h2><svg class="icon"><use href="#icon-cards"/></svg> Kubik Kartları</h2>
       <div id="cardCountHeader" class="card-count-badge card-count-badge-sm"></div>
     </div>
     <div id="cardPicker"></div>
@@ -1905,7 +1905,7 @@
     <div class="shop-sticky-top">
       <div class="shop-header">
         <button class="shop-back" id="friendsBack">← Geri</button>
-        <h2>👥 Dostlar</h2>
+        <h2><svg class="icon"><use href="#icon-friends"/></svg> Dostlar</h2>
       </div>
       <div class="shop-tabs" id="friendsTabs"></div>
     </div>
@@ -1932,7 +1932,7 @@
     <div class="shop-sticky-top">
       <div class="shop-header">
         <button class="shop-back" id="leaderboardBack">← Geri</button>
-        <h2>🏆 Reytinq Cədvəli</h2>
+        <h2><svg class="icon"><use href="#icon-leaderboard"/></svg> Reytinq Cədvəli</h2>
       </div>
       <div class="shop-tabs" id="leaderboardTabs"></div>
     </div>
@@ -1943,7 +1943,7 @@
     <div class="shop-sticky-top">
       <div class="shop-header">
         <button class="shop-back" id="mailboxBack">← Geri</button>
-        <h2>📬 Poçt qutusu</h2>
+        <h2><svg class="icon"><use href="#icon-mail"/></svg> Poçt qutusu</h2>
       </div>
       <div class="shop-tabs" id="mailboxTabs"></div>
     </div>
@@ -2270,7 +2270,7 @@
 
       <div id="playerCardCardsWrap" style="display:none">
         <button type="button" class="profile-cards-toggle" id="playerCardCardsToggle">
-          <span class="profile-cards-label">🃏 Kartlar</span>
+          <span class="profile-cards-label"><svg class="icon"><use href="#icon-cards"/></svg> Kartlar</span>
           <span class="profile-cards-count" style="font-size:11px;color:#a99;font-weight:700"></span>
           <span class="settings-accordion-arrow" id="playerCardCardsArrow">▾</span>
         </button>
@@ -3599,7 +3599,7 @@
       var claimable = complete && !claimed;
       return '<div class="achievement-row' + (claimed ? " unlocked" : "") + (claimable ? " claimable" : "") + '">' +
         (claimable ? '<span class="daily-missions-red-dot"></span>' : '') +
-        '<div class="achievement-icon">' + (claimed ? "✅" : "📋") + '</div>' +
+        '<div class="achievement-icon">' + (claimed ? "✅" : "<svg class='icon'><use href='#icon-list'/></svg>") + '</div>' +
         '<div class="achievement-info"><div class="achievement-name">' + t.desc + '</div>' +
         '<div class="daily-missions-progress">' + Math.min(Math.floor(progress), t.n) + '/' + t.n + '</div></div>' +
         (claimable ? '<button class="achievement-claim-btn" data-daily-id="' + id + '">+' + t.gold + ' <span class=gold-icon-emoji></span> +' + t.xp + ' xp</button>' : '') +
@@ -3611,7 +3611,7 @@
     var metaDoneCount = dm.picks.filter(function(id){ return dm.claimed[id]; }).length;
     var metaRowHtml = '<div class="achievement-row daily-missions-meta-row' + (dm.metaClaimed ? " unlocked" : "") + (metaClaimable ? " claimable" : "") + '">' +
       (metaClaimable ? '<span class="daily-missions-red-dot"></span>' : '') +
-      '<div class="achievement-icon">' + (dm.metaClaimed ? "🏆" : "🎁") + '</div>' +
+      '<div class="achievement-icon">' + (dm.metaClaimed ? "<svg class='icon'><use href='#icon-trophy'/></svg>" : "<svg class='icon'><use href='#icon-gift'/></svg>") + '</div>' +
       '<div class="achievement-info"><div class="achievement-name">Bütün 4 tapşırığı tamamla</div>' +
       '<div class="daily-missions-progress">' + metaDoneCount + '/4</div></div>' +
       (metaClaimable ? '<button class="achievement-claim-btn" id="dailyMetaClaimBtn">+' + DAILY_META_GOLD + ' <span class=gold-icon-emoji></span> +' + DAILY_META_XP + ' xp +2🎲 +1🔑</button>' : '') +
@@ -8114,7 +8114,7 @@
         var claimed = !!profile.claimedAchievements[a.id];
         var claimable = unlocked && !claimed;
         return '<div class="achievement-row' + (unlocked ? " unlocked" : "") + (claimable ? " claimable" : "") + '">' +
-          '<div class="achievement-icon">' + (unlocked ? a.icon : "🔒") + '</div>' +
+          '<div class="achievement-icon">' + (unlocked ? a.icon : "<svg class='icon'><use href='#icon-lock'/></svg>") + '</div>' +
           '<div class="achievement-info"><div class="achievement-name">' + a.name + '</div><div class="achievement-desc">' + a.desc + '</div></div>' +
           (claimable ? '<button class="achievement-claim-btn" data-id="' + a.id + '">+' + ACHIEVEMENT_GOLD_REWARD + ' <span class=gold-icon-emoji></span></button>' : '') +
           '</div>';
