@@ -13967,6 +13967,135 @@
       renderProfile();
     }
   }catch(e){}
+
+  // ===== Android tətbiqi (APK) =====
+  // Yalnız tətbiqdən açılanda işləyir: tətbiq oyunu ?app=android ilə açır (Chrome TWA-da referrer
+  // android-app://com.rovshan.rainofcubes olur). Bayraq sessionStorage-da saxlanır ki, Google ilə
+  // girişdən sonra (ünvan ?app olmadan qayıdır) da tanınsın. Brauzer versiyasına heç bir təsiri yoxdur.
+  var IS_ANDROID_APP = (function(){
+    try{
+      if(/[?&]app=android(&|$)/.test(location.search) ||
+         String(document.referrer).indexOf("android-app://com.rovshan.rainofcubes") === 0){
+        sessionStorage.setItem("rocAndroidApp", "1");
+      }
+      return sessionStorage.getItem("rocAndroidApp") === "1";
+    }catch(e){ return false; }
+  })();
+
+  function appElVisible(el){
+    return !!el && el.getClientRects().length > 0;
+  }
+  function appClickIfVisible(id){
+    var b = document.getElementById(id);
+    if(b && appElVisible(b) && !b.disabled){ b.click(); return true; }
+    return false;
+  }
+  function appTopmost(list){
+    var best = null, bestZ = -Infinity;
+    list.forEach(function(el){
+      var z = parseInt(getComputedStyle(el).zIndex, 10);
+      if(isNaN(z)) z = 0;
+      if(z >= bestZ){ best = el; bestZ = z; } // bərabərdirsə — DOM-da sonra gələn üstdə görünür
+    });
+    return best;
+  }
+  // Telefonun "Geri" düyməsi — ən üstdəki pəncərəni bağlayır.
+  // true = idarə olundu (tətbiq bağlanmasın), false = ana menyudayıq.
+  function handleAndroidBack(){
+    // 1) Açıq popup-lar (ən üstdəki)
+    var modals = Array.prototype.slice.call(document.querySelectorAll(
+      ".modal-overlay.show, #cardRevealOverlay.show, #cardPrereqOverlay.show, #cardPayOverlay.show"));
+    if(modals.length){
+      var m = appTopmost(modals);
+      var special = {
+        confirmModalOverlay: "confirmModalNo",
+        battleWaitingModal: "battleWaitingCancel",
+        battleInviteModal: "battleInviteDecline",
+        cardRevealOverlay: "cardRevealClose",
+        cardPrereqOverlay: "cardPrereqClose",
+        cardPayOverlay: "cardPayClose"
+      };
+      if(special[m.id]){ appClickIfVisible(special[m.id]); return true; }
+      var close = m.querySelector(".modal-close");
+      if(close) close.click();
+      return true; // bağlama düyməsi olmayan popup (məs. level mükafatı) açıq qalır
+    }
+    // 2) Admin: oyun təkrarı
+    if(appElVisible(document.getElementById("adminReplayScreen"))){ appClickIfVisible("adminReplayClose"); return true; }
+    // 3) Oyun sahəsindəki pəncərələr
+    if(pauseOverlay.classList.contains("show")){
+      if(pauseConfirmPanel.style.display !== "none") cancelQuit(); else resumeGame();
+      return true;
+    }
+    if(document.getElementById("overlay").classList.contains("show")){
+      if(!appClickIfVisible("dungeonReturnBtn")) appClickIfVisible("menuReturnBtn");
+      return true;
+    }
+    if(document.getElementById("arcadeResultOverlay").classList.contains("show")){ appClickIfVisible("arcadeLevelsBtn"); return true; }
+    if(document.getElementById("battleResultOverlay").classList.contains("show")){ appClickIfVisible("battleResultMenuBtn"); return true; }
+    if(document.getElementById("battleCountdownOverlay").classList.contains("show") ||
+       document.getElementById("battleWaitOverlay").classList.contains("show")) return true;
+    // 4) Oyun gedir — pauza (pauza düyməsi ilə eyni)
+    if(gameActive){ pauseGame(); return true; }
+    // 5) Bölmələr (Mağaza, Profil, Dostlar və s.) — "← Geri" düyməsi
+    if(appClickIfVisible("adminDetailBack")) return true;
+    var backs = Array.prototype.slice.call(document.querySelectorAll(".shop-back")).filter(appElVisible);
+    if(backs.length){ backs[backs.length - 1].click(); return true; }
+    return false;
+  }
+
+  if(IS_ANDROID_APP){
+    // "Geri" düyməsi brauzer tarixçəsi ilə işləyir: tarixçəyə bir "qoruyucu" qeyd əlavə edirik,
+    // Geri basılanda (popstate) pəncərəni bağlayıb qeydi yenidən qoyuruq. Chrome istifadəçi
+    // toxunuşu olmadan əlavə olunan qeydləri Geri-də ötürür — ona görə ilk toxunuşda qoyulur.
+    var appBackArmed = false, appExitPending = false, appExitTimer = null;
+    function armAppBack(){
+      if(appBackArmed) return;
+      appBackArmed = true;
+      try{ history.pushState({rocAppBack: true}, ""); }catch(e){}
+    }
+    document.addEventListener("pointerdown", function(){ if(!appExitPending) armAppBack(); }, true);
+    window.addEventListener("popstate", function(){
+      appBackArmed = false;
+      var handled;
+      try{ handled = handleAndroidBack(); }catch(e){ handled = true; }
+      if(handled){
+        appExitPending = false;
+        clearTimeout(appExitTimer);
+        armAppBack();
+        return;
+      }
+      // Ana menyu: ikinci basış (2 san. ərzində) tətbiqi bağlayır
+      appExitPending = true;
+      showAppExitHint();
+      clearTimeout(appExitTimer);
+      appExitTimer = setTimeout(function(){ appExitPending = false; armAppBack(); }, 2000);
+    });
+    // Ayrıca ipucu: adi #toast oyun sahəsinin içindədir və menyu ekranının altında qalır
+    var appExitHint = null;
+    function showAppExitHint(){
+      if(!appExitHint){
+        appExitHint = document.createElement("div");
+        appExitHint.className = "toast";
+        appExitHint.style.cssText = "position:fixed;top:auto;bottom:90px;z-index:2147483000";
+        appExitHint.textContent = "Çıxmaq üçün bir daha basın";
+        document.body.appendChild(appExitHint);
+      }
+      appExitHint.classList.add("show");
+      clearTimeout(appExitHint._t);
+      appExitHint._t = setTimeout(function(){ appExitHint.classList.remove("show"); }, 1800);
+    }
+
+    // Tətbiq arxa plana keçəndə (Home, zəng və s.) oyun pauzaya düşür, səs susur
+    document.addEventListener("visibilitychange", function(){
+      if(document.hidden){
+        if(gameActive && !paused) pauseGame();
+        if(audioCtx && audioCtx.state === "running") audioCtx.suspend().catch(function(){});
+      }else if(audioCtx && audioCtx.state === "suspended"){
+        audioCtx.resume().catch(function(){});
+      }
+    });
+  }
 })();
 </script>
 </body>

@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.rovshan.rainofcubes",
+      "sha256_cert_fingerprints": [
+        "06:F5:B4:9E:3C:E5:E7:58:11:52:CD:0C:2C:00:D1:1C:8D:9E:EB:5F:CC:48:E6:DA:20:D9:35:31:89:DA:EF:E5"
+      ]
+    }
+  }
+]
