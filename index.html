@@ -13983,7 +13983,9 @@
   })();
 
   function appElVisible(el){
-    return !!el && el.getClientRects().length > 0;
+    if(!el || !el.getClientRects().length) return false;
+    try{ if(el.checkVisibility) return el.checkVisibility({opacityProperty: true, visibilityProperty: true}); }catch(e){}
+    return true;
   }
   function appClickIfVisible(id){
     var b = document.getElementById(id);
@@ -14045,31 +14047,33 @@
   }
 
   if(IS_ANDROID_APP){
-    // "Geri" düyməsi brauzer tarixçəsi ilə işləyir: tarixçəyə bir "qoruyucu" qeyd əlavə edirik,
-    // Geri basılanda (popstate) pəncərəni bağlayıb qeydi yenidən qoyuruq. Chrome istifadəçi
-    // toxunuşu olmadan əlavə olunan qeydləri Geri-də ötürür — ona görə ilk toxunuşda qoyulur.
-    var appBackArmed = false, appExitPending = false, appExitTimer = null;
-    function armAppBack(){
-      if(appBackArmed) return;
-      appBackArmed = true;
-      try{ history.pushState({rocAppBack: true}, ""); }catch(e){}
-    }
-    document.addEventListener("pointerdown", function(){ if(!appExitPending) armAppBack(); }, true);
-    window.addEventListener("popstate", function(){
-      appBackArmed = false;
+    // "Geri" düyməsi brauzer tarixçəsi ilə işləyir: hər Geri bir tarixçə qeydini götürür (popstate),
+    // biz də onun yerinə ən üstdəki pəncərəni bağlayırıq. Chrome yalnız istifadəçi toxunuşu ilə
+    // əlavə olunan qeydləri saxlayır (toxunuşsuz əlavə olunanları Geri-də ötürüb tətbiqi bağlayır),
+    // ona görə qeyd popstate-də yox, HƏR toxunuşda (click) əlavə olunur — ehtiyat üçün 8-ə qədər.
+    // Beləcə bir neçə ardıcıl Geri (məs. popup → bölmə → menyu) toxunmadan da işləyir.
+    var APP_BACK_MAX = 8;
+    var appBackDepth = (history.state && history.state.rocDepth) || 0;
+    var appSkipPop = false;
+    document.addEventListener("click", function(e){
+      // Proqramla edilən .click() (məs. Geri-nin özü popup-u bağlayanda) qeyd ƏLAVƏ ETMİR —
+      // toxunuşsuz qeyd Chrome-da "ötürülən" sayılır və növbəti Geri tətbiqi bağlayardı.
+      if(!e.isTrusted || appBackDepth >= APP_BACK_MAX) return;
+      try{ history.pushState({rocDepth: appBackDepth + 1}, ""); appBackDepth++; }catch(e){}
+    }, true);
+    window.addEventListener("popstate", function(e){
+      appBackDepth = (e.state && e.state.rocDepth) || 0;
+      if(appSkipPop){ appSkipPop = false; return; }
       var handled;
-      try{ handled = handleAndroidBack(); }catch(e){ handled = true; }
-      if(handled){
-        appExitPending = false;
-        clearTimeout(appExitTimer);
-        armAppBack();
-        return;
-      }
-      // Ana menyu: ikinci basış (2 san. ərzində) tətbiqi bağlayır
-      appExitPending = true;
+      try{ handled = handleAndroidBack(); }catch(err){ handled = true; }
+      if(handled) return;
+      // Ana menyu: tarixçənin əvvəlinə qayıdırıq — növbəti Geri tətbiqi bağlayır
       showAppExitHint();
-      clearTimeout(appExitTimer);
-      appExitTimer = setTimeout(function(){ appExitPending = false; armAppBack(); }, 2000);
+      if(appBackDepth > 0){
+        appSkipPop = true;
+        history.go(-appBackDepth);
+        setTimeout(function(){ appSkipPop = false; }, 1500);
+      }
     });
     // Ayrıca ipucu: adi #toast oyun sahəsinin içindədir və menyu ekranının altında qalır
     var appExitHint = null;
