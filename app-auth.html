@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="az">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex">
+<title>Rain of Cubes</title>
+<style>
+  html,body{margin:0;height:100%;background:linear-gradient(180deg,#3a332c,#241f1a);color:#fff;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  .wrap{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px 16px;box-sizing:border-box;text-align:center}
+  h1{font-size:21px;margin:0}
+  p{margin:0;color:#d9cfc4;font-size:15px;line-height:1.45;max-width:340px}
+  a.btn{display:none;background:#6bbf59;color:#fff;text-decoration:none;font-weight:800;font-size:17px;padding:14px 30px;border-radius:14px;box-shadow:0 4px 0 #4e9a3f}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 id="t">Oyuna qayıdılır…</h1>
+  <p id="m">Bir saniyə gözləyin.</p>
+  <a class="btn" id="b" href="#">Oyuna qayıt</a>
+</div>
+<script>
+// Android tətbiqində (APK 2.0+) Google ilə girişdən sonra Supabase bura qaytarır.
+// Açarlar tətbiqə ötürülür (intent://auth → com.rovshan.rainofcubes), saytda heç nə saxlanmır.
+(function(){
+  var src = new URLSearchParams((location.hash || "").replace(/^#/, ""));
+  new URLSearchParams(location.search).forEach(function(v, k){ if(!src.has(k)) src.set(k, v); });
+  var keep = new URLSearchParams();
+  ["access_token","refresh_token","expires_in","expires_at","token_type","code","error","error_code","error_description"].forEach(function(k){
+    if(src.has(k)) keep.set(k, src.get(k));
+  });
+  // Açarlar ünvan sətrində / tarixçədə qalmasın
+  try{ history.replaceState(null, "", location.pathname); }catch(e){}
+  var t = document.getElementById("t"), m = document.getElementById("m"), b = document.getElementById("b");
+  if(!keep.toString()){
+    t.textContent = "Rain of Cubes";
+    m.textContent = "Bu səhifə yalnız Android tətbiqində Google ilə giriş üçündür.";
+    return;
+  }
+  var url = "intent://auth?" + keep.toString() + "#Intent;scheme=com.rovshan.rainofcubes;package=com.rovshan.rainofcubes;end";
+  b.href = url;
+  location.replace(url);
+  setTimeout(function(){
+    t.textContent = keep.has("error") ? "Giriş alınmadı" : "Giriş tamamlandı";
+    m.textContent = "Oyuna qayıtmaq üçün düyməyə basın.";
+    b.style.display = "inline-block";
+  }, 1200);
+})();
+</script>
+</body>
+</html>

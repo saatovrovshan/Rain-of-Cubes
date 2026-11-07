@@ -2494,6 +2494,18 @@
 
   function signInWithGoogle(){
     if(!supabaseClient) return;
+    // APK-nın içində: Google öz qaydası ilə tətbiq içi brauzerdə (WebView) girişi bloklayır —
+    // giriş Chrome pəncərəsində açılır, app-auth.html açarları tətbiqə qaytarır (window.rocAndroidAuth)
+    if(window.RocAndroid && window.RocAndroid.openAuth){
+      supabaseClient.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: "https://rain-of-cubes-saa-tov.vercel.app/app-auth.html", skipBrowserRedirect: true }
+      }).then(function(res){
+        var url = res && res.data && res.data.url;
+        if(url) window.RocAndroid.openAuth(url);
+      });
+      return;
+    }
     supabaseClient.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: window.location.origin + window.location.pathname }
@@ -13972,7 +13984,9 @@
   // Yalnız tətbiqdən açılanda işləyir: tətbiq oyunu ?app=android ilə açır (Chrome TWA-da referrer
   // android-app://com.rovshan.rainofcubes olur). Bayraq sessionStorage-da saxlanır ki, Google ilə
   // girişdən sonra (ünvan ?app olmadan qayıdır) da tanınsın. Brauzer versiyasına heç bir təsiri yoxdur.
-  var IS_ANDROID_APP = (function(){
+  // ROC_NATIVE: oyun APK-nın İÇİNDƏDİR (WebView, window.RocAndroid körpüsü) — APK 2.0+
+  var ROC_NATIVE = (function(){ try{ return !!(window.RocAndroid && window.RocAndroid.openAuth); }catch(e){ return false; } })();
+  var IS_ANDROID_APP = ROC_NATIVE || (function(){
     try{
       if(/[?&]app=android(&|$)/.test(location.search) ||
          String(document.referrer).indexOf("android-app://com.rovshan.rainofcubes") === 0){
@@ -14046,7 +14060,54 @@
     return false;
   }
 
-  if(IS_ANDROID_APP){
+  // Ekranın altında qısa bildiriş (adi #toast oyun sahəsinin içindədir və menyu ekranlarının altında qalır)
+  var appNoticeEl = null;
+  function appNotice(text, ms){
+    if(!appNoticeEl){
+      appNoticeEl = document.createElement("div");
+      appNoticeEl.className = "toast";
+      appNoticeEl.style.cssText = "position:fixed;top:auto;bottom:90px;z-index:2147483000;white-space:normal;max-width:86vw;text-align:center";
+      document.body.appendChild(appNoticeEl);
+    }
+    appNoticeEl.textContent = text;
+    appNoticeEl.classList.add("show");
+    clearTimeout(appNoticeEl._t);
+    appNoticeEl._t = setTimeout(function(){ appNoticeEl.classList.remove("show"); }, ms || 1800);
+  }
+  // Tətbiq arxa plana keçəndə (Home, zəng və s.) oyun pauzaya düşür, səs susur
+  function appSetHidden(hidden){
+    if(hidden){
+      if(gameActive && !paused) pauseGame();
+      if(audioCtx && audioCtx.state === "running") audioCtx.suspend().catch(function(){});
+    }else if(audioCtx && audioCtx.state === "suspended"){
+      audioCtx.resume().catch(function(){});
+    }
+  }
+
+  if(ROC_NATIVE){
+    // APK-nın öz kodu (MainActivity) bu funksiyaları çağırır
+    window.rocAndroidBack = function(){
+      try{ return !!handleAndroidBack(); }catch(e){ return true; }
+    };
+    window.rocAndroidExitHint = function(){ appNotice("Çıxmaq üçün bir daha basın"); };
+    window.rocAndroidVisibility = function(visible){ appSetHidden(!visible); };
+    // Google girişindən qayıdan açarlar (Chrome → app-auth.html → tətbiq)
+    window.rocAndroidAuth = function(query){
+      if(!supabaseClient) return;
+      var p = new URLSearchParams(String(query || "").replace(/^[?#]/, ""));
+      var err = p.get("error_description") || p.get("error");
+      if(err){ appNotice("Giriş alınmadı: " + err, 4000); return; }
+      var done = function(res){ if(res && res.error) appNotice("Giriş alınmadı: " + res.error.message, 4000); };
+      var fail = function(e){ appNotice("Giriş alınmadı: " + ((e && e.message) || e), 4000); };
+      if(p.get("code")){
+        supabaseClient.auth.exchangeCodeForSession(p.get("code")).then(done, fail);
+      }else if(p.get("access_token") && p.get("refresh_token")){
+        supabaseClient.auth.setSession({access_token: p.get("access_token"), refresh_token: p.get("refresh_token")}).then(done, fail);
+      }
+    };
+    document.addEventListener("visibilitychange", function(){ appSetHidden(document.hidden); });
+  }else if(IS_ANDROID_APP){
+    // Köhnə APK 1.0 (TWA — saytı Chrome-da açır)
     // "Geri" düyməsi brauzer tarixçəsi ilə işləyir: hər Geri bir tarixçə qeydini götürür (popstate),
     // biz də onun yerinə ən üstdəki pəncərəni bağlayırıq. Chrome yalnız istifadəçi toxunuşu ilə
     // əlavə olunan qeydləri saxlayır (toxunuşsuz əlavə olunanları Geri-də ötürüb tətbiqi bağlayır),
@@ -14068,37 +14129,14 @@
       try{ handled = handleAndroidBack(); }catch(err){ handled = true; }
       if(handled) return;
       // Ana menyu: tarixçənin əvvəlinə qayıdırıq — növbəti Geri tətbiqi bağlayır
-      showAppExitHint();
+      appNotice("Çıxmaq üçün bir daha basın");
       if(appBackDepth > 0){
         appSkipPop = true;
         history.go(-appBackDepth);
         setTimeout(function(){ appSkipPop = false; }, 1500);
       }
     });
-    // Ayrıca ipucu: adi #toast oyun sahəsinin içindədir və menyu ekranının altında qalır
-    var appExitHint = null;
-    function showAppExitHint(){
-      if(!appExitHint){
-        appExitHint = document.createElement("div");
-        appExitHint.className = "toast";
-        appExitHint.style.cssText = "position:fixed;top:auto;bottom:90px;z-index:2147483000";
-        appExitHint.textContent = "Çıxmaq üçün bir daha basın";
-        document.body.appendChild(appExitHint);
-      }
-      appExitHint.classList.add("show");
-      clearTimeout(appExitHint._t);
-      appExitHint._t = setTimeout(function(){ appExitHint.classList.remove("show"); }, 1800);
-    }
-
-    // Tətbiq arxa plana keçəndə (Home, zəng və s.) oyun pauzaya düşür, səs susur
-    document.addEventListener("visibilitychange", function(){
-      if(document.hidden){
-        if(gameActive && !paused) pauseGame();
-        if(audioCtx && audioCtx.state === "running") audioCtx.suspend().catch(function(){});
-      }else if(audioCtx && audioCtx.state === "suspended"){
-        audioCtx.resume().catch(function(){});
-      }
-    });
+    document.addEventListener("visibilitychange", function(){ appSetHidden(document.hidden); });
   }
 })();
 </script>
